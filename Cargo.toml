@@ -6,7 +6,7 @@ default-members = ["libs/*"]
 [workspace.package]
 version = "0.0.0"
 edition = "2024"
-license = "Apache-2.0"
+license = "MIT"
 readme = "README.md"
 documentation = "https://www.github.com/aacebo/xmod"
 homepage = "https://www.github.com/aacebo/xmod"
