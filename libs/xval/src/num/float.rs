@@ -1,5 +1,6 @@
 use crate::{ToValue, Value, num::Number};
 
+/// A floating-point value that can hold an [`f32`] or [`f64`].
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",

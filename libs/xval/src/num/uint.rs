@@ -1,5 +1,6 @@
 use crate::{ToValue, Value, num::Number};
 
+/// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], or [`u64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",

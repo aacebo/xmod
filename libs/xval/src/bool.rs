@@ -1,5 +1,6 @@
 use crate::{ToValue, Value};
 
+/// A type-safe wrapper around a [`bool`] value.
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(

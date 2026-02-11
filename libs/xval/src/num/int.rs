@@ -1,5 +1,6 @@
 use crate::{ToValue, Value, num::Number};
 
+/// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], or [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",

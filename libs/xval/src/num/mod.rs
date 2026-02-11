@@ -8,6 +8,7 @@ pub use uint::*;
 
 use crate::{ToValue, Value};
 
+/// A numeric value that can hold a float, signed integer, or unsigned integer.
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",

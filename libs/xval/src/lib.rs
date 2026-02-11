@@ -4,10 +4,12 @@ pub mod num;
 pub use bool::*;
 pub use num::*;
 
+/// A trait for types that can be converted into a [`Value`].
 pub trait ToValue {
     fn to_value(self) -> Value;
 }
 
+/// A dynamically-typed value that can hold a boolean or any numeric type.
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",
