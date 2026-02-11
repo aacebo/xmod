@@ -1,0 +1,21 @@
+[workspace]
+resolver = "3"
+members = ["libs/*"]
+default-members = ["libs/*"]
+
+[workspace.package]
+version = "0.0.0"
+edition = "2024"
+license = "Apache-2.0"
+readme = "README.md"
+documentation = "https://www.github.com/aacebo/xmod"
+homepage = "https://www.github.com/aacebo/xmod"
+repository = "https://www.github.com/aacebo/xmod"
+
+[workspace.dependencies]
+xok = { path = "./libs/xok", version = "0.0.0" }
+xpipe = { path = "./libs/xpipe", version = "0.0.0" }
+xval = { path = "./libs/xval", version = "0.0.0" }
+xsch = { path = "./libs/xsch", version = "0.0.0" }
+
+serde = { version = "1", features = ["default", "derive"] }
