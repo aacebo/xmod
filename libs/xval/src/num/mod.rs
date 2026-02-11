@@ -54,9 +54,7 @@ impl Number {
             v => panic!("expected Float, received {}", std::any::type_name_of_val(v)),
         }
     }
-}
 
-impl Number {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::Int(v) => v.type_id(),

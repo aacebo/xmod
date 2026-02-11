@@ -11,18 +11,14 @@ use crate::{ToValue, Value};
 pub struct Bool(bool);
 
 impl Bool {
-    pub fn to_bool(&self) -> bool {
-        self.0
-    }
-}
-
-impl Bool {
     pub fn from_bool(value: bool) -> Self {
         Self(value)
     }
-}
 
-impl Bool {
+    pub fn to_bool(&self) -> bool {
+        self.0
+    }
+
     pub fn type_id(&self) -> std::any::TypeId {
         std::any::TypeId::of::<bool>()
     }

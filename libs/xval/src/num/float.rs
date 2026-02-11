@@ -13,6 +13,14 @@ pub enum Float {
 }
 
 impl Float {
+    pub fn from_f64(value: f64) -> Self {
+        Self::F64(value)
+    }
+
+    pub fn from_f32(value: f32) -> Self {
+        Self::F32(value)
+    }
+
     pub fn is_f64(&self) -> bool {
         matches!(self, Self::F64(_))
     }
@@ -34,19 +42,7 @@ impl Float {
             v => panic!("expected f32, received {}", std::any::type_name_of_val(v)),
         }
     }
-}
 
-impl Float {
-    pub fn from_f64(value: f64) -> Self {
-        Self::F64(value)
-    }
-
-    pub fn from_f32(value: f32) -> Self {
-        Self::F32(value)
-    }
-}
-
-impl Float {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::F64(_) => std::any::TypeId::of::<f64>(),

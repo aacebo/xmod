@@ -15,6 +15,22 @@ pub enum Int {
 }
 
 impl Int {
+    pub fn from_i8(value: i8) -> Self {
+        Self::I8(value)
+    }
+
+    pub fn from_i16(value: i16) -> Self {
+        Self::I16(value)
+    }
+
+    pub fn from_i32(value: i32) -> Self {
+        Self::I32(value)
+    }
+
+    pub fn from_i64(value: i64) -> Self {
+        Self::I64(value)
+    }
+
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::I8(_))
     }
@@ -58,27 +74,7 @@ impl Int {
             v => panic!("expected i64, received {}", std::any::type_name_of_val(v)),
         }
     }
-}
 
-impl Int {
-    pub fn from_i8(value: i8) -> Self {
-        Self::I8(value)
-    }
-
-    pub fn from_i16(value: i16) -> Self {
-        Self::I16(value)
-    }
-
-    pub fn from_i32(value: i32) -> Self {
-        Self::I32(value)
-    }
-
-    pub fn from_i64(value: i64) -> Self {
-        Self::I64(value)
-    }
-}
-
-impl Int {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::I8(_) => std::any::TypeId::of::<i8>(),

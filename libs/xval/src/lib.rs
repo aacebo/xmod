@@ -1,8 +1,10 @@
 mod bool;
 pub mod num;
+mod string;
 
 pub use bool::*;
 pub use num::*;
+pub use string::*;
 
 /// A trait for types that can be converted into a [`Value`].
 pub trait ToValue {
@@ -19,6 +21,7 @@ pub trait ToValue {
 pub enum Value {
     Bool(Bool),
     Number(Number),
+    Str(Str),
 }
 
 impl Value {
@@ -28,6 +31,10 @@ impl Value {
 
     pub fn is_number(&self) -> bool {
         matches!(self, Self::Number(_))
+    }
+
+    pub fn is_str(&self) -> bool {
+        matches!(self, Self::Str(_))
     }
 
     pub fn as_bool(&self) -> &Bool {
@@ -46,20 +53,28 @@ impl Value {
             ),
         }
     }
-}
 
-impl Value {
+    pub fn as_str(&self) -> &Str {
+        match self {
+            Self::Str(v) => v,
+            v => panic!("expected Str, received {}", std::any::type_name_of_val(v)),
+        }
+    }
+
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::Bool(v) => v.type_id(),
             Self::Number(v) => v.type_id(),
+            Self::Str(v) => v.type_id(),
         }
     }
-}
 
-impl Value {
     pub fn to_bool(&self) -> bool {
         self.as_bool().to_bool()
+    }
+
+    pub fn to_str(&self) -> &str {
+        self.as_str().as_str()
     }
 }
 
@@ -180,6 +195,7 @@ impl std::fmt::Display for Value {
         match self {
             Self::Bool(v) => write!(f, "{}", v),
             Self::Number(v) => write!(f, "{}", v),
+            Self::Str(v) => write!(f, "{}", v),
         }
     }
 }
@@ -193,10 +209,17 @@ mod tests {
         let b = Value::from_bool(true);
         assert!(b.is_bool());
         assert!(!b.is_number());
+        assert!(!b.is_str());
 
         let n = Value::from_i32(1);
         assert!(n.is_number());
         assert!(!n.is_bool());
+        assert!(!n.is_str());
+
+        let s = Value::from_str("hello");
+        assert!(s.is_str());
+        assert!(!s.is_bool());
+        assert!(!s.is_number());
     }
 
     #[test]
@@ -224,10 +247,23 @@ mod tests {
     }
 
     #[test]
+    fn as_str() {
+        let v = Value::from_str("hello");
+        assert_eq!(v.to_str(), "hello");
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Str")]
+    fn as_str_panics_on_mismatch() {
+        Value::from_bool(true).as_str();
+    }
+
+    #[test]
     fn display() {
         assert_eq!(Value::from_bool(true).to_string(), "true");
         assert_eq!(Value::from_i32(42).to_string(), "42");
         assert_eq!(Value::from_f64(3.14).to_string(), "3.14");
+        assert_eq!(Value::from_str("hello").to_string(), "hello");
     }
 
     #[test]
@@ -246,6 +282,10 @@ mod tests {
         );
         assert_eq!(Value::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
         assert_eq!(Value::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
+        assert_eq!(
+            Value::from_str("hello").type_id(),
+            std::any::TypeId::of::<&str>()
+        );
     }
 
     #[cfg(feature = "serde")]
@@ -263,6 +303,10 @@ mod tests {
                 serde_json::to_string(&Value::from_f64(3.14)).unwrap(),
                 "3.14"
             );
+            assert_eq!(
+                serde_json::to_string(&Value::from_str("hello")).unwrap(),
+                "\"hello\""
+            );
         }
 
         #[test]
@@ -272,6 +316,9 @@ mod tests {
 
             let v: Value = serde_json::from_str("false").unwrap();
             assert_eq!(v.to_bool(), false);
+
+            let v: Value = serde_json::from_str("\"hello\"").unwrap();
+            assert_eq!(v.to_str(), "hello");
         }
     }
 }

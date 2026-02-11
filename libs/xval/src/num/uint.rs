@@ -15,6 +15,22 @@ pub enum UInt {
 }
 
 impl UInt {
+    pub fn from_u8(value: u8) -> Self {
+        Self::U8(value)
+    }
+
+    pub fn from_u16(value: u16) -> Self {
+        Self::U16(value)
+    }
+
+    pub fn from_u32(value: u32) -> Self {
+        Self::U32(value)
+    }
+
+    pub fn from_u64(value: u64) -> Self {
+        Self::U64(value)
+    }
+
     pub fn is_u8(&self) -> bool {
         matches!(self, Self::U8(_))
     }
@@ -58,27 +74,7 @@ impl UInt {
             v => panic!("expected u64, received {}", std::any::type_name_of_val(v)),
         }
     }
-}
 
-impl UInt {
-    pub fn from_u8(value: u8) -> Self {
-        Self::U8(value)
-    }
-
-    pub fn from_u16(value: u16) -> Self {
-        Self::U16(value)
-    }
-
-    pub fn from_u32(value: u32) -> Self {
-        Self::U32(value)
-    }
-
-    pub fn from_u64(value: u64) -> Self {
-        Self::U64(value)
-    }
-}
-
-impl UInt {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::U8(_) => std::any::TypeId::of::<u8>(),
