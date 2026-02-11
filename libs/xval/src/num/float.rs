@@ -41,6 +41,12 @@ impl From<Float> for Number {
     }
 }
 
+impl From<Float> for Value {
+    fn from(value: Float) -> Self {
+        Number::from(value).into()
+    }
+}
+
 impl From<f32> for Float {
     fn from(value: f32) -> Self {
         Self::F32(value)
@@ -50,6 +56,30 @@ impl From<f32> for Float {
 impl From<f64> for Float {
     fn from(value: f64) -> Self {
         Self::F64(value)
+    }
+}
+
+impl From<f32> for Number {
+    fn from(value: f32) -> Self {
+        Float::from(value).into()
+    }
+}
+
+impl From<f64> for Number {
+    fn from(value: f64) -> Self {
+        Float::from(value).into()
+    }
+}
+
+impl From<f32> for Value {
+    fn from(value: f32) -> Self {
+        Number::from(value).into()
+    }
+}
+
+impl From<f64> for Value {
+    fn from(value: f64) -> Self {
+        Number::from(value).into()
     }
 }
 
@@ -111,7 +141,7 @@ mod tests {
 
     #[test]
     fn into_number() {
-        let n = Number::from(Float::F64(2.5));
+        let n = Number::from(2.5f64);
         assert!(matches!(n, Number::Float(Float::F64(v)) if v == 2.5));
     }
 

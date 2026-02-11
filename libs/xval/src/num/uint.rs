@@ -89,6 +89,60 @@ impl From<u64> for UInt {
     }
 }
 
+impl From<UInt> for Value {
+    fn from(value: UInt) -> Self {
+        Number::from(value).into()
+    }
+}
+
+impl From<u8> for Number {
+    fn from(value: u8) -> Self {
+        UInt::from(value).into()
+    }
+}
+
+impl From<u16> for Number {
+    fn from(value: u16) -> Self {
+        UInt::from(value).into()
+    }
+}
+
+impl From<u32> for Number {
+    fn from(value: u32) -> Self {
+        UInt::from(value).into()
+    }
+}
+
+impl From<u64> for Number {
+    fn from(value: u64) -> Self {
+        UInt::from(value).into()
+    }
+}
+
+impl From<u8> for Value {
+    fn from(value: u8) -> Self {
+        Number::from(value).into()
+    }
+}
+
+impl From<u16> for Value {
+    fn from(value: u16) -> Self {
+        Number::from(value).into()
+    }
+}
+
+impl From<u32> for Value {
+    fn from(value: u32) -> Self {
+        Number::from(value).into()
+    }
+}
+
+impl From<u64> for Value {
+    fn from(value: u64) -> Self {
+        Number::from(value).into()
+    }
+}
+
 impl std::fmt::Display for UInt {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -177,7 +231,7 @@ mod tests {
 
     #[test]
     fn into_number() {
-        let n = Number::from(UInt::U32(5));
+        let n = Number::from(5u32);
         assert!(matches!(n, Number::UInt(UInt::U32(5))));
     }
 

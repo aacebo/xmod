@@ -169,61 +169,61 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let f = Number::Float(Float::F64(1.0));
+        let f = Number::from(1.0f64);
         assert!(f.is_float());
         assert!(!f.is_int());
         assert!(!f.is_uint());
 
-        assert!(Number::Int(Int::I32(1)).is_int());
-        assert!(Number::UInt(UInt::U32(1)).is_uint());
+        assert!(Number::from(1i32).is_int());
+        assert!(Number::from(1u32).is_uint());
     }
 
     #[test]
     fn as_float() {
-        let n = Number::Float(Float::F64(3.14));
+        let n = Number::from(3.14f64);
         assert_eq!(*n.as_float(), Float::F64(3.14));
     }
 
     #[test]
     fn as_int() {
-        let n = Number::Int(Int::I32(42));
+        let n = Number::from(42i32);
         assert_eq!(*n.as_int(), Int::I32(42));
     }
 
     #[test]
     fn as_uint() {
-        let n = Number::UInt(UInt::U32(42));
+        let n = Number::from(42u32);
         assert_eq!(*n.as_uint(), UInt::U32(42));
     }
 
     #[test]
     #[should_panic(expected = "expected Float")]
     fn as_float_panics_on_mismatch() {
-        Number::Int(Int::I32(1)).as_float();
+        Number::from(1i32).as_float();
     }
 
     #[test]
     #[should_panic(expected = "expected Int")]
     fn as_int_panics_on_mismatch() {
-        Number::Float(Float::F64(1.0)).as_int();
+        Number::from(1.0f64).as_int();
     }
 
     #[test]
     #[should_panic(expected = "expected UInt")]
     fn as_uint_panics_on_mismatch() {
-        Number::Int(Int::I32(1)).as_uint();
+        Number::from(1i32).as_uint();
     }
 
     #[test]
     fn into_value() {
-        let v = Value::from(Number::Int(Int::I32(5)));
+        let v = Value::from(5i32);
         assert!(matches!(v, Value::Number(_)));
     }
 
     #[test]
     fn display() {
-        assert_eq!(Number::Float(Float::F64(1.5)).to_string(), "1.5");
-        assert_eq!(Number::Int(Int::I32(42)).to_string(), "42");
-        assert_eq!(Number::UInt(UInt::U64(100)).to_string(), "100");
+        assert_eq!(Number::from(1.5f64).to_string(), "1.5");
+        assert_eq!(Number::from(42i32).to_string(), "42");
+        assert_eq!(Number::from(100u64).to_string(), "100");
     }
 }

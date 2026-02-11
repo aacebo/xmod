@@ -27,6 +27,12 @@ impl From<bool> for Bool {
     }
 }
 
+impl From<bool> for Value {
+    fn from(value: bool) -> Self {
+        Bool::from(value).into()
+    }
+}
+
 impl std::ops::Deref for Bool {
     type Target = bool;
 
@@ -68,7 +74,7 @@ mod tests {
 
     #[test]
     fn into_value() {
-        let v = Value::from(Bool::from(true));
+        let v = Value::from(true);
         assert!(matches!(v, Value::Bool(_)));
     }
 
