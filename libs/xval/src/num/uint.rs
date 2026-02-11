@@ -334,6 +334,12 @@ mod tests {
 
             let u: UInt = serde_json::from_str("300").unwrap();
             assert_eq!(u.to_u16(), 300);
+
+            let u: UInt = serde_json::from_str("70000").unwrap();
+            assert_eq!(u.to_u32(), 70000);
+
+            let u: UInt = serde_json::from_str("5000000000").unwrap();
+            assert_eq!(u.to_u64(), 5000000000);
         }
     }
 }

@@ -8,24 +8,17 @@ use crate::{ToValue, Value, num::Number};
     serde(untagged)
 )]
 pub enum Float {
-    F32(f32),
     F64(f64),
+    F32(f32),
 }
 
 impl Float {
-    pub fn is_f32(&self) -> bool {
-        matches!(self, Self::F32(_))
-    }
-
     pub fn is_f64(&self) -> bool {
         matches!(self, Self::F64(_))
     }
 
-    pub fn to_f32(&self) -> f32 {
-        match self {
-            Self::F32(v) => *v,
-            v => panic!("expected f32, received {}", std::any::type_name_of_val(v)),
-        }
+    pub fn is_f32(&self) -> bool {
+        matches!(self, Self::F32(_))
     }
 
     pub fn to_f64(&self) -> f64 {
@@ -34,23 +27,30 @@ impl Float {
             v => panic!("expected f64, received {}", std::any::type_name_of_val(v)),
         }
     }
+
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Self::F32(v) => *v,
+            v => panic!("expected f32, received {}", std::any::type_name_of_val(v)),
+        }
+    }
 }
 
 impl Float {
-    pub fn from_f32(value: f32) -> Self {
-        Self::F32(value)
-    }
-
     pub fn from_f64(value: f64) -> Self {
         Self::F64(value)
+    }
+
+    pub fn from_f32(value: f32) -> Self {
+        Self::F32(value)
     }
 }
 
 impl Float {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
-            Self::F32(_) => std::any::TypeId::of::<f32>(),
             Self::F64(_) => std::any::TypeId::of::<f64>(),
+            Self::F32(_) => std::any::TypeId::of::<f32>(),
         }
     }
 }
@@ -126,8 +126,8 @@ impl Value {
 impl std::fmt::Display for Float {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::F32(v) => write!(f, "{}", v),
             Self::F64(v) => write!(f, "{}", v),
+            Self::F32(v) => write!(f, "{}", v),
         }
     }
 }
@@ -210,7 +210,7 @@ mod tests {
         #[test]
         fn deserialize() {
             let f: Float = serde_json::from_str("3.14").unwrap();
-            assert_eq!(f.to_f32(), 3.14f32);
+            assert!(f.is_f64());
         }
     }
 }

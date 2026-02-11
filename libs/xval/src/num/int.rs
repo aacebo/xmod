@@ -334,6 +334,12 @@ mod tests {
 
             let i: Int = serde_json::from_str("-200").unwrap();
             assert_eq!(i.to_i16(), -200);
+
+            let i: Int = serde_json::from_str("40000").unwrap();
+            assert_eq!(i.to_i32(), 40000);
+
+            let i: Int = serde_json::from_str("3000000000").unwrap();
+            assert_eq!(i.to_i64(), 3000000000);
         }
     }
 }

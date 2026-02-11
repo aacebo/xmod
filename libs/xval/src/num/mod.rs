@@ -16,9 +16,9 @@ use crate::{ToValue, Value};
     serde(untagged)
 )]
 pub enum Number {
-    Float(Float),
     Int(Int),
     UInt(UInt),
+    Float(Float),
 }
 
 impl Number {
@@ -34,13 +34,6 @@ impl Number {
         matches!(self, Self::UInt(_))
     }
 
-    pub fn as_float(&self) -> &Float {
-        match self {
-            Self::Float(v) => v,
-            v => panic!("expected Float, received {}", std::any::type_name_of_val(v)),
-        }
-    }
-
     pub fn as_int(&self) -> &Int {
         match self {
             Self::Int(v) => v,
@@ -54,14 +47,21 @@ impl Number {
             v => panic!("expected UInt, received {}", std::any::type_name_of_val(v)),
         }
     }
+
+    pub fn as_float(&self) -> &Float {
+        match self {
+            Self::Float(v) => v,
+            v => panic!("expected Float, received {}", std::any::type_name_of_val(v)),
+        }
+    }
 }
 
 impl Number {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
-            Self::Float(v) => v.type_id(),
             Self::Int(v) => v.type_id(),
             Self::UInt(v) => v.type_id(),
+            Self::Float(v) => v.type_id(),
         }
     }
 }
@@ -161,9 +161,9 @@ impl From<Number> for Value {
 impl std::fmt::Display for Number {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Float(v) => write!(f, "{}", v),
             Self::Int(v) => write!(f, "{}", v),
             Self::UInt(v) => write!(f, "{}", v),
+            Self::Float(v) => write!(f, "{}", v),
         }
     }
 }
@@ -272,7 +272,7 @@ mod tests {
             assert!(n.is_float());
 
             let n: Number = serde_json::from_str("42").unwrap();
-            assert!(n.is_float());
+            assert!(n.is_int());
         }
     }
 }
