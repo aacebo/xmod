@@ -40,3 +40,44 @@ impl std::fmt::Display for Bool {
         write!(f, "{}", &self.0)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn to_bool() {
+        assert!(Bool::from(true).to_bool());
+        assert!(!Bool::from(false).to_bool());
+    }
+
+    #[test]
+    fn from_bool() {
+        let b = Bool::from(true);
+        assert_eq!(b, Bool(true));
+
+        let b = Bool::from(false);
+        assert_eq!(b, Bool(false));
+    }
+
+    #[test]
+    fn into_value() {
+        let v = Value::from(Bool::from(true));
+        assert!(matches!(v, Value::Bool(_)));
+    }
+
+    #[test]
+    fn deref() {
+        let b = Bool::from(true);
+        assert_eq!(*b, true);
+
+        let b = Bool::from(false);
+        assert_eq!(*b, false);
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(Bool::from(true).to_string(), "true");
+        assert_eq!(Bool::from(false).to_string(), "false");
+    }
+}

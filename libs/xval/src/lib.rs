@@ -58,3 +58,53 @@ impl std::fmt::Display for Value {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_predicates() {
+        let b = Value::Bool(Bool::from(true));
+        assert!(b.is_bool());
+        assert!(!b.is_number());
+
+        let n = Value::Number(Number::Int(Int::I32(1)));
+        assert!(n.is_number());
+        assert!(!n.is_bool());
+    }
+
+    #[test]
+    fn as_bool() {
+        let v = Value::Bool(Bool::from(true));
+        assert_eq!(v.as_bool().to_bool(), true);
+    }
+
+    #[test]
+    fn as_number() {
+        let v = Value::Number(Number::Int(Int::I32(42)));
+        assert_eq!(*v.as_number(), Number::Int(Int::I32(42)));
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Bool")]
+    fn as_bool_panics_on_mismatch() {
+        Value::Number(Number::Int(Int::I32(1))).as_bool();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Number")]
+    fn as_number_panics_on_mismatch() {
+        Value::Bool(Bool::from(true)).as_number();
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(Value::Bool(Bool::from(true)).to_string(), "true");
+        assert_eq!(Value::Number(Number::Int(Int::I32(42))).to_string(), "42");
+        assert_eq!(
+            Value::Number(Number::Float(Float::F64(3.14))).to_string(),
+            "3.14"
+        );
+    }
+}

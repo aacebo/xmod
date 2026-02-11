@@ -99,3 +99,87 @@ impl std::fmt::Display for UInt {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_predicates() {
+        let v = UInt::U8(1);
+        assert!(v.is_u8());
+        assert!(!v.is_u16());
+        assert!(!v.is_u32());
+        assert!(!v.is_u64());
+
+        assert!(UInt::U16(1).is_u16());
+        assert!(UInt::U32(1).is_u32());
+        assert!(UInt::U64(1).is_u64());
+    }
+
+    #[test]
+    fn to_u8() {
+        assert_eq!(UInt::U8(42).to_u8(), 42);
+    }
+
+    #[test]
+    fn to_u16() {
+        assert_eq!(UInt::U16(42).to_u16(), 42);
+    }
+
+    #[test]
+    fn to_u32() {
+        assert_eq!(UInt::U32(42).to_u32(), 42);
+    }
+
+    #[test]
+    fn to_u64() {
+        assert_eq!(UInt::U64(42).to_u64(), 42);
+    }
+
+    #[test]
+    #[should_panic(expected = "expected u8")]
+    fn to_u8_panics_on_mismatch() {
+        UInt::U32(1).to_u8();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected u16")]
+    fn to_u16_panics_on_mismatch() {
+        UInt::U32(1).to_u16();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected u32")]
+    fn to_u32_panics_on_mismatch() {
+        UInt::U64(1).to_u32();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected u64")]
+    fn to_u64_panics_on_mismatch() {
+        UInt::U8(1).to_u64();
+    }
+
+    #[test]
+    fn from_primitives() {
+        assert_eq!(UInt::from(1u8), UInt::U8(1));
+        assert_eq!(UInt::from(1u16), UInt::U16(1));
+        assert_eq!(UInt::from(1u32), UInt::U32(1));
+        assert_eq!(UInt::from(1u64), UInt::U64(1));
+    }
+
+    #[test]
+    fn into_number() {
+        let n = Number::from(UInt::U32(5));
+        assert!(matches!(n, Number::UInt(UInt::U32(5))));
+    }
+
+    #[test]
+    fn display() {
+        assert_eq!(UInt::U8(255).to_string(), "255");
+        assert_eq!(UInt::U16(1000).to_string(), "1000");
+        assert_eq!(UInt::U32(100_000).to_string(), "100000");
+        assert_eq!(UInt::U64(999).to_string(), "999");
+    }
+}
