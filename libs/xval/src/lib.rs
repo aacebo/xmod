@@ -46,6 +46,124 @@ impl Value {
     }
 }
 
+impl Value {
+    pub fn to_bool(&self) -> bool {
+        self.as_bool().to_bool()
+    }
+}
+
+impl Value {
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_float())
+    }
+
+    pub fn is_int(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_int())
+    }
+
+    pub fn is_uint(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_uint())
+    }
+
+    pub fn as_float(&self) -> &Float {
+        self.as_number().as_float()
+    }
+
+    pub fn as_int(&self) -> &Int {
+        self.as_number().as_int()
+    }
+
+    pub fn as_uint(&self) -> &UInt {
+        self.as_number().as_uint()
+    }
+}
+
+impl Value {
+    pub fn is_f32(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_f32())
+    }
+
+    pub fn is_f64(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_f64())
+    }
+
+    pub fn to_f32(&self) -> f32 {
+        self.as_number().to_f32()
+    }
+
+    pub fn to_f64(&self) -> f64 {
+        self.as_number().to_f64()
+    }
+}
+
+impl Value {
+    pub fn is_i8(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_i8())
+    }
+
+    pub fn is_i16(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_i16())
+    }
+
+    pub fn is_i32(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_i32())
+    }
+
+    pub fn is_i64(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_i64())
+    }
+
+    pub fn to_i8(&self) -> i8 {
+        self.as_number().to_i8()
+    }
+
+    pub fn to_i16(&self) -> i16 {
+        self.as_number().to_i16()
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        self.as_number().to_i32()
+    }
+
+    pub fn to_i64(&self) -> i64 {
+        self.as_number().to_i64()
+    }
+}
+
+impl Value {
+    pub fn is_u8(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_u8())
+    }
+
+    pub fn is_u16(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_u16())
+    }
+
+    pub fn is_u32(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_u32())
+    }
+
+    pub fn is_u64(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_u64())
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        self.as_number().to_u8()
+    }
+
+    pub fn to_u16(&self) -> u16 {
+        self.as_number().to_u16()
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        self.as_number().to_u32()
+    }
+
+    pub fn to_u64(&self) -> u64 {
+        self.as_number().to_u64()
+    }
+}
+
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

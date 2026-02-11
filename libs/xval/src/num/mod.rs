@@ -55,6 +55,92 @@ impl Number {
     }
 }
 
+impl Number {
+    pub fn is_f32(&self) -> bool {
+        matches!(self, Self::Float(v) if v.is_f32())
+    }
+
+    pub fn is_f64(&self) -> bool {
+        matches!(self, Self::Float(v) if v.is_f64())
+    }
+
+    pub fn to_f32(&self) -> f32 {
+        self.as_float().to_f32()
+    }
+
+    pub fn to_f64(&self) -> f64 {
+        self.as_float().to_f64()
+    }
+}
+
+impl Number {
+    pub fn is_i8(&self) -> bool {
+        matches!(self, Self::Int(v) if v.is_i8())
+    }
+
+    pub fn is_i16(&self) -> bool {
+        matches!(self, Self::Int(v) if v.is_i16())
+    }
+
+    pub fn is_i32(&self) -> bool {
+        matches!(self, Self::Int(v) if v.is_i32())
+    }
+
+    pub fn is_i64(&self) -> bool {
+        matches!(self, Self::Int(v) if v.is_i64())
+    }
+
+    pub fn to_i8(&self) -> i8 {
+        self.as_int().to_i8()
+    }
+
+    pub fn to_i16(&self) -> i16 {
+        self.as_int().to_i16()
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        self.as_int().to_i32()
+    }
+
+    pub fn to_i64(&self) -> i64 {
+        self.as_int().to_i64()
+    }
+}
+
+impl Number {
+    pub fn is_u8(&self) -> bool {
+        matches!(self, Self::UInt(v) if v.is_u8())
+    }
+
+    pub fn is_u16(&self) -> bool {
+        matches!(self, Self::UInt(v) if v.is_u16())
+    }
+
+    pub fn is_u32(&self) -> bool {
+        matches!(self, Self::UInt(v) if v.is_u32())
+    }
+
+    pub fn is_u64(&self) -> bool {
+        matches!(self, Self::UInt(v) if v.is_u64())
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        self.as_uint().to_u8()
+    }
+
+    pub fn to_u16(&self) -> u16 {
+        self.as_uint().to_u16()
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        self.as_uint().to_u32()
+    }
+
+    pub fn to_u64(&self) -> u64 {
+        self.as_uint().to_u64()
+    }
+}
+
 impl From<Number> for Value {
     fn from(value: Number) -> Self {
         Self::Number(value)
