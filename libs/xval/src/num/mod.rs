@@ -6,7 +6,7 @@ pub use float::*;
 pub use int::*;
 pub use uint::*;
 
-use crate::Value;
+use crate::{ToValue, Value};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(
@@ -68,6 +68,12 @@ impl std::fmt::Display for Number {
             Self::Int(v) => write!(f, "{}", v),
             Self::UInt(v) => write!(f, "{}", v),
         }
+    }
+}
+
+impl ToValue for Number {
+    fn to_value(self) -> Value {
+        self.into()
     }
 }
 

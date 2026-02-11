@@ -1,4 +1,4 @@
-use crate::Value;
+use crate::{ToValue, Value};
 
 #[repr(transparent)]
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -38,6 +38,12 @@ impl std::ops::Deref for Bool {
 impl std::fmt::Display for Bool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.0)
+    }
+}
+
+impl ToValue for Bool {
+    fn to_value(self) -> Value {
+        Value::from(self)
     }
 }
 

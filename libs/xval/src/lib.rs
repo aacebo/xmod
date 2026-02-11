@@ -8,10 +8,6 @@ pub trait ToValue {
     fn to_value(self) -> Value;
 }
 
-pub trait AsValue {
-    fn as_value<'a>(&self) -> &'a Value;
-}
-
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",

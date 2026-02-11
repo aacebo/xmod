@@ -1,4 +1,4 @@
-use crate::num::Number;
+use crate::{ToValue, Value, num::Number};
 
 #[derive(Debug, Copy, Clone, PartialEq)]
 #[cfg_attr(
@@ -59,6 +59,12 @@ impl std::fmt::Display for Float {
             Self::F32(v) => write!(f, "{}", v),
             Self::F64(v) => write!(f, "{}", v),
         }
+    }
+}
+
+impl ToValue for Float {
+    fn to_value(self) -> Value {
+        Number::Float(self).into()
     }
 }
 

@@ -1,4 +1,4 @@
-use crate::num::Number;
+use crate::{ToValue, Value, num::Number};
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
@@ -97,6 +97,12 @@ impl std::fmt::Display for UInt {
             Self::U32(v) => write!(f, "{}", v),
             Self::U64(v) => write!(f, "{}", v),
         }
+    }
+}
+
+impl ToValue for UInt {
+    fn to_value(self) -> Value {
+        Number::UInt(self).into()
     }
 }
 
