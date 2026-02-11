@@ -1,6 +1,11 @@
 use crate::num::Number;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(untagged)
+)]
 pub enum UInt {
     U8(u8),
     U16(u16),
@@ -28,40 +33,28 @@ impl UInt {
     pub fn to_u8(&self) -> u8 {
         match self {
             Self::U8(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected u8, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected u8, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_u16(&self) -> u16 {
         match self {
             Self::U16(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected u16, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected u16, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_u32(&self) -> u32 {
         match self {
             Self::U32(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected u32, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected u32, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_u64(&self) -> u64 {
         match self {
             Self::U64(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected u64, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected u64, received {}", std::any::type_name_of_val(v)),
         }
     }
 }

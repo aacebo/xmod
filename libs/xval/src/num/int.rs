@@ -1,6 +1,11 @@
 use crate::num::Number;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(untagged)
+)]
 pub enum Int {
     I8(i8),
     I16(i16),
@@ -28,40 +33,28 @@ impl Int {
     pub fn to_i8(&self) -> i8 {
         match self {
             Self::I8(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected i8, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected i8, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_i16(&self) -> i16 {
         match self {
             Self::I16(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected i16, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected i16, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_i32(&self) -> i32 {
         match self {
             Self::I32(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected i32, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected i32, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_i64(&self) -> i64 {
         match self {
             Self::I64(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected i64, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected i64, received {}", std::any::type_name_of_val(v)),
         }
     }
 }

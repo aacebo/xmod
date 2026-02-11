@@ -1,6 +1,11 @@
 use crate::num::Number;
 
 #[derive(Debug, Copy, Clone, PartialEq)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(untagged)
+)]
 pub enum Float {
     F32(f32),
     F64(f64),
@@ -18,20 +23,14 @@ impl Float {
     pub fn to_f32(&self) -> f32 {
         match self {
             Self::F32(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected f32, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected f32, received {}", std::any::type_name_of_val(v)),
         }
     }
 
     pub fn to_f64(&self) -> f64 {
         match self {
             Self::F64(v) => *v,
-            v => panic!(
-                "{}",
-                format!("expected f64, received {}", std::any::type_name_of_val(v))
-            ),
+            v => panic!("expected f64, received {}", std::any::type_name_of_val(v)),
         }
     }
 }
