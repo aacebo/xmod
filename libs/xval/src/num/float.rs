@@ -152,57 +152,64 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let v = Float::F32(1.0);
+        let v = Float::from_f32(1.0);
         assert!(v.is_f32());
         assert!(!v.is_f64());
 
-        assert!(Float::F64(1.0).is_f64());
+        assert!(Float::from_f64(1.0).is_f64());
     }
 
     #[test]
     fn to_f32() {
-        assert_eq!(Float::F32(3.14).to_f32(), 3.14);
+        assert_eq!(Float::from_f32(3.14).to_f32(), 3.14);
     }
 
     #[test]
     fn to_f64() {
-        assert_eq!(Float::F64(3.14).to_f64(), 3.14);
+        assert_eq!(Float::from_f64(3.14).to_f64(), 3.14);
     }
 
     #[test]
     #[should_panic(expected = "expected f32")]
     fn to_f32_panics_on_mismatch() {
-        Float::F64(1.0).to_f32();
+        Float::from_f64(1.0).to_f32();
     }
 
     #[test]
     #[should_panic(expected = "expected f64")]
     fn to_f64_panics_on_mismatch() {
-        Float::F32(1.0).to_f64();
+        Float::from_f32(1.0).to_f64();
     }
 
     #[test]
     fn from_primitives() {
-        assert_eq!(Float::from_f32(1.0), Float::F32(1.0));
-        assert_eq!(Float::from_f64(1.0), Float::F64(1.0));
+        assert_eq!(Float::from_f32(1.0), Float::from_f32(1.0));
+        assert_eq!(Float::from_f64(1.0), Float::from_f64(1.0));
     }
 
     #[test]
     fn into_number() {
         let n = Number::from_f64(2.5);
-        assert!(matches!(n, Number::Float(Float::F64(v)) if v == 2.5));
+        assert!(n.is_float());
+        assert_eq!(n.as_float().to_f64(), 2.5);
     }
 
     #[test]
     fn display() {
-        assert_eq!(Float::F32(1.5).to_string(), "1.5");
-        assert_eq!(Float::F64(2.5).to_string(), "2.5");
+        assert_eq!(Float::from_f32(1.5).to_string(), "1.5");
+        assert_eq!(Float::from_f64(2.5).to_string(), "2.5");
     }
 
     #[test]
     fn type_id() {
-        assert_eq!(Float::F32(1.0).type_id(), std::any::TypeId::of::<f32>());
-        assert_eq!(Float::F64(1.0).type_id(), std::any::TypeId::of::<f64>());
+        assert_eq!(
+            Float::from_f32(1.0).type_id(),
+            std::any::TypeId::of::<f32>()
+        );
+        assert_eq!(
+            Float::from_f64(1.0).type_id(),
+            std::any::TypeId::of::<f64>()
+        );
     }
 
     #[cfg(feature = "serde")]
@@ -211,8 +218,11 @@ mod tests {
 
         #[test]
         fn serialize() {
-            assert_eq!(serde_json::to_string(&Float::F32(1.5)).unwrap(), "1.5");
-            assert_eq!(serde_json::to_string(&Float::F64(3.14)).unwrap(), "3.14");
+            assert_eq!(serde_json::to_string(&Float::from_f32(1.5)).unwrap(), "1.5");
+            assert_eq!(
+                serde_json::to_string(&Float::from_f64(3.14)).unwrap(),
+                "3.14"
+            );
         }
 
         #[test]

@@ -190,19 +190,19 @@ mod tests {
     #[test]
     fn as_float() {
         let n = Number::from_f64(3.14);
-        assert_eq!(*n.as_float(), Float::F64(3.14));
+        assert_eq!(*n.as_float(), Float::from_f64(3.14));
     }
 
     #[test]
     fn as_int() {
         let n = Number::from_i32(42);
-        assert_eq!(*n.as_int(), Int::I32(42));
+        assert_eq!(*n.as_int(), Int::from_i32(42));
     }
 
     #[test]
     fn as_uint() {
         let n = Number::from_u32(42);
-        assert_eq!(*n.as_uint(), UInt::U32(42));
+        assert_eq!(*n.as_uint(), UInt::from_u32(42));
     }
 
     #[test]

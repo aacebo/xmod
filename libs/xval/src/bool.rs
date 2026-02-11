@@ -87,10 +87,10 @@ mod tests {
     #[test]
     fn from_bool() {
         let b = Bool::from_bool(true);
-        assert_eq!(b, Bool(true));
+        assert_eq!(b, Bool::from_bool(true));
 
         let b = Bool::from_bool(false);
-        assert_eq!(b, Bool(false));
+        assert_eq!(b, Bool::from_bool(false));
     }
 
     #[test]

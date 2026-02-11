@@ -252,89 +252,90 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let v = Int::I8(1);
+        let v = Int::from_i8(1);
         assert!(v.is_i8());
         assert!(!v.is_i16());
         assert!(!v.is_i32());
         assert!(!v.is_i64());
 
-        assert!(Int::I16(1).is_i16());
-        assert!(Int::I32(1).is_i32());
-        assert!(Int::I64(1).is_i64());
+        assert!(Int::from_i16(1).is_i16());
+        assert!(Int::from_i32(1).is_i32());
+        assert!(Int::from_i64(1).is_i64());
     }
 
     #[test]
     fn to_i8() {
-        assert_eq!(Int::I8(42).to_i8(), 42);
+        assert_eq!(Int::from_i8(42).to_i8(), 42);
     }
 
     #[test]
     fn to_i16() {
-        assert_eq!(Int::I16(42).to_i16(), 42);
+        assert_eq!(Int::from_i16(42).to_i16(), 42);
     }
 
     #[test]
     fn to_i32() {
-        assert_eq!(Int::I32(42).to_i32(), 42);
+        assert_eq!(Int::from_i32(42).to_i32(), 42);
     }
 
     #[test]
     fn to_i64() {
-        assert_eq!(Int::I64(42).to_i64(), 42);
+        assert_eq!(Int::from_i64(42).to_i64(), 42);
     }
 
     #[test]
     #[should_panic(expected = "expected i8")]
     fn to_i8_panics_on_mismatch() {
-        Int::I32(1).to_i8();
+        Int::from_i32(1).to_i8();
     }
 
     #[test]
     #[should_panic(expected = "expected i16")]
     fn to_i16_panics_on_mismatch() {
-        Int::I32(1).to_i16();
+        Int::from_i32(1).to_i16();
     }
 
     #[test]
     #[should_panic(expected = "expected i32")]
     fn to_i32_panics_on_mismatch() {
-        Int::I64(1).to_i32();
+        Int::from_i64(1).to_i32();
     }
 
     #[test]
     #[should_panic(expected = "expected i64")]
     fn to_i64_panics_on_mismatch() {
-        Int::I8(1).to_i64();
+        Int::from_i8(1).to_i64();
     }
 
     #[test]
     fn from_primitives() {
-        assert_eq!(Int::from_i8(1), Int::I8(1));
-        assert_eq!(Int::from_i16(1), Int::I16(1));
-        assert_eq!(Int::from_i32(1), Int::I32(1));
-        assert_eq!(Int::from_i64(1), Int::I64(1));
+        assert_eq!(Int::from_i8(1), Int::from_i8(1));
+        assert_eq!(Int::from_i16(1), Int::from_i16(1));
+        assert_eq!(Int::from_i32(1), Int::from_i32(1));
+        assert_eq!(Int::from_i64(1), Int::from_i64(1));
     }
 
     #[test]
     fn into_number() {
         let n = Number::from_i32(5);
-        assert!(matches!(n, Number::Int(Int::I32(5))));
+        assert!(n.is_int());
+        assert_eq!(n.as_int().to_i32(), 5);
     }
 
     #[test]
     fn display() {
-        assert_eq!(Int::I8(-1).to_string(), "-1");
-        assert_eq!(Int::I16(200).to_string(), "200");
-        assert_eq!(Int::I32(100_000).to_string(), "100000");
-        assert_eq!(Int::I64(-999).to_string(), "-999");
+        assert_eq!(Int::from_i8(-1).to_string(), "-1");
+        assert_eq!(Int::from_i16(200).to_string(), "200");
+        assert_eq!(Int::from_i32(100_000).to_string(), "100000");
+        assert_eq!(Int::from_i64(-999).to_string(), "-999");
     }
 
     #[test]
     fn type_id() {
-        assert_eq!(Int::I8(1).type_id(), std::any::TypeId::of::<i8>());
-        assert_eq!(Int::I16(1).type_id(), std::any::TypeId::of::<i16>());
-        assert_eq!(Int::I32(1).type_id(), std::any::TypeId::of::<i32>());
-        assert_eq!(Int::I64(1).type_id(), std::any::TypeId::of::<i64>());
+        assert_eq!(Int::from_i8(1).type_id(), std::any::TypeId::of::<i8>());
+        assert_eq!(Int::from_i16(1).type_id(), std::any::TypeId::of::<i16>());
+        assert_eq!(Int::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Int::from_i64(1).type_id(), std::any::TypeId::of::<i64>());
     }
 
     #[cfg(feature = "serde")]
@@ -343,8 +344,8 @@ mod tests {
 
         #[test]
         fn serialize() {
-            assert_eq!(serde_json::to_string(&Int::I8(-1)).unwrap(), "-1");
-            assert_eq!(serde_json::to_string(&Int::I32(42)).unwrap(), "42");
+            assert_eq!(serde_json::to_string(&Int::from_i8(-1)).unwrap(), "-1");
+            assert_eq!(serde_json::to_string(&Int::from_i32(42)).unwrap(), "42");
         }
 
         #[test]
