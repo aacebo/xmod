@@ -15,6 +15,12 @@ impl Bool {
     }
 }
 
+impl Bool {
+    pub fn type_id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<bool>()
+    }
+}
+
 impl From<Bool> for Value {
     fn from(value: Bool) -> Self {
         Self::Bool(value)
@@ -91,5 +97,10 @@ mod tests {
     fn display() {
         assert_eq!(Bool::from(true).to_string(), "true");
         assert_eq!(Bool::from(false).to_string(), "false");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(Bool::from(true).type_id(), std::any::TypeId::of::<bool>());
     }
 }

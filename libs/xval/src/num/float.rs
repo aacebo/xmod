@@ -35,6 +35,15 @@ impl Float {
     }
 }
 
+impl Float {
+    pub fn type_id(&self) -> std::any::TypeId {
+        match self {
+            Self::F32(_) => std::any::TypeId::of::<f32>(),
+            Self::F64(_) => std::any::TypeId::of::<f64>(),
+        }
+    }
+}
+
 impl From<Float> for Number {
     fn from(value: Float) -> Self {
         Self::Float(value)
@@ -149,5 +158,11 @@ mod tests {
     fn display() {
         assert_eq!(Float::F32(1.5).to_string(), "1.5");
         assert_eq!(Float::F64(2.5).to_string(), "2.5");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(Float::F32(1.0).type_id(), std::any::TypeId::of::<f32>());
+        assert_eq!(Float::F64(1.0).type_id(), std::any::TypeId::of::<f64>());
     }
 }

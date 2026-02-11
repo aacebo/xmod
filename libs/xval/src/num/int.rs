@@ -59,6 +59,17 @@ impl Int {
     }
 }
 
+impl Int {
+    pub fn type_id(&self) -> std::any::TypeId {
+        match self {
+            Self::I8(_) => std::any::TypeId::of::<i8>(),
+            Self::I16(_) => std::any::TypeId::of::<i16>(),
+            Self::I32(_) => std::any::TypeId::of::<i32>(),
+            Self::I64(_) => std::any::TypeId::of::<i64>(),
+        }
+    }
+}
+
 impl From<Int> for Number {
     fn from(value: Int) -> Self {
         Self::Int(value)
@@ -241,5 +252,13 @@ mod tests {
         assert_eq!(Int::I16(200).to_string(), "200");
         assert_eq!(Int::I32(100_000).to_string(), "100000");
         assert_eq!(Int::I64(-999).to_string(), "-999");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(Int::I8(1).type_id(), std::any::TypeId::of::<i8>());
+        assert_eq!(Int::I16(1).type_id(), std::any::TypeId::of::<i16>());
+        assert_eq!(Int::I32(1).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Int::I64(1).type_id(), std::any::TypeId::of::<i64>());
     }
 }

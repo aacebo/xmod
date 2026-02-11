@@ -56,6 +56,16 @@ impl Number {
 }
 
 impl Number {
+    pub fn type_id(&self) -> std::any::TypeId {
+        match self {
+            Self::Float(v) => v.type_id(),
+            Self::Int(v) => v.type_id(),
+            Self::UInt(v) => v.type_id(),
+        }
+    }
+}
+
+impl Number {
     pub fn is_f32(&self) -> bool {
         matches!(self, Self::Float(v) if v.is_f32())
     }
@@ -225,5 +235,19 @@ mod tests {
         assert_eq!(Number::from(1.5f64).to_string(), "1.5");
         assert_eq!(Number::from(42i32).to_string(), "42");
         assert_eq!(Number::from(100u64).to_string(), "100");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(
+            Number::from(1.0f32).type_id(),
+            std::any::TypeId::of::<f32>()
+        );
+        assert_eq!(
+            Number::from(1.0f64).type_id(),
+            std::any::TypeId::of::<f64>()
+        );
+        assert_eq!(Number::from(1i32).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Number::from(1u32).type_id(), std::any::TypeId::of::<u32>());
     }
 }

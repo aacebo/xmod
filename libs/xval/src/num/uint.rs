@@ -59,6 +59,17 @@ impl UInt {
     }
 }
 
+impl UInt {
+    pub fn type_id(&self) -> std::any::TypeId {
+        match self {
+            Self::U8(_) => std::any::TypeId::of::<u8>(),
+            Self::U16(_) => std::any::TypeId::of::<u16>(),
+            Self::U32(_) => std::any::TypeId::of::<u32>(),
+            Self::U64(_) => std::any::TypeId::of::<u64>(),
+        }
+    }
+}
+
 impl From<UInt> for Number {
     fn from(value: UInt) -> Self {
         Self::UInt(value)
@@ -241,5 +252,13 @@ mod tests {
         assert_eq!(UInt::U16(1000).to_string(), "1000");
         assert_eq!(UInt::U32(100_000).to_string(), "100000");
         assert_eq!(UInt::U64(999).to_string(), "999");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(UInt::U8(1).type_id(), std::any::TypeId::of::<u8>());
+        assert_eq!(UInt::U16(1).type_id(), std::any::TypeId::of::<u16>());
+        assert_eq!(UInt::U32(1).type_id(), std::any::TypeId::of::<u32>());
+        assert_eq!(UInt::U64(1).type_id(), std::any::TypeId::of::<u64>());
     }
 }

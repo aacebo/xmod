@@ -47,6 +47,15 @@ impl Value {
 }
 
 impl Value {
+    pub fn type_id(&self) -> std::any::TypeId {
+        match self {
+            Self::Bool(v) => v.type_id(),
+            Self::Number(v) => v.type_id(),
+        }
+    }
+}
+
+impl Value {
     pub fn to_bool(&self) -> bool {
         self.as_bool().to_bool()
     }
@@ -217,5 +226,14 @@ mod tests {
         assert_eq!(Value::from(true).to_string(), "true");
         assert_eq!(Value::from(42i32).to_string(), "42");
         assert_eq!(Value::from(3.14f64).to_string(), "3.14");
+    }
+
+    #[test]
+    fn type_id() {
+        assert_eq!(Value::from(true).type_id(), std::any::TypeId::of::<bool>());
+        assert_eq!(Value::from(1.0f32).type_id(), std::any::TypeId::of::<f32>());
+        assert_eq!(Value::from(1.0f64).type_id(), std::any::TypeId::of::<f64>());
+        assert_eq!(Value::from(1i32).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Value::from(1u32).type_id(), std::any::TypeId::of::<u32>());
     }
 }
