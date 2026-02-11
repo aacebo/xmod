@@ -222,6 +222,30 @@ impl ToValue for Int {
     }
 }
 
+impl ToValue for i8 {
+    fn to_value(self) -> Value {
+        Value::from_i8(self)
+    }
+}
+
+impl ToValue for i16 {
+    fn to_value(self) -> Value {
+        Value::from_i16(self)
+    }
+}
+
+impl ToValue for i32 {
+    fn to_value(self) -> Value {
+        Value::from_i32(self)
+    }
+}
+
+impl ToValue for i64 {
+    fn to_value(self) -> Value {
+        Value::from_i64(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

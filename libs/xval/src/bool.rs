@@ -68,6 +68,12 @@ impl ToValue for Bool {
     }
 }
 
+impl ToValue for bool {
+    fn to_value(self) -> Value {
+        Value::from_bool(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

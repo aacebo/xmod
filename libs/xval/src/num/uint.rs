@@ -222,6 +222,30 @@ impl ToValue for UInt {
     }
 }
 
+impl ToValue for u8 {
+    fn to_value(self) -> Value {
+        Value::from_u8(self)
+    }
+}
+
+impl ToValue for u16 {
+    fn to_value(self) -> Value {
+        Value::from_u16(self)
+    }
+}
+
+impl ToValue for u32 {
+    fn to_value(self) -> Value {
+        Value::from_u32(self)
+    }
+}
+
+impl ToValue for u64 {
+    fn to_value(self) -> Value {
+        Value::from_u64(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

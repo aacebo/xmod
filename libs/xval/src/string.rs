@@ -88,6 +88,18 @@ impl ToValue for Str {
     }
 }
 
+impl ToValue for &str {
+    fn to_value(self) -> Value {
+        Value::from_str(self)
+    }
+}
+
+impl ToValue for String {
+    fn to_value(self) -> Value {
+        Value::from_string(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

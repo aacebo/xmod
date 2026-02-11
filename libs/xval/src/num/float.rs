@@ -134,6 +134,18 @@ impl ToValue for Float {
     }
 }
 
+impl ToValue for f32 {
+    fn to_value(self) -> Value {
+        Value::from_f32(self)
+    }
+}
+
+impl ToValue for f64 {
+    fn to_value(self) -> Value {
+        Value::from_f64(self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
