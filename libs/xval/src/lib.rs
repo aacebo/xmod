@@ -188,53 +188,62 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let b = Value::from(true);
+        let b = Value::from_bool(true);
         assert!(b.is_bool());
         assert!(!b.is_number());
 
-        let n = Value::from(1i32);
+        let n = Value::from_i32(1);
         assert!(n.is_number());
         assert!(!n.is_bool());
     }
 
     #[test]
     fn as_bool() {
-        let v = Value::from(true);
+        let v = Value::from_bool(true);
         assert_eq!(v.to_bool(), true);
     }
 
     #[test]
     fn as_number() {
-        let v = Value::from(42i32);
-        assert_eq!(*v.as_number(), Number::from(42i32));
+        let v = Value::from_i32(42);
+        assert_eq!(*v.as_number(), Number::from_i32(42));
     }
 
     #[test]
     #[should_panic(expected = "expected Bool")]
     fn as_bool_panics_on_mismatch() {
-        Value::from(1i32).as_bool();
+        Value::from_i32(1).as_bool();
     }
 
     #[test]
     #[should_panic(expected = "expected Number")]
     fn as_number_panics_on_mismatch() {
-        Value::from(true).as_number();
+        Value::from_bool(true).as_number();
     }
 
     #[test]
     fn display() {
-        assert_eq!(Value::from(true).to_string(), "true");
-        assert_eq!(Value::from(42i32).to_string(), "42");
-        assert_eq!(Value::from(3.14f64).to_string(), "3.14");
+        assert_eq!(Value::from_bool(true).to_string(), "true");
+        assert_eq!(Value::from_i32(42).to_string(), "42");
+        assert_eq!(Value::from_f64(3.14).to_string(), "3.14");
     }
 
     #[test]
     fn type_id() {
-        assert_eq!(Value::from(true).type_id(), std::any::TypeId::of::<bool>());
-        assert_eq!(Value::from(1.0f32).type_id(), std::any::TypeId::of::<f32>());
-        assert_eq!(Value::from(1.0f64).type_id(), std::any::TypeId::of::<f64>());
-        assert_eq!(Value::from(1i32).type_id(), std::any::TypeId::of::<i32>());
-        assert_eq!(Value::from(1u32).type_id(), std::any::TypeId::of::<u32>());
+        assert_eq!(
+            Value::from_bool(true).type_id(),
+            std::any::TypeId::of::<bool>()
+        );
+        assert_eq!(
+            Value::from_f32(1.0).type_id(),
+            std::any::TypeId::of::<f32>()
+        );
+        assert_eq!(
+            Value::from_f64(1.0).type_id(),
+            std::any::TypeId::of::<f64>()
+        );
+        assert_eq!(Value::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Value::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
     }
 
     #[cfg(feature = "serde")]
@@ -243,10 +252,13 @@ mod tests {
 
         #[test]
         fn serialize() {
-            assert_eq!(serde_json::to_string(&Value::from(true)).unwrap(), "true");
-            assert_eq!(serde_json::to_string(&Value::from(42i32)).unwrap(), "42");
             assert_eq!(
-                serde_json::to_string(&Value::from(3.14f64)).unwrap(),
+                serde_json::to_string(&Value::from_bool(true)).unwrap(),
+                "true"
+            );
+            assert_eq!(serde_json::to_string(&Value::from_i32(42)).unwrap(), "42");
+            assert_eq!(
+                serde_json::to_string(&Value::from_f64(3.14)).unwrap(),
                 "3.14"
             );
         }

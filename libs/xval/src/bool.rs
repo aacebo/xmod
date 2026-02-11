@@ -16,6 +16,12 @@ impl Bool {
 }
 
 impl Bool {
+    pub fn from_bool(value: bool) -> Self {
+        Self(value)
+    }
+}
+
+impl Bool {
     pub fn type_id(&self) -> std::any::TypeId {
         std::any::TypeId::of::<bool>()
     }
@@ -29,13 +35,19 @@ impl From<Bool> for Value {
 
 impl From<bool> for Bool {
     fn from(value: bool) -> Self {
-        Self(value)
+        Self::from_bool(value)
     }
 }
 
 impl From<bool> for Value {
     fn from(value: bool) -> Self {
-        Bool::from(value).into()
+        Self::from_bool(value)
+    }
+}
+
+impl Value {
+    pub fn from_bool(value: bool) -> Self {
+        Self::Bool(Bool::from_bool(value))
     }
 }
 
@@ -65,43 +77,46 @@ mod tests {
 
     #[test]
     fn to_bool() {
-        assert!(Bool::from(true).to_bool());
-        assert!(!Bool::from(false).to_bool());
+        assert!(Bool::from_bool(true).to_bool());
+        assert!(!Bool::from_bool(false).to_bool());
     }
 
     #[test]
     fn from_bool() {
-        let b = Bool::from(true);
+        let b = Bool::from_bool(true);
         assert_eq!(b, Bool(true));
 
-        let b = Bool::from(false);
+        let b = Bool::from_bool(false);
         assert_eq!(b, Bool(false));
     }
 
     #[test]
     fn into_value() {
-        let v = Value::from(true);
+        let v = Value::from_bool(true);
         assert!(matches!(v, Value::Bool(_)));
     }
 
     #[test]
     fn deref() {
-        let b = Bool::from(true);
+        let b = Bool::from_bool(true);
         assert_eq!(*b, true);
 
-        let b = Bool::from(false);
+        let b = Bool::from_bool(false);
         assert_eq!(*b, false);
     }
 
     #[test]
     fn display() {
-        assert_eq!(Bool::from(true).to_string(), "true");
-        assert_eq!(Bool::from(false).to_string(), "false");
+        assert_eq!(Bool::from_bool(true).to_string(), "true");
+        assert_eq!(Bool::from_bool(false).to_string(), "false");
     }
 
     #[test]
     fn type_id() {
-        assert_eq!(Bool::from(true).type_id(), std::any::TypeId::of::<bool>());
+        assert_eq!(
+            Bool::from_bool(true).type_id(),
+            std::any::TypeId::of::<bool>()
+        );
     }
 
     #[cfg(feature = "serde")]
@@ -110,17 +125,23 @@ mod tests {
 
         #[test]
         fn serialize() {
-            assert_eq!(serde_json::to_string(&Bool::from(true)).unwrap(), "true");
-            assert_eq!(serde_json::to_string(&Bool::from(false)).unwrap(), "false");
+            assert_eq!(
+                serde_json::to_string(&Bool::from_bool(true)).unwrap(),
+                "true"
+            );
+            assert_eq!(
+                serde_json::to_string(&Bool::from_bool(false)).unwrap(),
+                "false"
+            );
         }
 
         #[test]
         fn deserialize() {
             let b: Bool = serde_json::from_str("true").unwrap();
-            assert_eq!(b, Bool::from(true));
+            assert_eq!(b, Bool::from_bool(true));
 
             let b: Bool = serde_json::from_str("false").unwrap();
-            assert_eq!(b, Bool::from(false));
+            assert_eq!(b, Bool::from_bool(false));
         }
     }
 }

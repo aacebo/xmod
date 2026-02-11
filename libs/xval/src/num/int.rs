@@ -60,6 +60,24 @@ impl Int {
 }
 
 impl Int {
+    pub fn from_i8(value: i8) -> Self {
+        Self::I8(value)
+    }
+
+    pub fn from_i16(value: i16) -> Self {
+        Self::I16(value)
+    }
+
+    pub fn from_i32(value: i32) -> Self {
+        Self::I32(value)
+    }
+
+    pub fn from_i64(value: i64) -> Self {
+        Self::I64(value)
+    }
+}
+
+impl Int {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::I8(_) => std::any::TypeId::of::<i8>(),
@@ -78,25 +96,25 @@ impl From<Int> for Number {
 
 impl From<i8> for Int {
     fn from(value: i8) -> Self {
-        Self::I8(value)
+        Self::from_i8(value)
     }
 }
 
 impl From<i16> for Int {
     fn from(value: i16) -> Self {
-        Self::I16(value)
+        Self::from_i16(value)
     }
 }
 
 impl From<i32> for Int {
     fn from(value: i32) -> Self {
-        Self::I32(value)
+        Self::from_i32(value)
     }
 }
 
 impl From<i64> for Int {
     fn from(value: i64) -> Self {
-        Self::I64(value)
+        Self::from_i64(value)
     }
 }
 
@@ -108,49 +126,85 @@ impl From<Int> for Value {
 
 impl From<i8> for Number {
     fn from(value: i8) -> Self {
-        Int::from(value).into()
+        Self::from_i8(value)
     }
 }
 
 impl From<i16> for Number {
     fn from(value: i16) -> Self {
-        Int::from(value).into()
+        Self::from_i16(value)
     }
 }
 
 impl From<i32> for Number {
     fn from(value: i32) -> Self {
-        Int::from(value).into()
+        Self::from_i32(value)
     }
 }
 
 impl From<i64> for Number {
     fn from(value: i64) -> Self {
-        Int::from(value).into()
+        Self::from_i64(value)
     }
 }
 
 impl From<i8> for Value {
     fn from(value: i8) -> Self {
-        Number::from(value).into()
+        Self::from_i8(value)
     }
 }
 
 impl From<i16> for Value {
     fn from(value: i16) -> Self {
-        Number::from(value).into()
+        Self::from_i16(value)
     }
 }
 
 impl From<i32> for Value {
     fn from(value: i32) -> Self {
-        Number::from(value).into()
+        Self::from_i32(value)
     }
 }
 
 impl From<i64> for Value {
     fn from(value: i64) -> Self {
-        Number::from(value).into()
+        Self::from_i64(value)
+    }
+}
+
+impl Number {
+    pub fn from_i8(value: i8) -> Self {
+        Self::Int(Int::from_i8(value))
+    }
+
+    pub fn from_i16(value: i16) -> Self {
+        Self::Int(Int::from_i16(value))
+    }
+
+    pub fn from_i32(value: i32) -> Self {
+        Self::Int(Int::from_i32(value))
+    }
+
+    pub fn from_i64(value: i64) -> Self {
+        Self::Int(Int::from_i64(value))
+    }
+}
+
+impl Value {
+    pub fn from_i8(value: i8) -> Self {
+        Self::Number(Number::from_i8(value))
+    }
+
+    pub fn from_i16(value: i16) -> Self {
+        Self::Number(Number::from_i16(value))
+    }
+
+    pub fn from_i32(value: i32) -> Self {
+        Self::Number(Number::from_i32(value))
+    }
+
+    pub fn from_i64(value: i64) -> Self {
+        Self::Number(Number::from_i64(value))
     }
 }
 
@@ -234,15 +288,15 @@ mod tests {
 
     #[test]
     fn from_primitives() {
-        assert_eq!(Int::from(1i8), Int::I8(1));
-        assert_eq!(Int::from(1i16), Int::I16(1));
-        assert_eq!(Int::from(1i32), Int::I32(1));
-        assert_eq!(Int::from(1i64), Int::I64(1));
+        assert_eq!(Int::from_i8(1), Int::I8(1));
+        assert_eq!(Int::from_i16(1), Int::I16(1));
+        assert_eq!(Int::from_i32(1), Int::I32(1));
+        assert_eq!(Int::from_i64(1), Int::I64(1));
     }
 
     #[test]
     fn into_number() {
-        let n = Number::from(5i32);
+        let n = Number::from_i32(5);
         assert!(matches!(n, Number::Int(Int::I32(5))));
     }
 

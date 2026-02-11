@@ -179,76 +179,76 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let f = Number::from(1.0f64);
+        let f = Number::from_f64(1.0);
         assert!(f.is_float());
         assert!(!f.is_int());
         assert!(!f.is_uint());
 
-        assert!(Number::from(1i32).is_int());
-        assert!(Number::from(1u32).is_uint());
+        assert!(Number::from_i32(1).is_int());
+        assert!(Number::from_u32(1).is_uint());
     }
 
     #[test]
     fn as_float() {
-        let n = Number::from(3.14f64);
+        let n = Number::from_f64(3.14);
         assert_eq!(*n.as_float(), Float::F64(3.14));
     }
 
     #[test]
     fn as_int() {
-        let n = Number::from(42i32);
+        let n = Number::from_i32(42);
         assert_eq!(*n.as_int(), Int::I32(42));
     }
 
     #[test]
     fn as_uint() {
-        let n = Number::from(42u32);
+        let n = Number::from_u32(42);
         assert_eq!(*n.as_uint(), UInt::U32(42));
     }
 
     #[test]
     #[should_panic(expected = "expected Float")]
     fn as_float_panics_on_mismatch() {
-        Number::from(1i32).as_float();
+        Number::from_i32(1).as_float();
     }
 
     #[test]
     #[should_panic(expected = "expected Int")]
     fn as_int_panics_on_mismatch() {
-        Number::from(1.0f64).as_int();
+        Number::from_f64(1.0).as_int();
     }
 
     #[test]
     #[should_panic(expected = "expected UInt")]
     fn as_uint_panics_on_mismatch() {
-        Number::from(1i32).as_uint();
+        Number::from_i32(1).as_uint();
     }
 
     #[test]
     fn into_value() {
-        let v = Value::from(5i32);
+        let v = Value::from_i32(5);
         assert!(matches!(v, Value::Number(_)));
     }
 
     #[test]
     fn display() {
-        assert_eq!(Number::from(1.5f64).to_string(), "1.5");
-        assert_eq!(Number::from(42i32).to_string(), "42");
-        assert_eq!(Number::from(100u64).to_string(), "100");
+        assert_eq!(Number::from_f64(1.5).to_string(), "1.5");
+        assert_eq!(Number::from_i32(42).to_string(), "42");
+        assert_eq!(Number::from_u64(100).to_string(), "100");
     }
 
     #[test]
     fn type_id() {
         assert_eq!(
-            Number::from(1.0f32).type_id(),
+            Number::from_f32(1.0).type_id(),
             std::any::TypeId::of::<f32>()
         );
         assert_eq!(
-            Number::from(1.0f64).type_id(),
+            Number::from_f64(1.0).type_id(),
             std::any::TypeId::of::<f64>()
         );
-        assert_eq!(Number::from(1i32).type_id(), std::any::TypeId::of::<i32>());
-        assert_eq!(Number::from(1u32).type_id(), std::any::TypeId::of::<u32>());
+        assert_eq!(Number::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(Number::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
     }
 
     #[cfg(feature = "serde")]
@@ -258,11 +258,11 @@ mod tests {
         #[test]
         fn serialize() {
             assert_eq!(
-                serde_json::to_string(&Number::from(3.14f64)).unwrap(),
+                serde_json::to_string(&Number::from_f64(3.14)).unwrap(),
                 "3.14"
             );
-            assert_eq!(serde_json::to_string(&Number::from(42i32)).unwrap(), "42");
-            assert_eq!(serde_json::to_string(&Number::from(-5i32)).unwrap(), "-5");
+            assert_eq!(serde_json::to_string(&Number::from_i32(42)).unwrap(), "42");
+            assert_eq!(serde_json::to_string(&Number::from_i32(-5)).unwrap(), "-5");
         }
 
         #[test]

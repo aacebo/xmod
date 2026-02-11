@@ -36,6 +36,16 @@ impl Float {
 }
 
 impl Float {
+    pub fn from_f32(value: f32) -> Self {
+        Self::F32(value)
+    }
+
+    pub fn from_f64(value: f64) -> Self {
+        Self::F64(value)
+    }
+}
+
+impl Float {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::F32(_) => std::any::TypeId::of::<f32>(),
@@ -58,37 +68,57 @@ impl From<Float> for Value {
 
 impl From<f32> for Float {
     fn from(value: f32) -> Self {
-        Self::F32(value)
+        Self::from_f32(value)
     }
 }
 
 impl From<f64> for Float {
     fn from(value: f64) -> Self {
-        Self::F64(value)
+        Self::from_f64(value)
     }
 }
 
 impl From<f32> for Number {
     fn from(value: f32) -> Self {
-        Float::from(value).into()
+        Self::from_f32(value)
     }
 }
 
 impl From<f64> for Number {
     fn from(value: f64) -> Self {
-        Float::from(value).into()
+        Self::from_f64(value)
     }
 }
 
 impl From<f32> for Value {
     fn from(value: f32) -> Self {
-        Number::from(value).into()
+        Self::from_f32(value)
     }
 }
 
 impl From<f64> for Value {
     fn from(value: f64) -> Self {
-        Number::from(value).into()
+        Self::from_f64(value)
+    }
+}
+
+impl Number {
+    pub fn from_f32(value: f32) -> Self {
+        Self::Float(Float::from_f32(value))
+    }
+
+    pub fn from_f64(value: f64) -> Self {
+        Self::Float(Float::from_f64(value))
+    }
+}
+
+impl Value {
+    pub fn from_f32(value: f32) -> Self {
+        Self::Number(Number::from_f32(value))
+    }
+
+    pub fn from_f64(value: f64) -> Self {
+        Self::Number(Number::from_f64(value))
     }
 }
 
@@ -144,13 +174,13 @@ mod tests {
 
     #[test]
     fn from_primitives() {
-        assert_eq!(Float::from(1.0f32), Float::F32(1.0));
-        assert_eq!(Float::from(1.0f64), Float::F64(1.0));
+        assert_eq!(Float::from_f32(1.0), Float::F32(1.0));
+        assert_eq!(Float::from_f64(1.0), Float::F64(1.0));
     }
 
     #[test]
     fn into_number() {
-        let n = Number::from(2.5f64);
+        let n = Number::from_f64(2.5);
         assert!(matches!(n, Number::Float(Float::F64(v)) if v == 2.5));
     }
 

@@ -60,6 +60,24 @@ impl UInt {
 }
 
 impl UInt {
+    pub fn from_u8(value: u8) -> Self {
+        Self::U8(value)
+    }
+
+    pub fn from_u16(value: u16) -> Self {
+        Self::U16(value)
+    }
+
+    pub fn from_u32(value: u32) -> Self {
+        Self::U32(value)
+    }
+
+    pub fn from_u64(value: u64) -> Self {
+        Self::U64(value)
+    }
+}
+
+impl UInt {
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
             Self::U8(_) => std::any::TypeId::of::<u8>(),
@@ -78,25 +96,25 @@ impl From<UInt> for Number {
 
 impl From<u8> for UInt {
     fn from(value: u8) -> Self {
-        Self::U8(value)
+        Self::from_u8(value)
     }
 }
 
 impl From<u16> for UInt {
     fn from(value: u16) -> Self {
-        Self::U16(value)
+        Self::from_u16(value)
     }
 }
 
 impl From<u32> for UInt {
     fn from(value: u32) -> Self {
-        Self::U32(value)
+        Self::from_u32(value)
     }
 }
 
 impl From<u64> for UInt {
     fn from(value: u64) -> Self {
-        Self::U64(value)
+        Self::from_u64(value)
     }
 }
 
@@ -108,49 +126,85 @@ impl From<UInt> for Value {
 
 impl From<u8> for Number {
     fn from(value: u8) -> Self {
-        UInt::from(value).into()
+        Self::from_u8(value)
     }
 }
 
 impl From<u16> for Number {
     fn from(value: u16) -> Self {
-        UInt::from(value).into()
+        Self::from_u16(value)
     }
 }
 
 impl From<u32> for Number {
     fn from(value: u32) -> Self {
-        UInt::from(value).into()
+        Self::from_u32(value)
     }
 }
 
 impl From<u64> for Number {
     fn from(value: u64) -> Self {
-        UInt::from(value).into()
+        Self::from_u64(value)
     }
 }
 
 impl From<u8> for Value {
     fn from(value: u8) -> Self {
-        Number::from(value).into()
+        Self::from_u8(value)
     }
 }
 
 impl From<u16> for Value {
     fn from(value: u16) -> Self {
-        Number::from(value).into()
+        Self::from_u16(value)
     }
 }
 
 impl From<u32> for Value {
     fn from(value: u32) -> Self {
-        Number::from(value).into()
+        Self::from_u32(value)
     }
 }
 
 impl From<u64> for Value {
     fn from(value: u64) -> Self {
-        Number::from(value).into()
+        Self::from_u64(value)
+    }
+}
+
+impl Number {
+    pub fn from_u8(value: u8) -> Self {
+        Self::UInt(UInt::from_u8(value))
+    }
+
+    pub fn from_u16(value: u16) -> Self {
+        Self::UInt(UInt::from_u16(value))
+    }
+
+    pub fn from_u32(value: u32) -> Self {
+        Self::UInt(UInt::from_u32(value))
+    }
+
+    pub fn from_u64(value: u64) -> Self {
+        Self::UInt(UInt::from_u64(value))
+    }
+}
+
+impl Value {
+    pub fn from_u8(value: u8) -> Self {
+        Self::Number(Number::from_u8(value))
+    }
+
+    pub fn from_u16(value: u16) -> Self {
+        Self::Number(Number::from_u16(value))
+    }
+
+    pub fn from_u32(value: u32) -> Self {
+        Self::Number(Number::from_u32(value))
+    }
+
+    pub fn from_u64(value: u64) -> Self {
+        Self::Number(Number::from_u64(value))
     }
 }
 
@@ -234,15 +288,15 @@ mod tests {
 
     #[test]
     fn from_primitives() {
-        assert_eq!(UInt::from(1u8), UInt::U8(1));
-        assert_eq!(UInt::from(1u16), UInt::U16(1));
-        assert_eq!(UInt::from(1u32), UInt::U32(1));
-        assert_eq!(UInt::from(1u64), UInt::U64(1));
+        assert_eq!(UInt::from_u8(1), UInt::U8(1));
+        assert_eq!(UInt::from_u16(1), UInt::U16(1));
+        assert_eq!(UInt::from_u32(1), UInt::U32(1));
+        assert_eq!(UInt::from_u64(1), UInt::U64(1));
     }
 
     #[test]
     fn into_number() {
-        let n = Number::from(5u32);
+        let n = Number::from_u32(5);
         assert!(matches!(n, Number::UInt(UInt::U32(5))));
     }
 
