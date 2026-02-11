@@ -284,7 +284,7 @@ mod tests {
         assert_eq!(Value::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
         assert_eq!(
             Value::from_str("hello").type_id(),
-            std::any::TypeId::of::<&str>()
+            std::any::TypeId::of::<String>()
         );
     }
 

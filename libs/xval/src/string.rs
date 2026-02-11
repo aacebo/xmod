@@ -24,7 +24,7 @@ impl Str {
     }
 
     pub fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<&str>()
+        std::any::TypeId::of::<String>()
     }
 }
 
@@ -132,7 +132,7 @@ mod tests {
     fn type_id() {
         assert_eq!(
             Str::from_str("hello").type_id(),
-            std::any::TypeId::of::<&str>()
+            std::any::TypeId::of::<String>()
         );
     }
 
