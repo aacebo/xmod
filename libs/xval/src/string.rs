@@ -30,7 +30,7 @@ impl Str {
 
 impl From<Str> for Value {
     fn from(value: Str) -> Self {
-        Self::Str(value)
+        Self::String(value)
     }
 }
 
@@ -60,11 +60,11 @@ impl From<String> for Value {
 
 impl Value {
     pub fn from_str(value: &str) -> Self {
-        Self::Str(Str::from_str(value))
+        Self::String(Str::from_str(value))
     }
 
     pub fn from_string(value: String) -> Self {
-        Self::Str(Str::from_string(value))
+        Self::String(Str::from_string(value))
     }
 }
 
@@ -125,7 +125,7 @@ mod tests {
     #[test]
     fn into_value() {
         let v = Value::from_str("hello");
-        assert!(matches!(v, Value::Str(_)));
+        assert!(matches!(v, Value::String(_)));
     }
 
     #[test]
