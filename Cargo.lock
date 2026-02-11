@@ -117,6 +117,17 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "serde_json",
+ "xval-derive",
+]
+
+[[package]]
+name = "xval-derive"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "xval",
 ]
 
 [[package]]

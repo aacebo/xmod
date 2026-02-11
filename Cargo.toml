@@ -15,7 +15,8 @@ repository = "https://www.github.com/aacebo/xmod"
 [workspace.dependencies]
 xok = { path = "./libs/xok", version = "0.0.0" }
 xpipe = { path = "./libs/xpipe", version = "0.0.0" }
-xval = { path = "./libs/xval", version = "0.0.0" }
 xsch = { path = "./libs/xsch", version = "0.0.0" }
+xval = { path = "./libs/xval", version = "0.0.0" }
+xval-derive = { path = "./libs/xval-derive", version = "0.0.0" }
 
 serde = { version = "1", features = ["default", "derive"] }

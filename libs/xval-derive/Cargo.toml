@@ -1,5 +1,5 @@
 [package]
-name = "xval"
+name = "xval-derive"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,14 +8,13 @@ documentation.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
-[features]
-default = []
-derive = ["xval-derive"]
-serde = ["dep:serde"]
+[lib]
+proc-macro = true
 
 [dependencies]
-xval-derive = { workspace = true, optional = true }
-serde = { workspace = true, optional = true }
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["extra-traits"] }
 
 [dev-dependencies]
-serde_json = "1"
+xval = { workspace = true, features = ["derive"] }
