@@ -103,4 +103,24 @@ mod tests {
     fn type_id() {
         assert_eq!(Bool::from(true).type_id(), std::any::TypeId::of::<bool>());
     }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use super::*;
+
+        #[test]
+        fn serialize() {
+            assert_eq!(serde_json::to_string(&Bool::from(true)).unwrap(), "true");
+            assert_eq!(serde_json::to_string(&Bool::from(false)).unwrap(), "false");
+        }
+
+        #[test]
+        fn deserialize() {
+            let b: Bool = serde_json::from_str("true").unwrap();
+            assert_eq!(b, Bool::from(true));
+
+            let b: Bool = serde_json::from_str("false").unwrap();
+            assert_eq!(b, Bool::from(false));
+        }
+    }
 }

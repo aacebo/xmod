@@ -236,4 +236,28 @@ mod tests {
         assert_eq!(Value::from(1i32).type_id(), std::any::TypeId::of::<i32>());
         assert_eq!(Value::from(1u32).type_id(), std::any::TypeId::of::<u32>());
     }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use super::*;
+
+        #[test]
+        fn serialize() {
+            assert_eq!(serde_json::to_string(&Value::from(true)).unwrap(), "true");
+            assert_eq!(serde_json::to_string(&Value::from(42i32)).unwrap(), "42");
+            assert_eq!(
+                serde_json::to_string(&Value::from(3.14f64)).unwrap(),
+                "3.14"
+            );
+        }
+
+        #[test]
+        fn deserialize() {
+            let v: Value = serde_json::from_str("true").unwrap();
+            assert_eq!(v.to_bool(), true);
+
+            let v: Value = serde_json::from_str("false").unwrap();
+            assert_eq!(v.to_bool(), false);
+        }
+    }
 }

@@ -165,4 +165,21 @@ mod tests {
         assert_eq!(Float::F32(1.0).type_id(), std::any::TypeId::of::<f32>());
         assert_eq!(Float::F64(1.0).type_id(), std::any::TypeId::of::<f64>());
     }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use super::*;
+
+        #[test]
+        fn serialize() {
+            assert_eq!(serde_json::to_string(&Float::F32(1.5)).unwrap(), "1.5");
+            assert_eq!(serde_json::to_string(&Float::F64(3.14)).unwrap(), "3.14");
+        }
+
+        #[test]
+        fn deserialize() {
+            let f: Float = serde_json::from_str("3.14").unwrap();
+            assert_eq!(f.to_f32(), 3.14f32);
+        }
+    }
 }
