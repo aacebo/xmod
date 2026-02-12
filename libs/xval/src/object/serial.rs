@@ -1,6 +1,6 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{Array, Ident, Object, Struct, Value};
+use crate::{Array, Ident, Object, Struct, Tuple, Value};
 
 impl serde::Serialize for Object {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -10,6 +10,7 @@ impl serde::Serialize for Object {
         match self {
             Object::Struct(s) => s.as_ref().serialize(serializer),
             Object::Array(a) => a.as_ref().serialize(serializer),
+            Object::Tuple(t) => t.as_ref().serialize(serializer),
         }
     }
 }
@@ -56,6 +57,24 @@ impl serde::Serialize for dyn Array {
         }
 
         seq.end()
+    }
+}
+
+impl serde::Serialize for dyn Tuple {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeTuple;
+
+        let len = self.len();
+        let mut tup = serializer.serialize_tuple(len)?;
+
+        for item in self.items() {
+            tup.serialize_element(&item.as_value())?;
+        }
+
+        tup.end()
     }
 }
 

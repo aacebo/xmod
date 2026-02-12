@@ -1,12 +1,12 @@
 use std::sync::Arc;
 
-use crate::{AsValue, Object, Value, object::iter};
+use crate::{AsValue, Object, Value};
 
 pub trait Array: Send + Sync {
     fn name(&self) -> &str;
     fn type_id(&self) -> std::any::TypeId;
     fn len(&self) -> usize;
-    fn items(&self) -> iter::ArrayIter<'_>;
+    fn items(&self) -> ArrayIter<'_>;
     fn index(&self, i: usize) -> Option<&dyn AsValue>;
 
     fn is_empty(&self) -> bool {
@@ -27,8 +27,8 @@ impl Array for Vec<Value> {
         self.len()
     }
 
-    fn items(&self) -> iter::ArrayIter<'_> {
-        iter::ArrayIter::new(self.iter().map(|v| v as &dyn AsValue))
+    fn items(&self) -> ArrayIter<'_> {
+        ArrayIter::new(self.iter().map(|v| v as &dyn AsValue))
     }
 
     fn index(&self, i: usize) -> Option<&dyn AsValue> {
@@ -51,6 +51,22 @@ impl From<Vec<Value>> for Object {
 impl From<Vec<Value>> for Value {
     fn from(value: Vec<Value>) -> Self {
         Self::Object(Object::from(value))
+    }
+}
+
+pub struct ArrayIter<'a>(Box<dyn Iterator<Item = &'a dyn AsValue> + 'a>);
+
+impl<'a> ArrayIter<'a> {
+    pub fn new(iter: impl Iterator<Item = &'a dyn AsValue> + 'a) -> Self {
+        Self(Box::new(iter))
+    }
+}
+
+impl<'a> Iterator for ArrayIter<'a> {
+    type Item = &'a dyn AsValue;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 

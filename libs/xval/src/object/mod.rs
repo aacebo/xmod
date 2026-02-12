@@ -1,11 +1,12 @@
-mod array;
-mod iter;
+mod arrays;
 #[cfg(feature = "serde")]
 mod serial;
-mod r#struct;
+mod structs;
+mod tuples;
 
-pub use array::*;
-pub use r#struct::*;
+pub use arrays::*;
+pub use structs::*;
+pub use tuples::*;
 
 use std::sync::Arc;
 
@@ -15,6 +16,7 @@ use crate::{AsValue, Value};
 pub enum Object {
     Struct(Arc<dyn Struct>),
     Array(Arc<dyn Array>),
+    Tuple(Arc<dyn Tuple>),
 }
 
 impl Object {
@@ -26,6 +28,10 @@ impl Object {
         Self::Array(Arc::new(value))
     }
 
+    pub fn from_tuple<T: Tuple + 'static>(value: T) -> Self {
+        Self::Tuple(Arc::new(value))
+    }
+
     pub fn is_struct(&self) -> bool {
         matches!(self, Self::Struct(_))
     }
@@ -34,10 +40,15 @@ impl Object {
         matches!(self, Self::Array(_))
     }
 
+    pub fn is_tuple(&self) -> bool {
+        matches!(self, Self::Tuple(_))
+    }
+
     pub fn name(&self) -> &str {
         match self {
             Self::Struct(v) => v.name(),
             Self::Array(v) => v.name(),
+            Self::Tuple(v) => v.name(),
         }
     }
 
@@ -45,7 +56,20 @@ impl Object {
         match self {
             Self::Struct(v) => v.type_id(),
             Self::Array(v) => v.type_id(),
+            Self::Tuple(v) => v.type_id(),
         }
+    }
+
+    pub fn len(&self) -> usize {
+        match self {
+            Self::Struct(v) => v.len(),
+            Self::Array(v) => v.len(),
+            Self::Tuple(v) => v.len(),
+        }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
     }
 
     pub fn as_struct(&self) -> &Arc<dyn Struct> {
@@ -59,6 +83,13 @@ impl Object {
         match self {
             Self::Array(v) => v,
             v => panic!("expected Array, received {}", v.name()),
+        }
+    }
+
+    pub fn as_tuple(&self) -> &Arc<dyn Tuple> {
+        match self {
+            Self::Tuple(v) => v,
+            v => panic!("expected Tuple, received {}", v.name()),
         }
     }
 }
@@ -84,6 +115,15 @@ impl std::fmt::Debug for Object {
 
                 dbg.finish()
             }
+            Self::Tuple(t) => {
+                let mut dbg = f.debug_tuple(t.name());
+
+                for v in t.items() {
+                    dbg.field(&v.as_value());
+                }
+
+                dbg.finish()
+            }
         }
     }
 }
@@ -101,6 +141,10 @@ impl Value {
 
     pub fn from_array<T: Array + 'static>(value: T) -> Self {
         Self::Object(Object::from_array(value))
+    }
+
+    pub fn from_tuple<T: Tuple + 'static>(value: T) -> Self {
+        Self::Object(Object::from_tuple(value))
     }
 }
 
@@ -137,6 +181,14 @@ mod tests {
         ]
     }
 
+    fn sample_tuple() -> (Value, Value, Value) {
+        (
+            Value::from_i32(1),
+            Value::from_bool(true),
+            Value::from_str("hello"),
+        )
+    }
+
     mod objects {
         use std::sync::Arc;
 
@@ -147,6 +199,7 @@ mod tests {
             let obj = Object::Struct(Arc::new(sample_struct()));
             assert!(obj.is_struct());
             assert!(!obj.is_array());
+            assert!(!obj.is_tuple());
         }
 
         #[test]
@@ -154,6 +207,15 @@ mod tests {
             let obj = Object::Array(Arc::new(sample_array()));
             assert!(obj.is_array());
             assert!(!obj.is_struct());
+            assert!(!obj.is_tuple());
+        }
+
+        #[test]
+        fn is_tuple() {
+            let obj = Object::Tuple(Arc::new(sample_tuple()));
+            assert!(obj.is_tuple());
+            assert!(!obj.is_struct());
+            assert!(!obj.is_array());
         }
 
         #[test]
@@ -163,6 +225,9 @@ mod tests {
 
             let a = Object::Array(Arc::new(sample_array()));
             assert_eq!(a.name(), "Vec");
+
+            let t = Object::Tuple(Arc::new(sample_tuple()));
+            assert_eq!(t.name(), "Tuple3");
         }
 
         #[test]
@@ -172,6 +237,30 @@ mod tests {
 
             let a = Object::Array(Arc::new(sample_array()));
             assert_eq!(a.type_id(), std::any::TypeId::of::<Vec<Value>>());
+
+            let t = Object::Tuple(Arc::new(sample_tuple()));
+            assert_eq!(t.type_id(), std::any::TypeId::of::<(Value, Value, Value)>());
+        }
+
+        #[test]
+        fn len() {
+            let s = Object::from_struct(sample_struct());
+            assert_eq!(s.len(), 2);
+
+            let a = Object::from_array(sample_array());
+            assert_eq!(a.len(), 3);
+
+            let t = Object::from_tuple(sample_tuple());
+            assert_eq!(t.len(), 3);
+        }
+
+        #[test]
+        fn is_empty() {
+            let a = Object::from_array(sample_array());
+            assert!(!a.is_empty());
+
+            let empty = Object::from_array(Vec::<Value>::new());
+            assert!(empty.is_empty());
         }
 
         #[test]
@@ -203,6 +292,20 @@ mod tests {
         }
 
         #[test]
+        fn as_tuple() {
+            let obj = Object::Tuple(Arc::new(sample_tuple()));
+            let t = obj.as_tuple();
+            assert_eq!(t.len(), 3);
+        }
+
+        #[test]
+        #[should_panic(expected = "expected Tuple")]
+        fn as_tuple_panics_on_array() {
+            let obj = Object::Array(Arc::new(sample_array()));
+            obj.as_tuple();
+        }
+
+        #[test]
         fn debug_struct() {
             let obj = Object::Struct(Arc::new(sample_struct()));
             let dbg = format!("{:?}", obj);
@@ -216,6 +319,13 @@ mod tests {
             let dbg = format!("{:?}", obj);
             assert!(dbg.starts_with('['));
             assert!(dbg.ends_with(']'));
+        }
+
+        #[test]
+        fn debug_tuple() {
+            let obj = Object::Tuple(Arc::new(sample_tuple()));
+            let dbg = format!("{:?}", obj);
+            assert!(dbg.starts_with("Tuple3"));
         }
 
         #[test]
@@ -256,6 +366,13 @@ mod tests {
         }
 
         #[test]
+        fn from_tuple_for_object() {
+            let obj = Object::from(sample_tuple());
+            assert!(obj.is_tuple());
+            assert_eq!(obj.as_tuple().len(), 3);
+        }
+
+        #[test]
         fn from_hashmap_for_value() {
             let v = Value::from(sample_struct());
             assert!(v.is_struct());
@@ -265,6 +382,12 @@ mod tests {
         fn from_vec_for_value() {
             let v = Value::from(sample_array());
             assert!(v.is_array());
+        }
+
+        #[test]
+        fn from_tuple_for_value() {
+            let v = Value::from(sample_tuple());
+            assert!(v.is_tuple());
         }
 
         #[test]
@@ -279,6 +402,13 @@ mod tests {
             let v = Value::from_array(sample_array());
             assert!(v.is_array());
             assert_eq!(v.as_array().len(), 3);
+        }
+
+        #[test]
+        fn value_from_tuple() {
+            let v = Value::from_tuple(sample_tuple());
+            assert!(v.is_tuple());
+            assert_eq!(v.as_tuple().len(), 3);
         }
 
         #[test]
@@ -316,6 +446,13 @@ mod tests {
         #[test]
         fn serialize_array() {
             let obj = Object::Array(Arc::new(sample_array()));
+            let json = serde_json::to_string(&obj).unwrap();
+            assert_eq!(json, "[1,true,\"hello\"]");
+        }
+
+        #[test]
+        fn serialize_tuple() {
+            let obj = Object::Tuple(Arc::new(sample_tuple()));
             let json = serde_json::to_string(&obj).unwrap();
             assert_eq!(json, "[1,true,\"hello\"]");
         }

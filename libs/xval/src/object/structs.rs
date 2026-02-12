@@ -1,13 +1,12 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{AsValue, Ident, Object, Value, object::iter};
+use crate::{AsValue, Ident, Object, Value};
 
 pub trait Struct: Send + Sync {
     fn name(&self) -> &str;
     fn type_id(&self) -> std::any::TypeId;
     fn len(&self) -> usize;
-    fn keys(&self) -> iter::KeysIter<'_>;
-    fn items(&self) -> iter::StructIter<'_>;
+    fn items(&self) -> StructIter<'_>;
     fn field(&self, ident: &Ident) -> Option<&dyn AsValue>;
 
     fn is_empty(&self) -> bool {
@@ -28,12 +27,8 @@ impl Struct for HashMap<Ident, Value> {
         self.len()
     }
 
-    fn keys(&self) -> iter::KeysIter<'_> {
-        iter::KeysIter::new(HashMap::keys(self))
-    }
-
-    fn items(&self) -> iter::StructIter<'_> {
-        iter::StructIter::new(self.iter().map(|(k, v)| (k, v as &dyn AsValue)))
+    fn items(&self) -> StructIter<'_> {
+        StructIter::new(self.iter().map(|(k, v)| (k, v as &dyn AsValue)))
     }
 
     fn field(&self, ident: &Ident) -> Option<&dyn AsValue> {
@@ -56,6 +51,22 @@ impl From<HashMap<Ident, Value>> for Value {
 impl AsValue for HashMap<Ident, Value> {
     fn as_value(&self) -> Value {
         Value::Object(Object::Struct(Arc::new(self.clone())))
+    }
+}
+
+pub struct StructIter<'a>(Box<dyn Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a>);
+
+impl<'a> StructIter<'a> {
+    pub fn new(iter: impl Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a) -> Self {
+        Self(Box::new(iter))
+    }
+}
+
+impl<'a> Iterator for StructIter<'a> {
+    type Item = (&'a Ident, &'a dyn AsValue);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
     }
 }
 

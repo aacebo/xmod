@@ -110,12 +110,20 @@ impl Value {
         matches!(self, Self::Object(v) if v.is_array())
     }
 
+    pub fn is_tuple(&self) -> bool {
+        matches!(self, Self::Object(v) if v.is_tuple())
+    }
+
     pub fn as_struct(&self) -> &std::sync::Arc<dyn Struct> {
         self.as_object().as_struct()
     }
 
     pub fn as_array(&self) -> &std::sync::Arc<dyn Array> {
         self.as_object().as_array()
+    }
+
+    pub fn as_tuple(&self) -> &std::sync::Arc<dyn Tuple> {
+        self.as_object().as_tuple()
     }
 }
 
