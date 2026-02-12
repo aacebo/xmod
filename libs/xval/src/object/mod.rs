@@ -14,6 +14,14 @@ pub enum Object {
 }
 
 impl Object {
+    pub fn from_struct<T: Struct + 'static>(value: T) -> Self {
+        Self::Struct(Arc::new(value))
+    }
+
+    pub fn from_array<T: Array + 'static>(value: T) -> Self {
+        Self::Array(Arc::new(value))
+    }
+
     pub fn is_struct(&self) -> bool {
         matches!(self, Self::Struct(_))
     }
@@ -360,7 +368,7 @@ mod tests {
         }
     }
 
-    mod object_tests {
+    mod objects {
         use super::*;
 
         #[test]

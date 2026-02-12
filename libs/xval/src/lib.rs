@@ -248,6 +248,30 @@ impl AsValue for Value {
     }
 }
 
+impl<T: AsValue> AsValue for Box<T> {
+    fn as_value(&self) -> Value {
+        self.as_ref().as_value()
+    }
+}
+
+impl<T: AsValue> AsValue for std::rc::Rc<T> {
+    fn as_value(&self) -> Value {
+        self.as_ref().as_value()
+    }
+}
+
+impl<T: AsValue> AsValue for std::sync::Arc<T> {
+    fn as_value(&self) -> Value {
+        self.as_ref().as_value()
+    }
+}
+
+impl<T: AsValue> AsValue for std::cell::RefCell<T> {
+    fn as_value(&self) -> Value {
+        self.borrow().as_value()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
