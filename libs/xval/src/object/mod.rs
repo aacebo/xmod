@@ -1,11 +1,15 @@
+mod array;
 mod iter;
 #[cfg(feature = "serde")]
 mod serial;
+mod r#struct;
 
-use std::collections::HashMap;
+pub use array::*;
+pub use r#struct::*;
+
 use std::sync::Arc;
 
-use crate::{AsValue, Ident, Value};
+use crate::{AsValue, Value};
 
 #[derive(Clone)]
 pub enum Object {
@@ -84,84 +88,9 @@ impl std::fmt::Debug for Object {
     }
 }
 
-pub trait Struct: Send + Sync {
-    fn name(&self) -> &str;
-    fn type_id(&self) -> std::any::TypeId;
-    fn len(&self) -> usize;
-    fn keys(&self) -> iter::KeysIter<'_>;
-    fn items(&self) -> iter::StructIter<'_>;
-    fn field(&self, ident: &Ident) -> Option<&dyn AsValue>;
-
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-pub trait Array: Send + Sync {
-    fn name(&self) -> &str;
-    fn type_id(&self) -> std::any::TypeId;
-    fn len(&self) -> usize;
-    fn items(&self) -> iter::ArrayIter<'_>;
-    fn index(&self, i: usize) -> Option<&dyn AsValue>;
-
-    fn is_empty(&self) -> bool {
-        self.len() == 0
-    }
-}
-
-impl Struct for HashMap<Ident, Value> {
-    fn name(&self) -> &str {
-        "HashMap"
-    }
-
-    fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Self>()
-    }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    fn keys(&self) -> iter::KeysIter<'_> {
-        iter::KeysIter::new(HashMap::keys(self))
-    }
-
-    fn items(&self) -> iter::StructIter<'_> {
-        iter::StructIter::new(self.iter().map(|(k, v)| (k, v as &dyn AsValue)))
-    }
-
-    fn field(&self, ident: &Ident) -> Option<&dyn AsValue> {
-        self.get(ident).map(|v| v as &dyn AsValue)
-    }
-}
-
 impl From<Object> for Value {
     fn from(value: Object) -> Self {
         Self::Object(value)
-    }
-}
-
-impl From<HashMap<Ident, Value>> for Object {
-    fn from(value: HashMap<Ident, Value>) -> Self {
-        Self::Struct(Arc::new(value))
-    }
-}
-
-impl From<Vec<Value>> for Object {
-    fn from(value: Vec<Value>) -> Self {
-        Self::Array(Arc::new(value))
-    }
-}
-
-impl From<HashMap<Ident, Value>> for Value {
-    fn from(value: HashMap<Ident, Value>) -> Self {
-        Self::Object(Object::from(value))
-    }
-}
-
-impl From<Vec<Value>> for Value {
-    fn from(value: Vec<Value>) -> Self {
-        Self::Object(Object::from(value))
     }
 }
 
@@ -187,43 +116,11 @@ impl AsValue for Object {
     }
 }
 
-impl AsValue for HashMap<Ident, Value> {
-    fn as_value(&self) -> Value {
-        Value::Object(Object::Struct(Arc::new(self.clone())))
-    }
-}
-
-impl Array for Vec<Value> {
-    fn name(&self) -> &str {
-        "Vec"
-    }
-
-    fn type_id(&self) -> std::any::TypeId {
-        std::any::TypeId::of::<Vec<Value>>()
-    }
-
-    fn len(&self) -> usize {
-        self.len()
-    }
-
-    fn items(&self) -> iter::ArrayIter<'_> {
-        iter::ArrayIter::new(self.iter().map(|v| v as &dyn AsValue))
-    }
-
-    fn index(&self, i: usize) -> Option<&dyn AsValue> {
-        self.get(i).map(|v| v as &dyn AsValue)
-    }
-}
-
-impl AsValue for Vec<Value> {
-    fn as_value(&self) -> Value {
-        Value::Object(Object::Array(Arc::new(self.clone())))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use std::collections::HashMap;
+
+    use crate::*;
 
     fn sample_struct() -> HashMap<Ident, Value> {
         let mut map = HashMap::new();
@@ -240,135 +137,9 @@ mod tests {
         ]
     }
 
-    mod structs {
-        use super::*;
-
-        #[test]
-        fn name() {
-            let s = sample_struct();
-            assert_eq!(Struct::name(&s), "HashMap");
-        }
-
-        #[test]
-        fn type_id() {
-            let s = sample_struct();
-            assert_eq!(
-                Struct::type_id(&s),
-                std::any::TypeId::of::<HashMap<Ident, Value>>()
-            );
-        }
-
-        #[test]
-        fn len() {
-            let s = sample_struct();
-            assert_eq!(Struct::len(&s), 2);
-        }
-
-        #[test]
-        fn is_empty() {
-            let empty: HashMap<Ident, Value> = HashMap::new();
-            assert!(Struct::is_empty(&empty));
-            assert!(!Struct::is_empty(&sample_struct()));
-        }
-
-        #[test]
-        fn keys() {
-            let s = sample_struct();
-            let mut keys: Vec<_> = s.keys().collect();
-            keys.sort_by_key(|k| k.to_string());
-            assert_eq!(keys.len(), 2);
-            assert_eq!(keys[0].to_string(), "a");
-            assert_eq!(keys[1].to_string(), "b");
-        }
-
-        #[test]
-        fn items() {
-            let s = sample_struct();
-            let items: Vec<_> = s.items().collect();
-            assert_eq!(items.len(), 2);
-        }
-
-        #[test]
-        fn field() {
-            let s = sample_struct();
-            let v = s.field(&Ident::key("a")).unwrap();
-            assert_eq!(v.as_value().to_i32(), 1);
-
-            let v = s.field(&Ident::key("b")).unwrap();
-            assert_eq!(v.as_value().as_str(), "hello");
-
-            assert!(s.field(&Ident::key("missing")).is_none());
-        }
-
-        #[test]
-        fn as_value() {
-            let s = sample_struct();
-            let v = s.as_value();
-            assert!(v.is_object());
-            assert!(v.is_struct());
-        }
-    }
-
-    mod arrays {
-        use super::*;
-
-        #[test]
-        fn name() {
-            let a = sample_array();
-            assert_eq!(Array::name(&a), "Vec");
-        }
-
-        #[test]
-        fn type_id() {
-            let a = sample_array();
-            assert_eq!(Array::type_id(&a), std::any::TypeId::of::<Vec<Value>>());
-        }
-
-        #[test]
-        fn len() {
-            let a = sample_array();
-            assert_eq!(Array::len(&a), 3);
-        }
-
-        #[test]
-        fn is_empty() {
-            let empty: Vec<Value> = vec![];
-            assert!(Array::is_empty(&empty));
-            assert!(!Array::is_empty(&sample_array()));
-        }
-
-        #[test]
-        fn items() {
-            let a = sample_array();
-            let items: Vec<_> = a.items().collect();
-            assert_eq!(items.len(), 3);
-            assert_eq!(items[0].as_value().to_i32(), 1);
-            assert_eq!(items[1].as_value().to_bool(), true);
-            assert_eq!(items[2].as_value().as_str(), "hello");
-        }
-
-        #[test]
-        fn index() {
-            let a = sample_array();
-            let v = a.index(0).unwrap();
-            assert_eq!(v.as_value().to_i32(), 1);
-
-            let v = a.index(2).unwrap();
-            assert_eq!(v.as_value().as_str(), "hello");
-
-            assert!(a.index(99).is_none());
-        }
-
-        #[test]
-        fn as_value() {
-            let a = sample_array();
-            let v = a.as_value();
-            assert!(v.is_object());
-            assert!(v.is_array());
-        }
-    }
-
     mod objects {
+        use std::sync::Arc;
+
         use super::*;
 
         #[test]
@@ -529,6 +300,8 @@ mod tests {
 
     #[cfg(feature = "serde")]
     mod serde {
+        use std::sync::Arc;
+
         use super::*;
 
         #[test]
