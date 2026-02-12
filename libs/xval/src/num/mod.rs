@@ -9,7 +9,7 @@ pub use uint::*;
 use crate::{AsValue, Value};
 
 /// A numeric value that can hold a float, signed integer, or unsigned integer.
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -153,6 +153,16 @@ impl Number {
 impl From<Number> for Value {
     fn from(value: Number) -> Self {
         Self::Number(value)
+    }
+}
+
+impl std::fmt::Debug for Number {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Int(v) => write!(f, "{:#?}", v),
+            Self::UInt(v) => write!(f, "{:#?}", v),
+            Self::Float(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

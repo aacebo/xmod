@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], or [`i64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -76,6 +76,69 @@ impl Int {
             Self::I32(_) => std::any::TypeId::of::<i32>(),
             Self::I64(_) => std::any::TypeId::of::<i64>(),
         }
+    }
+}
+
+impl PartialEq<i8> for Int {
+    fn eq(&self, other: &i8) -> bool {
+        matches!(self, Self::I8(v) if v == other)
+    }
+}
+impl PartialEq<i16> for Int {
+    fn eq(&self, other: &i16) -> bool {
+        matches!(self, Self::I16(v) if v == other)
+    }
+}
+impl PartialEq<i32> for Int {
+    fn eq(&self, other: &i32) -> bool {
+        matches!(self, Self::I32(v) if v == other)
+    }
+}
+impl PartialEq<i64> for Int {
+    fn eq(&self, other: &i64) -> bool {
+        matches!(self, Self::I64(v) if v == other)
+    }
+}
+
+impl PartialEq<i8> for Number {
+    fn eq(&self, other: &i8) -> bool {
+        matches!(self, Self::Int(v) if v == other)
+    }
+}
+impl PartialEq<i16> for Number {
+    fn eq(&self, other: &i16) -> bool {
+        matches!(self, Self::Int(v) if v == other)
+    }
+}
+impl PartialEq<i32> for Number {
+    fn eq(&self, other: &i32) -> bool {
+        matches!(self, Self::Int(v) if v == other)
+    }
+}
+impl PartialEq<i64> for Number {
+    fn eq(&self, other: &i64) -> bool {
+        matches!(self, Self::Int(v) if v == other)
+    }
+}
+
+impl PartialEq<i8> for Value {
+    fn eq(&self, other: &i8) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<i16> for Value {
+    fn eq(&self, other: &i16) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<i32> for Value {
+    fn eq(&self, other: &i32) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<i64> for Value {
+    fn eq(&self, other: &i64) -> bool {
+        matches!(self, Self::Number(v) if v == other)
     }
 }
 
@@ -179,6 +242,17 @@ impl Value {
     }
     pub fn from_i64(value: i64) -> Self {
         Self::Number(Number::from_i64(value))
+    }
+}
+
+impl std::fmt::Debug for Int {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::I8(v) => write!(f, "{:#?}", v),
+            Self::I16(v) => write!(f, "{:#?}", v),
+            Self::I32(v) => write!(f, "{:#?}", v),
+            Self::I64(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

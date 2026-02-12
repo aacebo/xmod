@@ -1,4 +1,4 @@
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -42,6 +42,15 @@ impl From<String> for Ident {
 impl From<usize> for Ident {
     fn from(value: usize) -> Self {
         Self::index(value)
+    }
+}
+
+impl std::fmt::Debug for Ident {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Key(v) => write!(f, "{:#?}", v),
+            Self::Index(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

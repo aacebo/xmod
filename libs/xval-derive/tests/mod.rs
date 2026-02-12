@@ -11,6 +11,8 @@ fn as_value() {
         name: "Bob".to_string(),
     };
 
+    println!("{:#?}", user.as_value().as_struct());
+
     assert!(user.as_value().is_struct());
     assert!(
         user.as_value()

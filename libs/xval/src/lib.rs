@@ -21,7 +21,7 @@ pub trait AsValue {
 }
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -241,6 +241,17 @@ impl Value {
 
     pub fn to_u64(&self) -> u64 {
         self.as_number().to_u64()
+    }
+}
+
+impl std::fmt::Debug for Value {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Bool(v) => write!(f, "{:#?}", v),
+            Self::Number(v) => write!(f, "{:#?}", v),
+            Self::String(v) => write!(f, "{:#?}", v),
+            Self::Object(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

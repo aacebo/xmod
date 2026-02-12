@@ -54,6 +54,18 @@ impl AsValue for HashMap<Ident, Value> {
     }
 }
 
+impl std::fmt::Debug for dyn Struct {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut dbg = f.debug_struct(self.name());
+
+        for (k, v) in self.items() {
+            dbg.field(&k.to_string(), &v.as_value());
+        }
+
+        dbg.finish()
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for dyn Struct {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

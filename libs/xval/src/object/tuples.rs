@@ -14,6 +14,18 @@ pub trait Tuple: Send + Sync {
     }
 }
 
+impl std::fmt::Debug for dyn Tuple {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut dbg = f.debug_tuple(self.name());
+
+        for v in self.items() {
+            dbg.field(&v.as_value());
+        }
+
+        dbg.finish()
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for dyn Tuple {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

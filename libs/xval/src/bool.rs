@@ -2,7 +2,7 @@ use crate::{AsValue, Value};
 
 /// A type-safe wrapper around a [`bool`] value.
 #[repr(transparent)]
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -56,9 +56,27 @@ impl std::ops::Deref for Bool {
     }
 }
 
+impl std::fmt::Debug for Bool {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", &self.0)
+    }
+}
+
 impl std::fmt::Display for Bool {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.0)
+    }
+}
+
+impl PartialEq<bool> for Bool {
+    fn eq(&self, other: &bool) -> bool {
+        self.0 == *other
+    }
+}
+
+impl PartialEq<bool> for Value {
+    fn eq(&self, other: &bool) -> bool {
+        matches!(self, Self::Bool(v) if v == other)
     }
 }
 

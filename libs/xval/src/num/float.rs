@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -48,6 +48,39 @@ impl Float {
             Self::F64(_) => std::any::TypeId::of::<f64>(),
             Self::F32(_) => std::any::TypeId::of::<f32>(),
         }
+    }
+}
+
+impl PartialEq<f32> for Float {
+    fn eq(&self, other: &f32) -> bool {
+        matches!(self, Self::F32(v) if v == other)
+    }
+}
+impl PartialEq<f64> for Float {
+    fn eq(&self, other: &f64) -> bool {
+        matches!(self, Self::F64(v) if v == other)
+    }
+}
+
+impl PartialEq<f32> for Number {
+    fn eq(&self, other: &f32) -> bool {
+        matches!(self, Self::Float(v) if v == other)
+    }
+}
+impl PartialEq<f64> for Number {
+    fn eq(&self, other: &f64) -> bool {
+        matches!(self, Self::Float(v) if v == other)
+    }
+}
+
+impl PartialEq<f32> for Value {
+    fn eq(&self, other: &f32) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<f64> for Value {
+    fn eq(&self, other: &f64) -> bool {
+        matches!(self, Self::Number(v) if v == other)
     }
 }
 
@@ -116,6 +149,15 @@ impl Value {
 
     pub fn from_f64(value: f64) -> Self {
         Self::Number(Number::from_f64(value))
+    }
+}
+
+impl std::fmt::Debug for Float {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::F64(v) => write!(f, "{:#?}", v),
+            Self::F32(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

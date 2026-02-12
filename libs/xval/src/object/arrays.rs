@@ -54,6 +54,18 @@ impl From<Vec<Value>> for Value {
     }
 }
 
+impl std::fmt::Debug for dyn Array {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut dbg = f.debug_list();
+
+        for v in self.items() {
+            dbg.entry(&v.as_value());
+        }
+
+        dbg.finish()
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for dyn Array {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>

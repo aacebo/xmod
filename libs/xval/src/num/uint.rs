@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], or [`u64`].
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -76,6 +76,69 @@ impl UInt {
             Self::U32(_) => std::any::TypeId::of::<u32>(),
             Self::U64(_) => std::any::TypeId::of::<u64>(),
         }
+    }
+}
+
+impl PartialEq<u8> for UInt {
+    fn eq(&self, other: &u8) -> bool {
+        matches!(self, Self::U8(v) if v == other)
+    }
+}
+impl PartialEq<u16> for UInt {
+    fn eq(&self, other: &u16) -> bool {
+        matches!(self, Self::U16(v) if v == other)
+    }
+}
+impl PartialEq<u32> for UInt {
+    fn eq(&self, other: &u32) -> bool {
+        matches!(self, Self::U32(v) if v == other)
+    }
+}
+impl PartialEq<u64> for UInt {
+    fn eq(&self, other: &u64) -> bool {
+        matches!(self, Self::U64(v) if v == other)
+    }
+}
+
+impl PartialEq<u8> for Number {
+    fn eq(&self, other: &u8) -> bool {
+        matches!(self, Self::UInt(v) if v == other)
+    }
+}
+impl PartialEq<u16> for Number {
+    fn eq(&self, other: &u16) -> bool {
+        matches!(self, Self::UInt(v) if v == other)
+    }
+}
+impl PartialEq<u32> for Number {
+    fn eq(&self, other: &u32) -> bool {
+        matches!(self, Self::UInt(v) if v == other)
+    }
+}
+impl PartialEq<u64> for Number {
+    fn eq(&self, other: &u64) -> bool {
+        matches!(self, Self::UInt(v) if v == other)
+    }
+}
+
+impl PartialEq<u8> for Value {
+    fn eq(&self, other: &u8) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<u16> for Value {
+    fn eq(&self, other: &u16) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<u32> for Value {
+    fn eq(&self, other: &u32) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+impl PartialEq<u64> for Value {
+    fn eq(&self, other: &u64) -> bool {
+        matches!(self, Self::Number(v) if v == other)
     }
 }
 
@@ -179,6 +242,17 @@ impl Value {
     }
     pub fn from_u64(value: u64) -> Self {
         Self::Number(Number::from_u64(value))
+    }
+}
+
+impl std::fmt::Debug for UInt {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::U8(v) => write!(f, "{:#?}", v),
+            Self::U16(v) => write!(f, "{:#?}", v),
+            Self::U32(v) => write!(f, "{:#?}", v),
+            Self::U64(v) => write!(f, "{:#?}", v),
+        }
     }
 }
 

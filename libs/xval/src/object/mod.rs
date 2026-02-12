@@ -101,33 +101,9 @@ impl PartialEq for Object {
 impl std::fmt::Debug for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Struct(s) => {
-                let mut dbg = f.debug_map();
-
-                for (k, v) in s.items() {
-                    dbg.entry(&k, &v.as_value());
-                }
-
-                dbg.finish()
-            }
-            Self::Array(a) => {
-                let mut dbg = f.debug_list();
-
-                for v in a.items() {
-                    dbg.entry(&v.as_value());
-                }
-
-                dbg.finish()
-            }
-            Self::Tuple(t) => {
-                let mut dbg = f.debug_tuple(t.name());
-
-                for v in t.items() {
-                    dbg.field(&v.as_value());
-                }
-
-                dbg.finish()
-            }
+            Self::Struct(v) => write!(f, "{:#?}", v),
+            Self::Array(v) => write!(f, "{:#?}", v),
+            Self::Tuple(v) => write!(f, "{:#?}", v),
         }
     }
 }
