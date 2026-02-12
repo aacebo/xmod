@@ -47,3 +47,94 @@ impl std::fmt::Display for Ident {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::collections::HashSet;
+
+    #[test]
+    fn key() {
+        let k = Ident::key("foo");
+        assert!(k.is_key());
+        assert!(!k.is_index());
+    }
+
+    #[test]
+    fn index() {
+        let i = Ident::index(3);
+        assert!(i.is_index());
+        assert!(!i.is_key());
+    }
+
+    #[test]
+    fn from_str() {
+        let k: Ident = "bar".into();
+        assert!(k.is_key());
+        assert_eq!(k, Ident::key("bar"));
+    }
+
+    #[test]
+    fn from_usize() {
+        let i: Ident = 5usize.into();
+        assert!(i.is_index());
+        assert_eq!(i, Ident::index(5));
+    }
+
+    #[test]
+    fn display_key() {
+        assert_eq!(Ident::key("hello").to_string(), "hello");
+    }
+
+    #[test]
+    fn display_index() {
+        assert_eq!(Ident::index(42).to_string(), "42");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(Ident::key("a"), Ident::key("a"));
+        assert_ne!(Ident::key("a"), Ident::key("b"));
+        assert_eq!(Ident::index(0), Ident::index(0));
+        assert_ne!(Ident::index(0), Ident::index(1));
+        assert_ne!(Ident::key("0"), Ident::index(0));
+    }
+
+    #[test]
+    fn hash() {
+        let mut set = HashSet::new();
+        set.insert(Ident::key("a"));
+        set.insert(Ident::key("a"));
+        set.insert(Ident::index(0));
+        assert_eq!(set.len(), 2);
+    }
+
+    #[cfg(feature = "serde")]
+    mod serde {
+        use super::*;
+
+        #[test]
+        fn serialize_key() {
+            let json = serde_json::to_string(&Ident::key("foo")).unwrap();
+            assert_eq!(json, "\"foo\"");
+        }
+
+        #[test]
+        fn serialize_index() {
+            let json = serde_json::to_string(&Ident::index(7)).unwrap();
+            assert_eq!(json, "7");
+        }
+
+        #[test]
+        fn deserialize_key() {
+            let i: Ident = serde_json::from_str("\"foo\"").unwrap();
+            assert_eq!(i, Ident::key("foo"));
+        }
+
+        #[test]
+        fn deserialize_index() {
+            let i: Ident = serde_json::from_str("7").unwrap();
+            assert_eq!(i, Ident::index(7));
+        }
+    }
+}

@@ -72,12 +72,7 @@ impl<'de> serde::de::Visitor<'de> for ObjectVisitor {
         let mut result = HashMap::new();
 
         while let Some((key, value)) = map.next_entry::<String, Value>()? {
-            let ident = match key.parse::<usize>() {
-                Ok(i) => Ident::index(i),
-                Err(_) => Ident::key(&key),
-            };
-
-            result.insert(ident, value);
+            result.insert(Ident::key(&key), value);
         }
 
         Ok(Object::Struct(Arc::new(result)))

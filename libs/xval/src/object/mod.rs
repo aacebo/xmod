@@ -166,12 +166,12 @@ impl From<Vec<Value>> for Value {
 }
 
 impl Value {
-    pub fn from_struct(value: HashMap<Ident, Value>) -> Self {
-        Self::from(value)
+    pub fn from_struct<T: Struct + 'static>(value: T) -> Self {
+        Self::Object(Object::from_struct(value))
     }
 
-    pub fn from_array(value: Vec<Value>) -> Self {
-        Self::from(value)
+    pub fn from_array<T: Array + 'static>(value: T) -> Self {
+        Self::Object(Object::from_array(value))
     }
 }
 

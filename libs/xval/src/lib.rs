@@ -237,7 +237,7 @@ impl std::fmt::Display for Value {
             Self::Bool(v) => write!(f, "{}", v),
             Self::Number(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", v),
-            Self::Object(v) => write!(f, "{}", v.name()),
+            Self::Object(v) => write!(f, "{}", v),
         }
     }
 }
