@@ -115,7 +115,7 @@ impl From<i64> for Int {
     }
 }
 
-impl From<Int> for Value {
+impl<'a> From<Int> for Value<'a> {
     fn from(value: Int) -> Self {
         Number::from(value).into()
     }
@@ -145,25 +145,25 @@ impl From<i64> for Number {
     }
 }
 
-impl From<i8> for Value {
+impl<'a> From<i8> for Value<'a> {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
 
-impl From<i16> for Value {
+impl<'a> From<i16> for Value<'a> {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
 
-impl From<i32> for Value {
+impl<'a> From<i32> for Value<'a> {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
 
-impl From<i64> for Value {
+impl<'a> From<i64> for Value<'a> {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
     }
@@ -187,7 +187,7 @@ impl Number {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn from_i8(value: i8) -> Self {
         Self::Number(Number::from_i8(value))
     }
@@ -216,32 +216,32 @@ impl std::fmt::Display for Int {
     }
 }
 
-impl ToValue for Int {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for Int {
+    fn to_value(self) -> Value<'static> {
         Number::Int(self).into()
     }
 }
 
-impl ToValue for i8 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for i8 {
+    fn to_value(self) -> Value<'static> {
         Value::from_i8(self)
     }
 }
 
-impl ToValue for i16 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for i16 {
+    fn to_value(self) -> Value<'static> {
         Value::from_i16(self)
     }
 }
 
-impl ToValue for i32 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for i32 {
+    fn to_value(self) -> Value<'static> {
         Value::from_i32(self)
     }
 }
 
-impl ToValue for i64 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for i64 {
+    fn to_value(self) -> Value<'static> {
         Value::from_i64(self)
     }
 }

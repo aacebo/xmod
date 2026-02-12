@@ -150,7 +150,7 @@ impl Number {
     }
 }
 
-impl From<Number> for Value {
+impl<'a> From<Number> for Value<'a> {
     fn from(value: Number) -> Self {
         Self::Number(value)
     }
@@ -166,8 +166,8 @@ impl std::fmt::Display for Number {
     }
 }
 
-impl ToValue for Number {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for Number {
+    fn to_value(self) -> Value<'static> {
         self.into()
     }
 }

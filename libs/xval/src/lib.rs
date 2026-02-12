@@ -1,30 +1,36 @@
 mod bool;
+mod ident;
 pub mod num;
+mod object;
 mod string;
 
 pub use bool::*;
+pub use ident::*;
 pub use num::*;
+pub use object::*;
 pub use string::*;
 
 /// A trait for types that can be converted into a [`Value`].
-pub trait ToValue {
-    fn to_value(self) -> Value;
+pub trait ToValue<'a> {
+    fn to_value(self) -> Value<'a>;
 }
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Clone)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
     serde(untagged)
 )]
-pub enum Value {
+pub enum Value<'a> {
     Bool(Bool),
     Number(Number),
     String(Str),
+    #[cfg_attr(feature = "serde", serde(skip))]
+    Object(Object<'a>),
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn is_bool(&self) -> bool {
         matches!(self, Self::Bool(_))
     }
@@ -35,6 +41,10 @@ impl Value {
 
     pub fn is_string(&self) -> bool {
         matches!(self, Self::String(_))
+    }
+
+    pub fn is_object(&self) -> bool {
+        matches!(self, Self::Object(_))
     }
 
     pub fn as_bool(&self) -> &Bool {
@@ -64,6 +74,16 @@ impl Value {
         }
     }
 
+    pub fn as_object(&self) -> &Object<'a> {
+        match self {
+            Self::Object(v) => v,
+            v => panic!(
+                "expected Object, received {}",
+                std::any::type_name_of_val(v)
+            ),
+        }
+    }
+
     pub fn to_bool(&self) -> bool {
         self.as_bool().to_bool()
     }
@@ -77,11 +97,12 @@ impl Value {
             Self::Bool(v) => v.type_id(),
             Self::Number(v) => v.type_id(),
             Self::String(v) => v.type_id(),
+            Self::Object(v) => v.type_id(),
         }
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn is_float(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_float())
     }
@@ -107,7 +128,7 @@ impl Value {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn is_f32(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_f32())
     }
@@ -125,7 +146,7 @@ impl Value {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_i8())
     }
@@ -159,7 +180,7 @@ impl Value {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn is_u8(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_u8())
     }
@@ -193,13 +214,20 @@ impl Value {
     }
 }
 
-impl std::fmt::Display for Value {
+impl<'a> std::fmt::Display for Value<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bool(v) => write!(f, "{}", v),
             Self::Number(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", v),
+            Self::Object(v) => write!(f, "{}", v.name()),
         }
+    }
+}
+
+impl<'a> ToValue<'a> for Value<'a> {
+    fn to_value(self) -> Value<'a> {
+        self
     }
 }
 

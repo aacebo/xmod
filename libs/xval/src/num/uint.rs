@@ -115,7 +115,7 @@ impl From<u64> for UInt {
     }
 }
 
-impl From<UInt> for Value {
+impl<'a> From<UInt> for Value<'a> {
     fn from(value: UInt) -> Self {
         Number::from(value).into()
     }
@@ -145,25 +145,25 @@ impl From<u64> for Number {
     }
 }
 
-impl From<u8> for Value {
+impl<'a> From<u8> for Value<'a> {
     fn from(value: u8) -> Self {
         Self::from_u8(value)
     }
 }
 
-impl From<u16> for Value {
+impl<'a> From<u16> for Value<'a> {
     fn from(value: u16) -> Self {
         Self::from_u16(value)
     }
 }
 
-impl From<u32> for Value {
+impl<'a> From<u32> for Value<'a> {
     fn from(value: u32) -> Self {
         Self::from_u32(value)
     }
 }
 
-impl From<u64> for Value {
+impl<'a> From<u64> for Value<'a> {
     fn from(value: u64) -> Self {
         Self::from_u64(value)
     }
@@ -187,7 +187,7 @@ impl Number {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn from_u8(value: u8) -> Self {
         Self::Number(Number::from_u8(value))
     }
@@ -216,32 +216,32 @@ impl std::fmt::Display for UInt {
     }
 }
 
-impl ToValue for UInt {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for UInt {
+    fn to_value(self) -> Value<'static> {
         Number::UInt(self).into()
     }
 }
 
-impl ToValue for u8 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for u8 {
+    fn to_value(self) -> Value<'static> {
         Value::from_u8(self)
     }
 }
 
-impl ToValue for u16 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for u16 {
+    fn to_value(self) -> Value<'static> {
         Value::from_u16(self)
     }
 }
 
-impl ToValue for u32 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for u32 {
+    fn to_value(self) -> Value<'static> {
         Value::from_u32(self)
     }
 }
 
-impl ToValue for u64 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for u64 {
+    fn to_value(self) -> Value<'static> {
         Value::from_u64(self)
     }
 }

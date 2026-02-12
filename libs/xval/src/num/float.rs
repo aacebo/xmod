@@ -57,7 +57,7 @@ impl From<Float> for Number {
     }
 }
 
-impl From<Float> for Value {
+impl<'a> From<Float> for Value<'a> {
     fn from(value: Float) -> Self {
         Number::from(value).into()
     }
@@ -87,13 +87,13 @@ impl From<f64> for Number {
     }
 }
 
-impl From<f32> for Value {
+impl<'a> From<f32> for Value<'a> {
     fn from(value: f32) -> Self {
         Self::from_f32(value)
     }
 }
 
-impl From<f64> for Value {
+impl<'a> From<f64> for Value<'a> {
     fn from(value: f64) -> Self {
         Self::from_f64(value)
     }
@@ -109,7 +109,7 @@ impl Number {
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn from_f32(value: f32) -> Self {
         Self::Number(Number::from_f32(value))
     }
@@ -128,20 +128,20 @@ impl std::fmt::Display for Float {
     }
 }
 
-impl ToValue for Float {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for Float {
+    fn to_value(self) -> Value<'static> {
         Number::Float(self).into()
     }
 }
 
-impl ToValue for f32 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for f32 {
+    fn to_value(self) -> Value<'static> {
         Value::from_f32(self)
     }
 }
 
-impl ToValue for f64 {
-    fn to_value(self) -> Value {
+impl ToValue<'_> for f64 {
+    fn to_value(self) -> Value<'static> {
         Value::from_f64(self)
     }
 }

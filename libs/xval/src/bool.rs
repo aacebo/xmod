@@ -24,7 +24,7 @@ impl Bool {
     }
 }
 
-impl From<Bool> for Value {
+impl<'a> From<Bool> for Value<'a> {
     fn from(value: Bool) -> Self {
         Self::Bool(value)
     }
@@ -36,13 +36,13 @@ impl From<bool> for Bool {
     }
 }
 
-impl From<bool> for Value {
+impl<'a> From<bool> for Value<'a> {
     fn from(value: bool) -> Self {
         Self::from_bool(value)
     }
 }
 
-impl Value {
+impl<'a> Value<'a> {
     pub fn from_bool(value: bool) -> Self {
         Self::Bool(Bool::from_bool(value))
     }
@@ -62,14 +62,14 @@ impl std::fmt::Display for Bool {
     }
 }
 
-impl ToValue for Bool {
-    fn to_value(self) -> Value {
+impl<'a> ToValue<'a> for Bool {
+    fn to_value(self) -> Value<'a> {
         Value::from(self)
     }
 }
 
-impl ToValue for bool {
-    fn to_value(self) -> Value {
+impl<'a> ToValue<'a> for bool {
+    fn to_value(self) -> Value<'a> {
         Value::from_bool(self)
     }
 }
