@@ -14,6 +14,25 @@ pub trait Tuple: Send + Sync {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for dyn Tuple {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeTuple;
+
+        let len = self.len();
+        let mut tup = serializer.serialize_tuple(len)?;
+
+        for item in self.items() {
+            tup.serialize_element(&item.as_value())?;
+        }
+
+        tup.end()
+    }
+}
+
 pub struct TupleIter<'a>(Box<dyn Iterator<Item = &'a dyn AsValue> + 'a>);
 
 impl<'a> TupleIter<'a> {

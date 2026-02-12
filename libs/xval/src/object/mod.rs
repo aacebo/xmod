@@ -1,6 +1,4 @@
 mod arrays;
-#[cfg(feature = "serde")]
-mod serial;
 mod structs;
 mod tuples;
 
@@ -157,6 +155,66 @@ impl std::fmt::Display for Object {
 impl AsValue for Object {
     fn as_value(&self) -> Value {
         Value::Object(self.clone())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl serde::Serialize for Object {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        match self {
+            Object::Struct(s) => s.as_ref().serialize(serializer),
+            Object::Array(a) => a.as_ref().serialize(serializer),
+            Object::Tuple(t) => t.as_ref().serialize(serializer),
+        }
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Object {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        deserializer.deserialize_any(ObjectVisitor)
+    }
+}
+
+#[cfg(feature = "serde")]
+struct ObjectVisitor;
+
+#[cfg(feature = "serde")]
+impl<'de> serde::de::Visitor<'de> for ObjectVisitor {
+    type Value = Object;
+
+    fn expecting(&self, formatter: &mut std::fmt::Formatter) -> std::fmt::Result {
+        formatter.write_str("a map or sequence")
+    }
+
+    fn visit_map<A: serde::de::MapAccess<'de>>(self, mut map: A) -> Result<Self::Value, A::Error> {
+        use std::collections::HashMap;
+
+        let mut result = HashMap::new();
+
+        while let Some((key, value)) = map.next_entry::<String, Value>()? {
+            use crate::Ident;
+
+            result.insert(Ident::key(&key), value);
+        }
+
+        Ok(Object::Struct(Arc::new(result)))
+    }
+
+    fn visit_seq<A: serde::de::SeqAccess<'de>>(self, mut seq: A) -> Result<Self::Value, A::Error> {
+        let mut result = Vec::new();
+
+        while let Some(value) = seq.next_element::<Value>()? {
+            result.push(value);
+        }
+
+        Ok(Object::Array(Arc::new(result)))
     }
 }
 

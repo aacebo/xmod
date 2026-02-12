@@ -54,6 +54,25 @@ impl From<Vec<Value>> for Value {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for dyn Array {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeSeq;
+
+        let len = self.len();
+        let mut seq = serializer.serialize_seq(Some(len))?;
+
+        for item in self.items() {
+            seq.serialize_element(&item.as_value())?;
+        }
+
+        seq.end()
+    }
+}
+
 pub struct ArrayIter<'a>(Box<dyn Iterator<Item = &'a dyn AsValue> + 'a>);
 
 impl<'a> ArrayIter<'a> {

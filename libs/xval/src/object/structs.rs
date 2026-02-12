@@ -54,6 +54,25 @@ impl AsValue for HashMap<Ident, Value> {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for dyn Struct {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+
+        let iter = self.items();
+        let mut map = serializer.serialize_map(None)?;
+
+        for (ident, value) in iter {
+            map.serialize_entry(&ident.to_string(), &value.as_value())?;
+        }
+
+        map.end()
+    }
+}
+
 pub struct StructIter<'a>(Box<dyn Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a>);
 
 impl<'a> StructIter<'a> {
