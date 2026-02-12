@@ -1,39 +1,49 @@
-use crate::{AsValue, Ident, Value};
+use crate::{AsValue, Ident};
 
-pub struct StructIter<'a>(std::collections::hash_map::Iter<'a, Ident, Value>);
+pub struct KeysIter<'a>(Box<dyn Iterator<Item = &'a Ident> + 'a>);
+
+impl<'a> KeysIter<'a> {
+    pub fn new(iter: impl Iterator<Item = &'a Ident> + 'a) -> Self {
+        Self(Box::new(iter))
+    }
+}
+
+impl<'a> Iterator for KeysIter<'a> {
+    type Item = &'a Ident;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        self.0.next()
+    }
+}
+
+pub struct StructIter<'a>(Box<dyn Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a>);
+
+impl<'a> StructIter<'a> {
+    pub fn new(iter: impl Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a) -> Self {
+        Self(Box::new(iter))
+    }
+}
 
 impl<'a> Iterator for StructIter<'a> {
     type Item = (&'a Ident, &'a dyn AsValue);
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.0.next() {
-            None => None,
-            Some((ident, value)) => Some((ident, value as &dyn AsValue)),
-        }
+        self.0.next()
     }
 }
 
-impl<'a> From<std::collections::hash_map::Iter<'a, Ident, Value>> for StructIter<'a> {
-    fn from(value: std::collections::hash_map::Iter<'a, Ident, Value>) -> Self {
-        Self(value)
+pub struct ArrayIter<'a>(Box<dyn Iterator<Item = &'a dyn AsValue> + 'a>);
+
+impl<'a> ArrayIter<'a> {
+    pub fn new(iter: impl Iterator<Item = &'a dyn AsValue> + 'a) -> Self {
+        Self(Box::new(iter))
     }
 }
-
-pub struct ArrayIter<'a>(std::slice::Iter<'a, Value>);
 
 impl<'a> Iterator for ArrayIter<'a> {
     type Item = &'a dyn AsValue;
 
     fn next(&mut self) -> Option<Self::Item> {
-        match self.0.next() {
-            None => None,
-            Some(value) => Some(value as &dyn AsValue),
-        }
-    }
-}
-
-impl<'a> From<std::slice::Iter<'a, Value>> for ArrayIter<'a> {
-    fn from(value: std::slice::Iter<'a, Value>) -> Self {
-        Self(value)
+        self.0.next()
     }
 }

@@ -30,7 +30,7 @@ impl serde::Serialize for dyn Struct {
     {
         use serde::ser::SerializeMap;
 
-        let iter = self.iter();
+        let iter = self.items();
         let mut map = serializer.serialize_map(None)?;
 
         for (ident, value) in iter {
@@ -72,7 +72,12 @@ impl<'de> serde::de::Visitor<'de> for ObjectVisitor {
         let mut result = HashMap::new();
 
         while let Some((key, value)) = map.next_entry::<String, Value>()? {
-            result.insert(Ident::key(&key), value);
+            let ident = match key.parse::<usize>() {
+                Ok(i) => Ident::index(i),
+                Err(_) => Ident::key(&key),
+            };
+
+            result.insert(ident, value);
         }
 
         Ok(Object::Struct(Arc::new(result)))

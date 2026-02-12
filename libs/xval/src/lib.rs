@@ -16,7 +16,7 @@ pub trait AsValue {
 }
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -98,6 +98,24 @@ impl Value {
             Self::String(v) => v.type_id(),
             Self::Object(v) => v.type_id(),
         }
+    }
+}
+
+impl Value {
+    pub fn is_struct(&self) -> bool {
+        matches!(self, Self::Object(v) if v.is_struct())
+    }
+
+    pub fn is_array(&self) -> bool {
+        matches!(self, Self::Object(v) if v.is_array())
+    }
+
+    pub fn as_struct(&self) -> &std::sync::Arc<dyn Struct> {
+        self.as_object().as_struct()
+    }
+
+    pub fn as_array(&self) -> &std::sync::Arc<dyn Array> {
+        self.as_object().as_array()
     }
 }
 
