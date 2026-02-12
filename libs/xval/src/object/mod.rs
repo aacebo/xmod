@@ -92,6 +92,12 @@ impl Object {
     }
 }
 
+impl PartialEq for Object {
+    fn eq(&self, other: &Self) -> bool {
+        self.type_id() == other.type_id()
+    }
+}
+
 impl std::fmt::Debug for Object {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -99,7 +105,7 @@ impl std::fmt::Debug for Object {
                 let mut dbg = f.debug_map();
 
                 for (k, v) in s.items() {
-                    dbg.entry(k, &v.as_value());
+                    dbg.entry(&k, &v.as_value());
                 }
 
                 dbg.finish()
@@ -521,11 +527,8 @@ mod tests {
             assert!(obj.is_struct());
             let s = obj.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field(&Ident::key("x")).unwrap().as_value().to_i8(), 42);
-            assert_eq!(
-                s.field(&Ident::key("y")).unwrap().as_value().as_str(),
-                "world"
-            );
+            assert_eq!(s.field("x".into()).unwrap().as_value().to_i8(), 42);
+            assert_eq!(s.field("y".into()).unwrap().as_value().as_str(), "world");
         }
 
         #[test]
@@ -547,7 +550,7 @@ mod tests {
             assert!(deserialized.is_struct());
             let s = deserialized.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field(&Ident::key("a")).unwrap().as_value().to_i8(), 1);
+            assert_eq!(s.field("a".into()).unwrap().as_value().to_i8(), 1);
         }
 
         #[test]

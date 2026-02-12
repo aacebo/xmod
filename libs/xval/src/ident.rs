@@ -33,6 +33,12 @@ impl From<&str> for Ident {
     }
 }
 
+impl From<String> for Ident {
+    fn from(value: String) -> Self {
+        Self::Key(value.into_boxed_str())
+    }
+}
+
 impl From<usize> for Ident {
     fn from(value: usize) -> Self {
         Self::index(value)
@@ -45,6 +51,30 @@ impl std::fmt::Display for Ident {
             Self::Key(v) => write!(f, "{}", v),
             Self::Index(v) => write!(f, "{}", v),
         }
+    }
+}
+
+impl PartialEq<str> for Ident {
+    fn eq(&self, other: &str) -> bool {
+        self.to_string() == other
+    }
+}
+
+impl PartialEq<&str> for Ident {
+    fn eq(&self, other: &&str) -> bool {
+        self.to_string() == *other
+    }
+}
+
+impl PartialEq<String> for Ident {
+    fn eq(&self, other: &String) -> bool {
+        self.to_string() == *other
+    }
+}
+
+impl PartialEq<usize> for Ident {
+    fn eq(&self, other: &usize) -> bool {
+        self.to_string() == format!("{}", other)
     }
 }
 

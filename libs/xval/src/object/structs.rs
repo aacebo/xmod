@@ -7,7 +7,7 @@ pub trait Struct: Send + Sync {
     fn type_id(&self) -> std::any::TypeId;
     fn len(&self) -> usize;
     fn items(&self) -> StructIter<'_>;
-    fn field(&self, ident: &Ident) -> Option<&dyn AsValue>;
+    fn field(&self, ident: Ident) -> Option<&dyn AsValue>;
 
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -28,11 +28,11 @@ impl Struct for HashMap<Ident, Value> {
     }
 
     fn items(&self) -> StructIter<'_> {
-        StructIter::new(self.iter().map(|(k, v)| (k, v as &dyn AsValue)))
+        StructIter::new(self.iter().map(|(k, v)| (k.clone(), v as &dyn AsValue)))
     }
 
-    fn field(&self, ident: &Ident) -> Option<&dyn AsValue> {
-        self.get(ident).map(|v| v as &dyn AsValue)
+    fn field(&self, ident: Ident) -> Option<&dyn AsValue> {
+        self.get(&ident).map(|v| v as &dyn AsValue)
     }
 }
 
@@ -73,19 +73,29 @@ impl serde::Serialize for dyn Struct {
     }
 }
 
-pub struct StructIter<'a>(Box<dyn Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a>);
+pub struct StructIter<'a>(Box<dyn Iterator<Item = (Ident, &'a dyn AsValue)> + 'a>);
 
 impl<'a> StructIter<'a> {
-    pub fn new(iter: impl Iterator<Item = (&'a Ident, &'a dyn AsValue)> + 'a) -> Self {
+    pub fn new<T: Iterator<Item = (Ident, &'a dyn AsValue)> + 'a>(iter: T) -> Self {
         Self(Box::new(iter))
     }
 }
 
 impl<'a> Iterator for StructIter<'a> {
-    type Item = (&'a Ident, &'a dyn AsValue);
+    type Item = (Ident, &'a dyn AsValue);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
+    }
+}
+
+impl<'a, const N: usize> From<&'a [(Ident, Value); N]> for StructIter<'a> {
+    fn from(value: &'a [(Ident, Value); N]) -> Self {
+        Self::new(
+            value
+                .iter()
+                .map(|(ident, value)| (ident.clone(), value as &dyn AsValue)),
+        )
     }
 }
 
@@ -147,13 +157,13 @@ mod tests {
     #[test]
     fn field() {
         let s = sample_struct();
-        let v = s.field(&Ident::key("a")).unwrap();
+        let v = s.field("a".into()).unwrap();
         assert_eq!(v.as_value().to_i32(), 1);
 
-        let v = s.field(&Ident::key("b")).unwrap();
+        let v = s.field("b".into()).unwrap();
         assert_eq!(v.as_value().as_str(), "hello");
 
-        assert!(s.field(&Ident::key("missing")).is_none());
+        assert!(s.field("missing".into()).is_none());
     }
 
     #[test]

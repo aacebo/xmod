@@ -10,6 +10,11 @@ pub use num::*;
 pub use object::*;
 pub use string::*;
 
+#[cfg(feature = "derive")]
+pub mod derive {
+    pub use xval_derive::*;
+}
+
 /// A trait for types that can produce a [`Value`] from a shared reference.
 pub trait AsValue {
     fn as_value(&self) -> Value;
@@ -246,6 +251,19 @@ impl std::fmt::Display for Value {
             Self::Number(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", v),
             Self::Object(v) => write!(f, "{}", v),
+        }
+    }
+}
+
+impl Eq for Value {}
+
+impl PartialEq for Value {
+    fn eq(&self, other: &Self) -> bool {
+        match self {
+            Self::Bool(v) => other.is_bool() && v.eq(other.as_bool()),
+            Self::Number(v) => other.is_number() && v.eq(other.as_number()),
+            Self::String(v) => other.is_string() && v.eq(other.as_string()),
+            Self::Object(v) => other.is_object() && v.eq(other.as_object()),
         }
     }
 }
