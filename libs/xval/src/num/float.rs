@@ -1,4 +1,4 @@
-use crate::{ToValue, Value, num::Number};
+use crate::{AsValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
 #[derive(Debug, Copy, Clone, PartialEq)]
@@ -57,7 +57,7 @@ impl From<Float> for Number {
     }
 }
 
-impl<'a> From<Float> for Value<'a> {
+impl From<Float> for Value {
     fn from(value: Float) -> Self {
         Number::from(value).into()
     }
@@ -87,13 +87,13 @@ impl From<f64> for Number {
     }
 }
 
-impl<'a> From<f32> for Value<'a> {
+impl From<f32> for Value {
     fn from(value: f32) -> Self {
         Self::from_f32(value)
     }
 }
 
-impl<'a> From<f64> for Value<'a> {
+impl From<f64> for Value {
     fn from(value: f64) -> Self {
         Self::from_f64(value)
     }
@@ -109,7 +109,7 @@ impl Number {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn from_f32(value: f32) -> Self {
         Self::Number(Number::from_f32(value))
     }
@@ -128,21 +128,21 @@ impl std::fmt::Display for Float {
     }
 }
 
-impl ToValue<'_> for Float {
-    fn to_value(self) -> Value<'static> {
-        Number::Float(self).into()
+impl AsValue for Float {
+    fn as_value(&self) -> Value {
+        Value::Number(Number::Float(*self))
     }
 }
 
-impl ToValue<'_> for f32 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_f32(self)
+impl AsValue for f32 {
+    fn as_value(&self) -> Value {
+        Value::from_f32(*self)
     }
 }
 
-impl ToValue<'_> for f64 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_f64(self)
+impl AsValue for f64 {
+    fn as_value(&self) -> Value {
+        Value::from_f64(*self)
     }
 }
 

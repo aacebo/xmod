@@ -1,4 +1,4 @@
-use crate::{ToValue, Value, num::Number};
+use crate::{AsValue, Value, num::Number};
 
 /// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], or [`u64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -18,15 +18,12 @@ impl UInt {
     pub fn from_u8(value: u8) -> Self {
         Self::U8(value)
     }
-
     pub fn from_u16(value: u16) -> Self {
         Self::U16(value)
     }
-
     pub fn from_u32(value: u32) -> Self {
         Self::U32(value)
     }
-
     pub fn from_u64(value: u64) -> Self {
         Self::U64(value)
     }
@@ -34,15 +31,12 @@ impl UInt {
     pub fn is_u8(&self) -> bool {
         matches!(self, Self::U8(_))
     }
-
     pub fn is_u16(&self) -> bool {
         matches!(self, Self::U16(_))
     }
-
     pub fn is_u32(&self) -> bool {
         matches!(self, Self::U32(_))
     }
-
     pub fn is_u64(&self) -> bool {
         matches!(self, Self::U64(_))
     }
@@ -90,80 +84,69 @@ impl From<UInt> for Number {
         Self::UInt(value)
     }
 }
-
 impl From<u8> for UInt {
     fn from(value: u8) -> Self {
         Self::from_u8(value)
     }
 }
-
 impl From<u16> for UInt {
     fn from(value: u16) -> Self {
         Self::from_u16(value)
     }
 }
-
 impl From<u32> for UInt {
     fn from(value: u32) -> Self {
         Self::from_u32(value)
     }
 }
-
 impl From<u64> for UInt {
     fn from(value: u64) -> Self {
         Self::from_u64(value)
     }
 }
 
-impl<'a> From<UInt> for Value<'a> {
+impl From<UInt> for Value {
     fn from(value: UInt) -> Self {
         Number::from(value).into()
     }
 }
-
 impl From<u8> for Number {
     fn from(value: u8) -> Self {
         Self::from_u8(value)
     }
 }
-
 impl From<u16> for Number {
     fn from(value: u16) -> Self {
         Self::from_u16(value)
     }
 }
-
 impl From<u32> for Number {
     fn from(value: u32) -> Self {
         Self::from_u32(value)
     }
 }
-
 impl From<u64> for Number {
     fn from(value: u64) -> Self {
         Self::from_u64(value)
     }
 }
 
-impl<'a> From<u8> for Value<'a> {
+impl From<u8> for Value {
     fn from(value: u8) -> Self {
         Self::from_u8(value)
     }
 }
-
-impl<'a> From<u16> for Value<'a> {
+impl From<u16> for Value {
     fn from(value: u16) -> Self {
         Self::from_u16(value)
     }
 }
-
-impl<'a> From<u32> for Value<'a> {
+impl From<u32> for Value {
     fn from(value: u32) -> Self {
         Self::from_u32(value)
     }
 }
-
-impl<'a> From<u64> for Value<'a> {
+impl From<u64> for Value {
     fn from(value: u64) -> Self {
         Self::from_u64(value)
     }
@@ -173,33 +156,27 @@ impl Number {
     pub fn from_u8(value: u8) -> Self {
         Self::UInt(UInt::from_u8(value))
     }
-
     pub fn from_u16(value: u16) -> Self {
         Self::UInt(UInt::from_u16(value))
     }
-
     pub fn from_u32(value: u32) -> Self {
         Self::UInt(UInt::from_u32(value))
     }
-
     pub fn from_u64(value: u64) -> Self {
         Self::UInt(UInt::from_u64(value))
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn from_u8(value: u8) -> Self {
         Self::Number(Number::from_u8(value))
     }
-
     pub fn from_u16(value: u16) -> Self {
         Self::Number(Number::from_u16(value))
     }
-
     pub fn from_u32(value: u32) -> Self {
         Self::Number(Number::from_u32(value))
     }
-
     pub fn from_u64(value: u64) -> Self {
         Self::Number(Number::from_u64(value))
     }
@@ -216,33 +193,29 @@ impl std::fmt::Display for UInt {
     }
 }
 
-impl ToValue<'_> for UInt {
-    fn to_value(self) -> Value<'static> {
-        Number::UInt(self).into()
+impl AsValue for UInt {
+    fn as_value(&self) -> Value {
+        Value::Number(Number::UInt(*self))
     }
 }
-
-impl ToValue<'_> for u8 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_u8(self)
+impl AsValue for u8 {
+    fn as_value(&self) -> Value {
+        Value::from_u8(*self)
     }
 }
-
-impl ToValue<'_> for u16 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_u16(self)
+impl AsValue for u16 {
+    fn as_value(&self) -> Value {
+        Value::from_u16(*self)
     }
 }
-
-impl ToValue<'_> for u32 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_u32(self)
+impl AsValue for u32 {
+    fn as_value(&self) -> Value {
+        Value::from_u32(*self)
     }
 }
-
-impl ToValue<'_> for u64 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_u64(self)
+impl AsValue for u64 {
+    fn as_value(&self) -> Value {
+        Value::from_u64(*self)
     }
 }
 
@@ -267,17 +240,14 @@ mod tests {
     fn to_u8() {
         assert_eq!(UInt::from_u8(42).to_u8(), 42);
     }
-
     #[test]
     fn to_u16() {
         assert_eq!(UInt::from_u16(42).to_u16(), 42);
     }
-
     #[test]
     fn to_u32() {
         assert_eq!(UInt::from_u32(42).to_u32(), 42);
     }
-
     #[test]
     fn to_u64() {
         assert_eq!(UInt::from_u64(42).to_u64(), 42);
@@ -288,19 +258,16 @@ mod tests {
     fn to_u8_panics_on_mismatch() {
         UInt::from_u32(1).to_u8();
     }
-
     #[test]
     #[should_panic(expected = "expected u16")]
     fn to_u16_panics_on_mismatch() {
         UInt::from_u32(1).to_u16();
     }
-
     #[test]
     #[should_panic(expected = "expected u32")]
     fn to_u32_panics_on_mismatch() {
         UInt::from_u64(1).to_u32();
     }
-
     #[test]
     #[should_panic(expected = "expected u64")]
     fn to_u64_panics_on_mismatch() {

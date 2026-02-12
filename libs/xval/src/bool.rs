@@ -1,4 +1,4 @@
-use crate::{ToValue, Value};
+use crate::{AsValue, Value};
 
 /// A type-safe wrapper around a [`bool`] value.
 #[repr(transparent)]
@@ -24,7 +24,7 @@ impl Bool {
     }
 }
 
-impl<'a> From<Bool> for Value<'a> {
+impl From<Bool> for Value {
     fn from(value: Bool) -> Self {
         Self::Bool(value)
     }
@@ -36,13 +36,13 @@ impl From<bool> for Bool {
     }
 }
 
-impl<'a> From<bool> for Value<'a> {
+impl From<bool> for Value {
     fn from(value: bool) -> Self {
         Self::from_bool(value)
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn from_bool(value: bool) -> Self {
         Self::Bool(Bool::from_bool(value))
     }
@@ -62,15 +62,15 @@ impl std::fmt::Display for Bool {
     }
 }
 
-impl<'a> ToValue<'a> for Bool {
-    fn to_value(self) -> Value<'a> {
-        Value::from(self)
+impl AsValue for Bool {
+    fn as_value(&self) -> Value {
+        Value::Bool(*self)
     }
 }
 
-impl<'a> ToValue<'a> for bool {
-    fn to_value(self) -> Value<'a> {
-        Value::from_bool(self)
+impl AsValue for bool {
+    fn as_value(&self) -> Value {
+        Value::from_bool(*self)
     }
 }
 

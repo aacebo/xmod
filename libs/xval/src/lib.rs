@@ -10,9 +10,9 @@ pub use num::*;
 pub use object::*;
 pub use string::*;
 
-/// A trait for types that can be converted into a [`Value`].
-pub trait ToValue<'a> {
-    fn to_value(self) -> Value<'a>;
+/// A trait for types that can produce a [`Value`] from a shared reference.
+pub trait AsValue {
+    fn as_value(&self) -> Value;
 }
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
@@ -22,15 +22,14 @@ pub trait ToValue<'a> {
     derive(serde::Deserialize, serde::Serialize),
     serde(untagged)
 )]
-pub enum Value<'a> {
+pub enum Value {
     Bool(Bool),
     Number(Number),
     String(Str),
-    #[cfg_attr(feature = "serde", serde(skip))]
-    Object(Object<'a>),
+    Object(Object),
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn is_bool(&self) -> bool {
         matches!(self, Self::Bool(_))
     }
@@ -74,7 +73,7 @@ impl<'a> Value<'a> {
         }
     }
 
-    pub fn as_object(&self) -> &Object<'a> {
+    pub fn as_object(&self) -> &Object {
         match self {
             Self::Object(v) => v,
             v => panic!(
@@ -102,7 +101,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn is_float(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_float())
     }
@@ -128,7 +127,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn is_f32(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_f32())
     }
@@ -146,7 +145,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_i8())
     }
@@ -180,7 +179,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn is_u8(&self) -> bool {
         matches!(self, Self::Number(v) if v.is_u8())
     }
@@ -214,7 +213,7 @@ impl<'a> Value<'a> {
     }
 }
 
-impl<'a> std::fmt::Display for Value<'a> {
+impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Self::Bool(v) => write!(f, "{}", v),
@@ -225,9 +224,9 @@ impl<'a> std::fmt::Display for Value<'a> {
     }
 }
 
-impl<'a> ToValue<'a> for Value<'a> {
-    fn to_value(self) -> Value<'a> {
-        self
+impl AsValue for Value {
+    fn as_value(&self) -> Value {
+        self.clone()
     }
 }
 
@@ -350,6 +349,30 @@ mod tests {
 
             let v: Value = serde_json::from_str("\"hello\"").unwrap();
             assert_eq!(v.as_str(), "hello");
+        }
+
+        #[test]
+        fn deserialize_object_map() {
+            let v: Value = serde_json::from_str(r#"{"a": 1, "b": "hello"}"#).unwrap();
+            assert!(v.is_object());
+        }
+
+        #[test]
+        fn deserialize_object_array() {
+            let v: Value = serde_json::from_str("[1, true, \"hello\"]").unwrap();
+            assert!(v.is_object());
+        }
+
+        #[test]
+        fn serialize_object_array() {
+            let arr = vec![
+                Value::from_i32(1),
+                Value::from_bool(true),
+                Value::from_str("a"),
+            ];
+            let v = Value::Object(Object::Array(std::sync::Arc::new(arr)));
+            let json = serde_json::to_string(&v).unwrap();
+            assert_eq!(json, "[1,true,\"a\"]");
         }
     }
 }

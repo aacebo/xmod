@@ -1,4 +1,4 @@
-use crate::{ToValue, Value, num::Number};
+use crate::{AsValue, Value, num::Number};
 
 /// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], or [`i64`].
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash)]
@@ -18,15 +18,12 @@ impl Int {
     pub fn from_i8(value: i8) -> Self {
         Self::I8(value)
     }
-
     pub fn from_i16(value: i16) -> Self {
         Self::I16(value)
     }
-
     pub fn from_i32(value: i32) -> Self {
         Self::I32(value)
     }
-
     pub fn from_i64(value: i64) -> Self {
         Self::I64(value)
     }
@@ -34,15 +31,12 @@ impl Int {
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::I8(_))
     }
-
     pub fn is_i16(&self) -> bool {
         matches!(self, Self::I16(_))
     }
-
     pub fn is_i32(&self) -> bool {
         matches!(self, Self::I32(_))
     }
-
     pub fn is_i64(&self) -> bool {
         matches!(self, Self::I64(_))
     }
@@ -90,80 +84,69 @@ impl From<Int> for Number {
         Self::Int(value)
     }
 }
-
 impl From<i8> for Int {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
-
 impl From<i16> for Int {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
-
 impl From<i32> for Int {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
-
 impl From<i64> for Int {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
     }
 }
 
-impl<'a> From<Int> for Value<'a> {
+impl From<Int> for Value {
     fn from(value: Int) -> Self {
         Number::from(value).into()
     }
 }
-
 impl From<i8> for Number {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
-
 impl From<i16> for Number {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
-
 impl From<i32> for Number {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
-
 impl From<i64> for Number {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
     }
 }
 
-impl<'a> From<i8> for Value<'a> {
+impl From<i8> for Value {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
-
-impl<'a> From<i16> for Value<'a> {
+impl From<i16> for Value {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
-
-impl<'a> From<i32> for Value<'a> {
+impl From<i32> for Value {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
-
-impl<'a> From<i64> for Value<'a> {
+impl From<i64> for Value {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
     }
@@ -173,33 +156,27 @@ impl Number {
     pub fn from_i8(value: i8) -> Self {
         Self::Int(Int::from_i8(value))
     }
-
     pub fn from_i16(value: i16) -> Self {
         Self::Int(Int::from_i16(value))
     }
-
     pub fn from_i32(value: i32) -> Self {
         Self::Int(Int::from_i32(value))
     }
-
     pub fn from_i64(value: i64) -> Self {
         Self::Int(Int::from_i64(value))
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn from_i8(value: i8) -> Self {
         Self::Number(Number::from_i8(value))
     }
-
     pub fn from_i16(value: i16) -> Self {
         Self::Number(Number::from_i16(value))
     }
-
     pub fn from_i32(value: i32) -> Self {
         Self::Number(Number::from_i32(value))
     }
-
     pub fn from_i64(value: i64) -> Self {
         Self::Number(Number::from_i64(value))
     }
@@ -216,33 +193,29 @@ impl std::fmt::Display for Int {
     }
 }
 
-impl ToValue<'_> for Int {
-    fn to_value(self) -> Value<'static> {
-        Number::Int(self).into()
+impl AsValue for Int {
+    fn as_value(&self) -> Value {
+        Value::Number(Number::Int(*self))
     }
 }
-
-impl ToValue<'_> for i8 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_i8(self)
+impl AsValue for i8 {
+    fn as_value(&self) -> Value {
+        Value::from_i8(*self)
     }
 }
-
-impl ToValue<'_> for i16 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_i16(self)
+impl AsValue for i16 {
+    fn as_value(&self) -> Value {
+        Value::from_i16(*self)
     }
 }
-
-impl ToValue<'_> for i32 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_i32(self)
+impl AsValue for i32 {
+    fn as_value(&self) -> Value {
+        Value::from_i32(*self)
     }
 }
-
-impl ToValue<'_> for i64 {
-    fn to_value(self) -> Value<'static> {
-        Value::from_i64(self)
+impl AsValue for i64 {
+    fn as_value(&self) -> Value {
+        Value::from_i64(*self)
     }
 }
 
@@ -267,17 +240,14 @@ mod tests {
     fn to_i8() {
         assert_eq!(Int::from_i8(42).to_i8(), 42);
     }
-
     #[test]
     fn to_i16() {
         assert_eq!(Int::from_i16(42).to_i16(), 42);
     }
-
     #[test]
     fn to_i32() {
         assert_eq!(Int::from_i32(42).to_i32(), 42);
     }
-
     #[test]
     fn to_i64() {
         assert_eq!(Int::from_i64(42).to_i64(), 42);
@@ -288,19 +258,16 @@ mod tests {
     fn to_i8_panics_on_mismatch() {
         Int::from_i32(1).to_i8();
     }
-
     #[test]
     #[should_panic(expected = "expected i16")]
     fn to_i16_panics_on_mismatch() {
         Int::from_i32(1).to_i16();
     }
-
     #[test]
     #[should_panic(expected = "expected i32")]
     fn to_i32_panics_on_mismatch() {
         Int::from_i64(1).to_i32();
     }
-
     #[test]
     #[should_panic(expected = "expected i64")]
     fn to_i64_panics_on_mismatch() {

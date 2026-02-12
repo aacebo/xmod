@@ -1,4 +1,4 @@
-use crate::{ToValue, Value};
+use crate::{AsValue, Value};
 
 /// A type-safe wrapper around a [`str`] value.
 #[repr(transparent)]
@@ -28,7 +28,7 @@ impl Str {
     }
 }
 
-impl<'a> From<Str> for Value<'a> {
+impl From<Str> for Value {
     fn from(value: Str) -> Self {
         Self::String(value)
     }
@@ -40,7 +40,7 @@ impl From<&str> for Str {
     }
 }
 
-impl<'a> From<&str> for Value<'a> {
+impl From<&str> for Value {
     fn from(value: &str) -> Self {
         Self::from_str(value)
     }
@@ -52,13 +52,13 @@ impl From<String> for Str {
     }
 }
 
-impl<'a> From<String> for Value<'a> {
+impl From<String> for Value {
     fn from(value: String) -> Self {
         Self::from_string(value)
     }
 }
 
-impl<'a> Value<'a> {
+impl Value {
     pub fn from_str(value: &str) -> Self {
         Self::String(Str::from_str(value))
     }
@@ -82,21 +82,9 @@ impl std::fmt::Display for Str {
     }
 }
 
-impl<'a> ToValue<'a> for Str {
-    fn to_value(self) -> Value<'a> {
-        Value::from(self)
-    }
-}
-
-impl<'a> ToValue<'a> for &str {
-    fn to_value(self) -> Value<'a> {
-        Value::from_str(self)
-    }
-}
-
-impl<'a> ToValue<'a> for String {
-    fn to_value(self) -> Value<'a> {
-        Value::from_string(self)
+impl AsValue for Str {
+    fn as_value(&self) -> Value {
+        Value::String(self.clone())
     }
 }
 
