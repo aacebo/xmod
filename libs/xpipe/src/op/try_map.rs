@@ -100,7 +100,7 @@ mod tests {
     #[test]
     fn try_map_pipe_trait() {
         let result = Task::from("42".to_string())
-            .try_map(|s: String| s.parse::<i32>().map_err(|e| TaskError::new(e.to_string())))
+            .try_map(|s| s.parse::<i32>().map_err(|e| TaskError::new(e.to_string())))
             .eval();
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
