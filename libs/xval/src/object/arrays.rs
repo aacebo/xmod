@@ -36,9 +36,9 @@ impl Array for Vec<Value> {
     }
 }
 
-impl AsValue for Vec<Value> {
+impl<T: Clone + AsValue + 'static> AsValue for Vec<T> {
     fn as_value(&self) -> Value {
-        Value::Object(Object::Array(Arc::new(self.clone())))
+        Value::from_array(self.iter().map(|v| v.as_value()).collect::<Vec<_>>())
     }
 }
 
@@ -166,5 +166,55 @@ mod tests {
         let v = a.as_value();
         assert!(v.is_object());
         assert!(v.is_array());
+    }
+
+    #[test]
+    fn vec_i32_as_value() {
+        let v = vec![1i32, 2, 3].as_value();
+        assert!(v.is_array());
+        let arr = v.as_array();
+        assert_eq!(arr.len(), 3);
+        assert_eq!(arr.index(0).unwrap().as_value().to_i32(), 1);
+        assert_eq!(arr.index(1).unwrap().as_value().to_i32(), 2);
+        assert_eq!(arr.index(2).unwrap().as_value().to_i32(), 3);
+    }
+
+    #[test]
+    fn vec_bool_as_value() {
+        let v = vec![true, false].as_value();
+        assert!(v.is_array());
+        let arr = v.as_array();
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr.index(0).unwrap().as_value().to_bool(), true);
+        assert_eq!(arr.index(1).unwrap().as_value().to_bool(), false);
+    }
+
+    #[test]
+    fn vec_string_as_value() {
+        let v = vec![String::from("a"), String::from("b")].as_value();
+        assert!(v.is_array());
+        let arr = v.as_array();
+        assert_eq!(arr.len(), 2);
+        assert_eq!(arr.index(0).unwrap().as_value().as_str(), "a");
+        assert_eq!(arr.index(1).unwrap().as_value().as_str(), "b");
+    }
+
+    #[test]
+    fn vec_empty_as_value() {
+        let v = Vec::<i32>::new().as_value();
+        assert!(v.is_array());
+        assert_eq!(v.as_array().len(), 0);
+    }
+
+    #[test]
+    fn vec_nested_as_value() {
+        let v = vec![vec![1i32, 2], vec![3, 4]].as_value();
+        assert!(v.is_array());
+        let outer = v.as_array();
+        assert_eq!(outer.len(), 2);
+        let inner = outer.index(0).unwrap().as_value();
+        assert!(inner.is_array());
+        assert_eq!(inner.as_array().len(), 2);
+        assert_eq!(inner.as_array().index(0).unwrap().as_value().to_i32(), 1);
     }
 }

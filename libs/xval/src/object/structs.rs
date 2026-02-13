@@ -48,9 +48,13 @@ impl From<HashMap<Ident, Value>> for Value {
     }
 }
 
-impl AsValue for HashMap<Ident, Value> {
+impl<T: Clone + AsValue + 'static> AsValue for HashMap<Ident, T> {
     fn as_value(&self) -> Value {
-        Value::Object(Object::Struct(Arc::new(self.clone())))
+        Value::from_struct(
+            self.iter()
+                .map(|(k, v)| (k.clone(), v.as_value()))
+                .collect::<HashMap<Ident, Value>>(),
+        )
     }
 }
 
@@ -184,5 +188,36 @@ mod tests {
         let v = s.as_value();
         assert!(v.is_object());
         assert!(v.is_struct());
+    }
+
+    #[test]
+    fn hashmap_i32_as_value() {
+        let mut map = HashMap::new();
+        map.insert(Ident::key("x"), 10i32);
+        map.insert(Ident::key("y"), 20i32);
+        let v = map.as_value();
+        assert!(v.is_struct());
+        let s = v.as_struct();
+        assert_eq!(s.len(), 2);
+        assert_eq!(s.field("x".into()).unwrap().as_value().to_i32(), 10);
+        assert_eq!(s.field("y".into()).unwrap().as_value().to_i32(), 20);
+    }
+
+    #[test]
+    fn hashmap_string_as_value() {
+        let mut map = HashMap::new();
+        map.insert(Ident::key("name"), String::from("alice"));
+        let v = map.as_value();
+        assert!(v.is_struct());
+        let s = v.as_struct();
+        assert_eq!(s.field("name".into()).unwrap().as_value().as_str(), "alice");
+    }
+
+    #[test]
+    fn hashmap_empty_as_value() {
+        let map: HashMap<Ident, i32> = HashMap::new();
+        let v = map.as_value();
+        assert!(v.is_struct());
+        assert_eq!(v.as_struct().len(), 0);
     }
 }

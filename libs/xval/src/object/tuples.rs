@@ -91,12 +91,6 @@ macro_rules! impl_tuple {
             }
         }
 
-        impl AsValue for ( $(impl_tuple!(@replace $idx Value),)+ ) {
-            fn as_value(&self) -> Value {
-                Value::Object(Object::Tuple(Arc::new(self.clone())))
-            }
-        }
-
         impl From<( $(impl_tuple!(@replace $idx Value),)+ )> for Object {
             fn from(value: ( $(impl_tuple!(@replace $idx Value),)+ )) -> Self {
                 Self::Tuple(Arc::new(value))
@@ -129,6 +123,29 @@ impl_tuple!("Tuple9", 0, 1, 2, 3, 4, 5, 6, 7, 8);
 impl_tuple!("Tuple10", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 impl_tuple!("Tuple11", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 impl_tuple!("Tuple12", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
+
+macro_rules! impl_tuple_as_value {
+    ($($idx:tt $T:ident),+) => {
+        impl<$($T: Clone + AsValue + 'static),+> AsValue for ($($T,)+) {
+            fn as_value(&self) -> Value {
+                Value::from_tuple(($(self.$idx.as_value(),)+))
+            }
+        }
+    };
+}
+
+impl_tuple_as_value!(0 A);
+impl_tuple_as_value!(0 A, 1 B);
+impl_tuple_as_value!(0 A, 1 B, 2 C);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K);
+impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K, 11 L);
 
 #[cfg(test)]
 mod tests {
@@ -195,5 +212,37 @@ mod tests {
         let v = t.as_value();
         assert!(v.is_object());
         assert!(v.is_tuple());
+    }
+
+    #[test]
+    fn tuple_i32_as_value() {
+        let v = (1i32,).as_value();
+        assert!(v.is_tuple());
+        let t = v.as_tuple();
+        assert_eq!(t.len(), 1);
+        assert_eq!(t.index(0).unwrap().as_value().to_i32(), 1);
+    }
+
+    #[test]
+    fn tuple_mixed_as_value() {
+        let v = (1i32, true, String::from("hi")).as_value();
+        assert!(v.is_tuple());
+        let t = v.as_tuple();
+        assert_eq!(t.len(), 3);
+        assert_eq!(t.index(0).unwrap().as_value().to_i32(), 1);
+        assert_eq!(t.index(1).unwrap().as_value().to_bool(), true);
+        assert_eq!(t.index(2).unwrap().as_value().as_str(), "hi");
+    }
+
+    #[test]
+    fn tuple_nested_as_value() {
+        let v = (vec![1i32, 2], true).as_value();
+        assert!(v.is_tuple());
+        let t = v.as_tuple();
+        assert_eq!(t.len(), 2);
+        let inner = t.index(0).unwrap().as_value();
+        assert!(inner.is_array());
+        assert_eq!(inner.as_array().len(), 2);
+        assert_eq!(t.index(1).unwrap().as_value().to_bool(), true);
     }
 }
