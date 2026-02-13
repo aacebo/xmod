@@ -28,6 +28,7 @@ pub trait AsValue {
     serde(untagged)
 )]
 pub enum Value {
+    Null,
     Bool(Bool),
     Number(Number),
     String(Str),
@@ -35,6 +36,10 @@ pub enum Value {
 }
 
 impl Value {
+    pub fn is_null(&self) -> bool {
+        matches!(self, Self::Null)
+    }
+
     pub fn is_bool(&self) -> bool {
         matches!(self, Self::Bool(_))
     }
@@ -98,6 +103,7 @@ impl Value {
 
     pub fn type_id(&self) -> std::any::TypeId {
         match self {
+            Self::Null => panic!("attempt to call Value::type_id on Value::Null"),
             Self::Bool(v) => v.type_id(),
             Self::Number(v) => v.type_id(),
             Self::String(v) => v.type_id(),
@@ -247,6 +253,7 @@ impl Value {
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Null => write!(f, "<null>"),
             Self::Bool(v) => write!(f, "{:#?}", v),
             Self::Number(v) => write!(f, "{:#?}", v),
             Self::String(v) => write!(f, "{:#?}", v),
@@ -258,6 +265,7 @@ impl std::fmt::Debug for Value {
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
+            Self::Null => write!(f, "<null>"),
             Self::Bool(v) => write!(f, "{}", v),
             Self::Number(v) => write!(f, "{}", v),
             Self::String(v) => write!(f, "{}", v),
@@ -271,6 +279,7 @@ impl Eq for Value {}
 impl PartialEq for Value {
     fn eq(&self, other: &Self) -> bool {
         match self {
+            Self::Null => other.is_null(),
             Self::Bool(v) => other.is_bool() && v.eq(other.as_bool()),
             Self::Number(v) => other.is_number() && v.eq(other.as_number()),
             Self::String(v) => other.is_string() && v.eq(other.as_string()),
@@ -315,18 +324,28 @@ mod tests {
 
     #[test]
     fn is_predicates() {
+        let null = Value::Null;
+        assert!(null.is_null());
+        assert!(!null.is_bool());
+        assert!(!null.is_number());
+        assert!(!null.is_string());
+        assert!(!null.is_object());
+
         let b = Value::from_bool(true);
         assert!(b.is_bool());
+        assert!(!b.is_null());
         assert!(!b.is_number());
         assert!(!b.is_string());
 
         let n = Value::from_i32(1);
         assert!(n.is_number());
+        assert!(!n.is_null());
         assert!(!n.is_bool());
         assert!(!n.is_string());
 
         let s = Value::from_str("hello");
         assert!(s.is_string());
+        assert!(!s.is_null());
         assert!(!s.is_bool());
         assert!(!s.is_number());
     }
@@ -368,7 +387,59 @@ mod tests {
     }
 
     #[test]
+    fn debug_null() {
+        assert_eq!(format!("{:?}", Value::Null), "<null>");
+    }
+
+    #[test]
+    fn eq_null() {
+        assert_eq!(Value::Null, Value::Null);
+        assert_ne!(Value::Null, Value::from_bool(true));
+        assert_ne!(Value::Null, Value::from_i32(0));
+        assert_ne!(Value::Null, Value::from_str(""));
+    }
+
+    #[test]
+    fn clone_null() {
+        let v = Value::Null;
+        let cloned = v.clone();
+        assert!(cloned.is_null());
+        assert_eq!(v, cloned);
+    }
+
+    #[test]
+    #[should_panic(expected = "Value::Null")]
+    fn type_id_panics_on_null() {
+        Value::Null.type_id();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Bool")]
+    fn as_bool_panics_on_null() {
+        Value::Null.as_bool();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Number")]
+    fn as_number_panics_on_null() {
+        Value::Null.as_number();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected String")]
+    fn as_string_panics_on_null() {
+        Value::Null.as_string();
+    }
+
+    #[test]
+    #[should_panic(expected = "expected Object")]
+    fn as_object_panics_on_null() {
+        Value::Null.as_object();
+    }
+
+    #[test]
     fn display() {
+        assert_eq!(Value::Null.to_string(), "<null>");
         assert_eq!(Value::from_bool(true).to_string(), "true");
         assert_eq!(Value::from_i32(42).to_string(), "42");
         assert_eq!(Value::from_f64(3.14).to_string(), "3.14");
@@ -440,6 +511,17 @@ mod tests {
         fn deserialize_object_array() {
             let v: Value = serde_json::from_str("[1, true, \"hello\"]").unwrap();
             assert!(v.is_object());
+        }
+
+        #[test]
+        fn serialize_null() {
+            assert_eq!(serde_json::to_string(&Value::Null).unwrap(), "null");
+        }
+
+        #[test]
+        fn deserialize_null() {
+            let v: Value = serde_json::from_str("null").unwrap();
+            assert!(v.is_null());
         }
 
         #[test]

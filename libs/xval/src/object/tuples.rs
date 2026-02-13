@@ -77,10 +77,9 @@ macro_rules! impl_tuple {
             }
 
             fn items(&self) -> TupleIter<'_> {
-                let items: Vec<&dyn AsValue> = vec![
+                TupleIter::new(vec![
                     $( &self.$idx as &dyn AsValue, )+
-                ];
-                TupleIter::new(items.into_iter())
+                ].into_iter())
             }
 
             fn index(&self, i: usize) -> Option<&dyn AsValue> {
@@ -103,12 +102,8 @@ macro_rules! impl_tuple {
             }
         }
     };
-
     (@replace $_t:tt $sub:tt) => { $sub };
-
-    (@count $($t:tt),+) => {
-        0usize $(+ impl_tuple!(@replace $t 1usize))+
-    };
+    (@count $($t:tt),+) => { 0usize $(+ impl_tuple!(@replace $t 1usize))+ };
 }
 
 impl_tuple!("Tuple1", 0);

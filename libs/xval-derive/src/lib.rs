@@ -9,7 +9,7 @@ pub fn derive_value(input: TokenStream) -> TokenStream {
 
     match &input.data {
         syn::Data::Struct(data) => derive_struct_value(&input, data),
-        syn::Data::Enum(data) => derive_enum_value(&input, data),
+        // syn::Data::Enum(data) => derive_enum_value(&input, data),
         _ => quote!().into(),
     }
 }
@@ -62,6 +62,31 @@ fn derive_struct_value(input: &syn::DeriveInput, data: &syn::DataStruct) -> Toke
     .into()
 }
 
-fn derive_enum_value(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
-    quote! {}.into()
-}
+// fn derive_enum_value(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
+//     let ident = &input.ident;
+//     let len = data.variants.len();
+//     let variants = data.variants
+//         .iter()
+//         .map(|variant| {
+//             let variant_ident = variant.ident.clone();
+
+//             match variant.fields {
+//                 syn::Fields::Named(named) => quote!(),
+//                 _ => todo!(),
+//             }
+//         })
+//         .collect::<Vec<_>>();
+
+//     quote! {
+//         impl ::xval::AsValue for #ident {
+//             fn as_value(&self) -> ::xval::Value {
+//                 match self {
+//                     #(
+//                         Self::#variants =>
+//                     )*
+//                 }
+//             }
+//         }
+//     }
+//     .into()
+// }
