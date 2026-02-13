@@ -4,5 +4,6 @@
   "rust-analyzer.cargo.autoreload": true,
   "rust-analyzer.cargo.targetDir": true,
   "terminal.integrated.suggest.enabled": false,
-  "rust-analyzer.restartServerOnConfigChange": true
+  "rust-analyzer.restartServerOnConfigChange": true,
+  "rust-analyzer.check.workspace": false
 }
