@@ -39,7 +39,7 @@ mod tests {
 
     #[test]
     fn transforms_value() {
-        let result = Task::from(5).pipe(Map::new(|x| x * 2)).eval();
+        let result = Task::from(5).pipe(Map::new(|x: i32| x * 2)).eval();
         assert_eq!(result, 10);
     }
 
@@ -52,7 +52,9 @@ mod tests {
     #[test]
     fn with_closure() {
         let multiplier = 3;
-        let result = Task::from(7).pipe(Map::new(move |x| x * multiplier)).eval();
+        let result = Task::from(7)
+            .pipe(Map::new(move |x: i32| x * multiplier))
+            .eval();
         assert_eq!(result, 21);
     }
 

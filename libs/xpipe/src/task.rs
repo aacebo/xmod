@@ -1,56 +1,51 @@
+use std::cell::LazyCell;
+
 use crate::{Operator, Pipe};
 
-pub enum Task<T> {
-    Static(T),
-    Lazy(Box<dyn FnOnce() -> T + Send + Sync>),
+pub struct Task<T>(LazyCell<T, Box<dyn FnOnce() -> T + Send>>);
+
+impl<T: Send + 'static> Task<T> {
+    pub fn from_static(value: T) -> Self {
+        Self(LazyCell::new(Box::new(move || value)))
+    }
 }
 
 impl<T> Task<T> {
-    pub fn from_static(value: T) -> Self {
-        Self::Static(value)
-    }
-
-    pub fn from_lazy<H: FnOnce() -> T + Send + Sync + 'static>(handler: H) -> Self {
-        Self::Lazy(Box::new(handler))
-    }
-
-    pub fn is_static(&self) -> bool {
-        matches!(self, Self::Static(_))
-    }
-
-    pub fn is_lazy(&self) -> bool {
-        matches!(self, Self::Lazy(_))
+    pub fn from_lazy(factory: impl FnOnce() -> T + Send + 'static) -> Self {
+        Self(LazyCell::new(Box::new(factory)))
     }
 
     pub fn eval(self) -> T {
-        match self {
-            Self::Static(v) => v,
-            Self::Lazy(v) => v(),
-        }
+        let ptr = LazyCell::force(&self.0) as *const T;
+        let value = unsafe { std::ptr::read(ptr) };
+        std::mem::forget(self);
+        value
     }
 }
 
-impl<T> From<T> for Task<T> {
+impl<T> std::ops::Deref for Task<T> {
+    type Target = T;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl<T: Send + 'static> From<T> for Task<T> {
     fn from(value: T) -> Self {
-        Self::Static(value)
+        Self::from_static(value)
     }
 }
 
 impl<T: std::fmt::Debug> std::fmt::Debug for Task<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Static(v) => write!(f, "Task<{}>::Static({:#?})", std::any::type_name::<T>(), v),
-            Self::Lazy(_) => write!(f, "Task<{}>::Lazy", std::any::type_name::<T>()),
-        }
+        write!(f, "Task<{}>({:#?})", std::any::type_name::<T>(), &**self)
     }
 }
 
 impl<T: std::fmt::Display> std::fmt::Display for Task<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::Static(v) => write!(f, "Task<{}>::Static({})", std::any::type_name::<T>(), v),
-            Self::Lazy(_) => write!(f, "Task<{}>::Lazy", std::any::type_name::<T>()),
-        }
+        write!(f, "Task<{}>({})", std::any::type_name::<T>(), &**self)
     }
 }
 
