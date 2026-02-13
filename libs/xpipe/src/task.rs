@@ -2,7 +2,7 @@ use crate::{Operator, Pipe};
 
 pub enum Task<T> {
     Static(T),
-    Lazy(Box<dyn Fn() -> T + Send>),
+    Lazy(Box<dyn Fn() -> T + Send + Sync>),
 }
 
 impl<T> Task<T> {
@@ -10,7 +10,7 @@ impl<T> Task<T> {
         Self::Static(value)
     }
 
-    pub fn from_lazy<H: Fn() -> T + Send + 'static>(handler: H) -> Self {
+    pub fn from_lazy<H: Fn() -> T + Send + Sync + 'static>(handler: H) -> Self {
         Self::Lazy(Box::new(handler))
     }
 
@@ -39,12 +39,7 @@ impl<T> From<T> for Task<T> {
 impl<T: std::fmt::Debug> std::fmt::Debug for Task<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Static(v) => write!(
-                f,
-                "Task<{}>::Static({:#?})",
-                std::any::type_name_of_val(v),
-                v
-            ),
+            Self::Static(v) => write!(f, "Task<{}>::Static({:#?})", std::any::type_name::<T>(), v),
             Self::Lazy(_) => write!(f, "Task<{}>::Lazy", std::any::type_name::<T>()),
         }
     }
@@ -53,7 +48,7 @@ impl<T: std::fmt::Debug> std::fmt::Debug for Task<T> {
 impl<T: std::fmt::Display> std::fmt::Display for Task<T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Self::Static(v) => write!(f, "Task<{}>::Static({})", std::any::type_name_of_val(v), v),
+            Self::Static(v) => write!(f, "Task<{}>::Static({})", std::any::type_name::<T>(), v),
             Self::Lazy(_) => write!(f, "Task<{}>::Lazy", std::any::type_name::<T>()),
         }
     }
