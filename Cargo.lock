@@ -106,6 +106,9 @@ dependencies = [
 [[package]]
 name = "xpipe"
 version = "0.0.0"
+dependencies = [
+ "xok",
+]
 
 [[package]]
 name = "xsch"

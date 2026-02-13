@@ -2,7 +2,7 @@ use crate::{Operator, Pipe};
 
 pub enum Task<T> {
     Static(T),
-    Lazy(Box<dyn Fn() -> T + Send + Sync>),
+    Lazy(Box<dyn FnOnce() -> T + Send + Sync>),
 }
 
 impl<T> Task<T> {
@@ -10,7 +10,7 @@ impl<T> Task<T> {
         Self::Static(value)
     }
 
-    pub fn from_lazy<H: Fn() -> T + Send + Sync + 'static>(handler: H) -> Self {
+    pub fn from_lazy<H: FnOnce() -> T + Send + Sync + 'static>(handler: H) -> Self {
         Self::Lazy(Box::new(handler))
     }
 
