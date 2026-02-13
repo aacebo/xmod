@@ -56,6 +56,7 @@ impl PartialEq<f32> for Float {
         matches!(self, Self::F32(v) if v == other)
     }
 }
+
 impl PartialEq<f64> for Float {
     fn eq(&self, other: &f64) -> bool {
         matches!(self, Self::F64(v) if v == other)
@@ -67,6 +68,7 @@ impl PartialEq<f32> for Number {
         matches!(self, Self::Float(v) if v == other)
     }
 }
+
 impl PartialEq<f64> for Number {
     fn eq(&self, other: &f64) -> bool {
         matches!(self, Self::Float(v) if v == other)
@@ -78,6 +80,7 @@ impl PartialEq<f32> for Value {
         matches!(self, Self::Number(v) if v == other)
     }
 }
+
 impl PartialEq<f64> for Value {
     fn eq(&self, other: &f64) -> bool {
         matches!(self, Self::Number(v) if v == other)

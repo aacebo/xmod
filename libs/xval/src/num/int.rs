@@ -18,12 +18,15 @@ impl Int {
     pub fn from_i8(value: i8) -> Self {
         Self::I8(value)
     }
+
     pub fn from_i16(value: i16) -> Self {
         Self::I16(value)
     }
+
     pub fn from_i32(value: i32) -> Self {
         Self::I32(value)
     }
+
     pub fn from_i64(value: i64) -> Self {
         Self::I64(value)
     }
@@ -31,12 +34,15 @@ impl Int {
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::I8(_))
     }
+
     pub fn is_i16(&self) -> bool {
         matches!(self, Self::I16(_))
     }
+
     pub fn is_i32(&self) -> bool {
         matches!(self, Self::I32(_))
     }
+
     pub fn is_i64(&self) -> bool {
         matches!(self, Self::I64(_))
     }
@@ -84,16 +90,19 @@ impl PartialEq<i8> for Int {
         matches!(self, Self::I8(v) if v == other)
     }
 }
+
 impl PartialEq<i16> for Int {
     fn eq(&self, other: &i16) -> bool {
         matches!(self, Self::I16(v) if v == other)
     }
 }
+
 impl PartialEq<i32> for Int {
     fn eq(&self, other: &i32) -> bool {
         matches!(self, Self::I32(v) if v == other)
     }
 }
+
 impl PartialEq<i64> for Int {
     fn eq(&self, other: &i64) -> bool {
         matches!(self, Self::I64(v) if v == other)
@@ -105,16 +114,19 @@ impl PartialEq<i8> for Number {
         matches!(self, Self::Int(v) if v == other)
     }
 }
+
 impl PartialEq<i16> for Number {
     fn eq(&self, other: &i16) -> bool {
         matches!(self, Self::Int(v) if v == other)
     }
 }
+
 impl PartialEq<i32> for Number {
     fn eq(&self, other: &i32) -> bool {
         matches!(self, Self::Int(v) if v == other)
     }
 }
+
 impl PartialEq<i64> for Number {
     fn eq(&self, other: &i64) -> bool {
         matches!(self, Self::Int(v) if v == other)
@@ -126,16 +138,19 @@ impl PartialEq<i8> for Value {
         matches!(self, Self::Number(v) if v == other)
     }
 }
+
 impl PartialEq<i16> for Value {
     fn eq(&self, other: &i16) -> bool {
         matches!(self, Self::Number(v) if v == other)
     }
 }
+
 impl PartialEq<i32> for Value {
     fn eq(&self, other: &i32) -> bool {
         matches!(self, Self::Number(v) if v == other)
     }
 }
+
 impl PartialEq<i64> for Value {
     fn eq(&self, other: &i64) -> bool {
         matches!(self, Self::Number(v) if v == other)
@@ -147,21 +162,25 @@ impl From<Int> for Number {
         Self::Int(value)
     }
 }
+
 impl From<i8> for Int {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
+
 impl From<i16> for Int {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
+
 impl From<i32> for Int {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
+
 impl From<i64> for Int {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
@@ -173,21 +192,25 @@ impl From<Int> for Value {
         Number::from(value).into()
     }
 }
+
 impl From<i8> for Number {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
     }
 }
+
 impl From<i16> for Number {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
+
 impl From<i32> for Number {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
+
 impl From<i64> for Number {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
@@ -199,16 +222,19 @@ impl From<i8> for Value {
         Self::from_i8(value)
     }
 }
+
 impl From<i16> for Value {
     fn from(value: i16) -> Self {
         Self::from_i16(value)
     }
 }
+
 impl From<i32> for Value {
     fn from(value: i32) -> Self {
         Self::from_i32(value)
     }
 }
+
 impl From<i64> for Value {
     fn from(value: i64) -> Self {
         Self::from_i64(value)
@@ -219,12 +245,15 @@ impl Number {
     pub fn from_i8(value: i8) -> Self {
         Self::Int(Int::from_i8(value))
     }
+
     pub fn from_i16(value: i16) -> Self {
         Self::Int(Int::from_i16(value))
     }
+
     pub fn from_i32(value: i32) -> Self {
         Self::Int(Int::from_i32(value))
     }
+
     pub fn from_i64(value: i64) -> Self {
         Self::Int(Int::from_i64(value))
     }
@@ -234,12 +263,15 @@ impl Value {
     pub fn from_i8(value: i8) -> Self {
         Self::Number(Number::from_i8(value))
     }
+
     pub fn from_i16(value: i16) -> Self {
         Self::Number(Number::from_i16(value))
     }
+
     pub fn from_i32(value: i32) -> Self {
         Self::Number(Number::from_i32(value))
     }
+
     pub fn from_i64(value: i64) -> Self {
         Self::Number(Number::from_i64(value))
     }
@@ -272,21 +304,25 @@ impl AsValue for Int {
         Value::Number(Number::Int(*self))
     }
 }
+
 impl AsValue for i8 {
     fn as_value(&self) -> Value {
         Value::from_i8(*self)
     }
 }
+
 impl AsValue for i16 {
     fn as_value(&self) -> Value {
         Value::from_i16(*self)
     }
 }
+
 impl AsValue for i32 {
     fn as_value(&self) -> Value {
         Value::from_i32(*self)
     }
 }
+
 impl AsValue for i64 {
     fn as_value(&self) -> Value {
         Value::from_i64(*self)
@@ -314,14 +350,17 @@ mod tests {
     fn to_i8() {
         assert_eq!(Int::from_i8(42).to_i8(), 42);
     }
+
     #[test]
     fn to_i16() {
         assert_eq!(Int::from_i16(42).to_i16(), 42);
     }
+
     #[test]
     fn to_i32() {
         assert_eq!(Int::from_i32(42).to_i32(), 42);
     }
+
     #[test]
     fn to_i64() {
         assert_eq!(Int::from_i64(42).to_i64(), 42);
@@ -332,16 +371,19 @@ mod tests {
     fn to_i8_panics_on_mismatch() {
         Int::from_i32(1).to_i8();
     }
+
     #[test]
     #[should_panic(expected = "expected i16")]
     fn to_i16_panics_on_mismatch() {
         Int::from_i32(1).to_i16();
     }
+
     #[test]
     #[should_panic(expected = "expected i32")]
     fn to_i32_panics_on_mismatch() {
         Int::from_i64(1).to_i32();
     }
+
     #[test]
     #[should_panic(expected = "expected i64")]
     fn to_i64_panics_on_mismatch() {
