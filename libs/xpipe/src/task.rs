@@ -37,6 +37,12 @@ impl<T> std::ops::Deref for Task<T> {
     }
 }
 
+impl<T> AsRef<T> for Task<T> {
+    fn as_ref(&self) -> &T {
+        &self.0
+    }
+}
+
 impl<T: Send + 'static> From<T> for Task<T> {
     fn from(value: T) -> Self {
         Self::from_static(value)
