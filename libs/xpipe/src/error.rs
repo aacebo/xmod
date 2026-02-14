@@ -28,11 +28,7 @@ impl XError for TaskError {
         "TaskError"
     }
 
-    fn code(&self) -> u16 {
-        500
-    }
-
-    fn category(&self) -> &'static str {
-        "task"
+    fn module(&self) -> &'static str {
+        module_path!()
     }
 }
