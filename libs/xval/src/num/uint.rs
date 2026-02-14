@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], or [`u64`].
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

@@ -23,4 +23,11 @@ pub trait XError: std::error::Error {
     fn message(&self) -> Cow<'_, str> {
         Cow::Owned(self.to_string())
     }
+
+    fn boxed(self) -> Box<Self>
+    where
+        Self: Sized,
+    {
+        Box::new(self)
+    }
 }

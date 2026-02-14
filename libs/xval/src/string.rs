@@ -2,7 +2,7 @@ use crate::{AsValue, Value};
 
 /// A type-safe wrapper around a [`str`] value.
 #[repr(transparent)]
-#[derive(Clone, PartialEq, Eq, Hash)]
+#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

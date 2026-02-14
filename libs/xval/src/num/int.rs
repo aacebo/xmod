@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], or [`i64`].
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

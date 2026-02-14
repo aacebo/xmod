@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

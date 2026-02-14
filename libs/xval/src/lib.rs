@@ -288,6 +288,18 @@ impl PartialEq for Value {
     }
 }
 
+impl Ord for Value {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_string().cmp(&other.to_string())
+    }
+}
+
+impl PartialOrd for Value {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_string().partial_cmp(&other.to_string())
+    }
+}
+
 impl AsValue for Value {
     fn as_value(&self) -> Value {
         self.clone()

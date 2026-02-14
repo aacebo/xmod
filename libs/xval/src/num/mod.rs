@@ -9,7 +9,7 @@ pub use uint::*;
 use crate::{AsValue, Value};
 
 /// A numeric value that can hold a float, signed integer, or unsigned integer.
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone, PartialEq, PartialOrd)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

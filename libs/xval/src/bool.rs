@@ -2,7 +2,7 @@ use crate::{AsValue, Value};
 
 /// A type-safe wrapper around a [`bool`] value.
 #[repr(transparent)]
-#[derive(Copy, Clone, PartialEq, Eq, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),

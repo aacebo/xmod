@@ -1,0 +1,15 @@
+[package]
+name = "xflux"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+readme.workspace = true
+documentation.workspace = true
+homepage.workspace = true
+repository.workspace = true
+
+[dependencies]
+async-trait = "0.1"
+
+xok = { workspace = true }
+xval = { workspace = true }

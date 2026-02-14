@@ -141,7 +141,7 @@ mod tests {
         let delay_duration = Duration::from_millis(100);
         let result = task!(42).pipe(Delay::new(delay_duration)).eval();
         let elapsed = start.elapsed();
-        
+
         assert!(elapsed >= delay_duration);
         assert_eq!(result, 42);
     }
