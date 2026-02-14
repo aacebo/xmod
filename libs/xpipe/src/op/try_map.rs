@@ -1,15 +1,15 @@
 use crate::{Operator, Pipe, Task};
 
-pub struct TryMap<Input, Output>(Box<dyn FnOnce(Input) -> crate::Result<Output> + Send + Sync>);
+pub struct TryMap<Input, Output>(Box<dyn FnOnce(Input) -> crate::Result<Output> + Send>);
 
 impl<Input, Output> TryMap<Input, Output>
 where
-    Input: Send + Sync + 'static,
-    Output: Send + Sync + 'static,
+    Input: Send + 'static,
+    Output: Send + 'static,
 {
     pub fn new<F>(f: F) -> Self
     where
-        F: FnOnce(Input) -> crate::Result<Output> + Send + Sync + 'static,
+        F: FnOnce(Input) -> crate::Result<Output> + Send + 'static,
     {
         Self(Box::new(f))
     }
@@ -17,8 +17,8 @@ where
 
 impl<Input, Output> Operator<Input> for TryMap<Input, Output>
 where
-    Input: Send + Sync + 'static,
-    Output: Send + Sync + 'static,
+    Input: Send + 'static,
+    Output: Send + 'static,
 {
     type Output = crate::Result<Output>;
 
@@ -29,18 +29,18 @@ where
 
 pub trait TryMapPipe<T>: Pipe<T> + Sized
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     fn try_map<O, F>(self, f: F) -> Task<crate::Result<O>>
     where
-        O: Send + Sync + 'static,
-        F: FnOnce(T) -> crate::Result<O> + Send + Sync + 'static,
+        O: Send + 'static,
+        F: FnOnce(T) -> crate::Result<O> + Send + 'static,
     {
         self.pipe(TryMap::new(f))
     }
 }
 
-impl<T: Send + Sync + 'static, P: Pipe<T> + Sized> TryMapPipe<T> for P {}
+impl<T: Send + 'static, P: Pipe<T> + Sized> TryMapPipe<T> for P {}
 
 #[cfg(test)]
 mod tests {

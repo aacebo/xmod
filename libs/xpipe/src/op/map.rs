@@ -1,16 +1,14 @@
 use crate::{Operator, Pipe, Task};
 
-pub struct Map<Input, Output>(Box<dyn FnOnce(Input) -> Output + Send + Sync>);
+pub struct Map<Input, Output>(Box<dyn FnOnce(Input) -> Output + Send>);
 
 impl<Input, Output> Map<Input, Output> {
-    pub fn new<H: FnOnce(Input) -> Output + Send + Sync + 'static>(handler: H) -> Self {
+    pub fn new<H: FnOnce(Input) -> Output + Send + 'static>(handler: H) -> Self {
         Self(Box::new(handler))
     }
 }
 
-impl<Input: Send + Sync + 'static, Output: Send + Sync + 'static> Operator<Input>
-    for Map<Input, Output>
-{
+impl<Input: Send + 'static, Output: Send + 'static> Operator<Input> for Map<Input, Output> {
     type Output = Output;
 
     fn apply(self, task: Task<Input>) -> Task<Self::Output> {
@@ -19,12 +17,9 @@ impl<Input: Send + Sync + 'static, Output: Send + Sync + 'static> Operator<Input
 }
 
 pub trait MapPipe<T>: Pipe<T> + Sized {
-    fn map<O: Send + Sync + 'static, F: FnOnce(T) -> O + Send + Sync + 'static>(
-        self,
-        f: F,
-    ) -> Task<O>
+    fn map<O: Send + 'static, F: FnOnce(T) -> O + Send + 'static>(self, f: F) -> Task<O>
     where
-        T: Send + Sync + 'static,
+        T: Send + 'static,
     {
         self.pipe(Map(Box::new(f)))
     }

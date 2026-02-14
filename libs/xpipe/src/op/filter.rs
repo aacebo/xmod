@@ -1,16 +1,16 @@
 use crate::{Operator, Pipe, Task};
 
 pub struct Filter<T> {
-    predicate: Box<dyn Fn(&T) -> bool + Send + Sync>,
+    predicate: Box<dyn Fn(&T) -> bool + Send>,
 }
 
 impl<T> Filter<T>
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     pub fn new<P>(predicate: P) -> Self
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         Self {
             predicate: Box::new(predicate),
@@ -19,14 +19,14 @@ where
 
     pub fn allow<P>(predicate: P) -> Self
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         Self::new(predicate)
     }
 
     pub fn block<P>(predicate: P) -> Self
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         Self::new(move |x| !predicate(x))
     }
@@ -34,7 +34,7 @@ where
 
 impl<T> Operator<T> for Filter<T>
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = Option<T>;
 
@@ -52,31 +52,31 @@ where
 
 pub trait FilterPipe<T>: Pipe<T> + Sized
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     fn filter<P>(self, predicate: P) -> Task<Option<T>>
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         self.pipe(Filter::new(predicate))
     }
 
     fn filter_allow<P>(self, predicate: P) -> Task<Option<T>>
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         self.pipe(Filter::allow(predicate))
     }
 
     fn filter_block<P>(self, predicate: P) -> Task<Option<T>>
     where
-        P: Fn(&T) -> bool + Send + Sync + 'static,
+        P: Fn(&T) -> bool + Send + 'static,
     {
         self.pipe(Filter::block(predicate))
     }
 }
 
-impl<T: Send + Sync + 'static, P: Pipe<T> + Sized> FilterPipe<T> for P {}
+impl<T: Send + 'static, P: Pipe<T> + Sized> FilterPipe<T> for P {}
 
 #[cfg(test)]
 mod tests {

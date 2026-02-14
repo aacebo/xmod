@@ -12,9 +12,9 @@ impl<F> And<F> {
 
 impl<T, E, F> Operator<Result<T, E>> for And<F>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: FnOnce(&T) -> Result<(), E> + Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
+    F: FnOnce(&T) -> Result<(), E> + Send + 'static,
 {
     type Output = Result<T, E>;
 
@@ -40,9 +40,9 @@ impl<F> Or<F> {
 
 impl<T, E, F> Operator<Result<T, E>> for Or<F>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: FnOnce() -> T + Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
 {
     type Output = T;
 
@@ -63,9 +63,9 @@ impl<F> OrElseMap<F> {
 
 impl<T, E, F> Operator<Result<T, E>> for OrElseMap<F>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: FnOnce(E) -> T + Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
+    F: FnOnce(E) -> T + Send + 'static,
 {
     type Output = T;
 
@@ -79,26 +79,26 @@ where
 
 pub trait LogicalPipe<T, E>: Pipe<Result<T, E>> + Sized
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
 {
     fn and<F>(self, validator: F) -> Task<Result<T, E>>
     where
-        F: FnOnce(&T) -> Result<(), E> + Send + Sync + 'static,
+        F: FnOnce(&T) -> Result<(), E> + Send + 'static,
     {
         self.pipe(And::new(validator))
     }
 
     fn or<F>(self, fallback: F) -> Task<T>
     where
-        F: FnOnce() -> T + Send + Sync + 'static,
+        F: FnOnce() -> T + Send + 'static,
     {
         self.pipe(Or::new(fallback))
     }
 
     fn or_else_map<F>(self, handler: F) -> Task<T>
     where
-        F: FnOnce(E) -> T + Send + Sync + 'static,
+        F: FnOnce(E) -> T + Send + 'static,
     {
         self.pipe(OrElseMap::new(handler))
     }
@@ -106,8 +106,8 @@ where
 
 impl<T, E, P> LogicalPipe<T, E> for P
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
     P: Pipe<Result<T, E>> + Sized,
 {
 }

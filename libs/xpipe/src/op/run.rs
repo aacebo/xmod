@@ -1,14 +1,14 @@
 use crate::{Operator, Pipe, Task};
 
-pub struct Run<T>(Box<dyn FnOnce(&T) + Send + Sync>);
+pub struct Run<T>(Box<dyn FnOnce(&T) + Send>);
 
 impl<T> Run<T> {
-    pub fn new<F: FnOnce(&T) + Send + Sync + 'static>(handler: F) -> Self {
+    pub fn new<F: FnOnce(&T) + Send + 'static>(handler: F) -> Self {
         Self(Box::new(handler))
     }
 }
 
-impl<T: Send + Sync + 'static> Operator<T> for Run<T> {
+impl<T: Send + 'static> Operator<T> for Run<T> {
     type Output = T;
 
     fn apply(self, task: Task<T>) -> Task<Self::Output> {
@@ -21,9 +21,9 @@ impl<T: Send + Sync + 'static> Operator<T> for Run<T> {
 }
 
 pub trait RunPipe<T>: Pipe<T> + Sized {
-    fn run<F: FnOnce(&T) + Send + Sync + 'static>(self, f: F) -> Task<T>
+    fn run<F: FnOnce(&T) + Send + 'static>(self, f: F) -> Task<T>
     where
-        T: Send + Sync + 'static,
+        T: Send + 'static,
     {
         self.pipe(Run::new(f))
     }

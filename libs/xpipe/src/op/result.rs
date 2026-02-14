@@ -5,9 +5,9 @@ use crate::{Operator, Pipe, Task};
 
 pub struct Retry<Input, Output, E, F>
 where
-    Input: Clone + Send + Sync + 'static,
-    Output: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    Input: Clone + Send + 'static,
+    Output: Send + 'static,
+    E: Send + 'static,
 {
     operation: F,
     max_attempts: usize,
@@ -18,10 +18,10 @@ where
 
 impl<Input, Output, E, F> Retry<Input, Output, E, F>
 where
-    Input: Clone + Send + Sync + 'static,
-    Output: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: Fn(Input) -> Result<Output, E> + Send + Sync + 'static,
+    Input: Clone + Send + 'static,
+    Output: Send + 'static,
+    E: Send + 'static,
+    F: Fn(Input) -> Result<Output, E> + Send + 'static,
 {
     pub fn new(
         operation: F,
@@ -41,10 +41,10 @@ where
 
 impl<Input, Output, E, F> Operator<Input> for Retry<Input, Output, E, F>
 where
-    Input: Clone + Send + Sync + 'static,
-    Output: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: Fn(Input) -> Result<Output, E> + Send + Sync + 'static,
+    Input: Clone + Send + 'static,
+    Output: Send + 'static,
+    E: Send + 'static,
+    F: Fn(Input) -> Result<Output, E> + Send + 'static,
 {
     type Output = Result<Output, E>;
 
@@ -72,18 +72,18 @@ where
 
 pub trait RetryPipe<T>: Pipe<T> + Sized
 where
-    T: Clone + Send + Sync + 'static,
+    T: Clone + Send + 'static,
 {
     fn retry<O, E>(self) -> RetryBuilder<T, O, E, Self>
     where
-        O: Send + Sync + 'static,
-        E: Send + Sync + 'static,
+        O: Send + 'static,
+        E: Send + 'static,
     {
         RetryBuilder::new(self)
     }
 }
 
-impl<T: Clone + Send + Sync + 'static, P: Pipe<T> + Sized> RetryPipe<T> for P {}
+impl<T: Clone + Send + 'static, P: Pipe<T> + Sized> RetryPipe<T> for P {}
 
 pub struct RetryBuilder<Input, Output, E, P> {
     source: P,
@@ -95,9 +95,9 @@ pub struct RetryBuilder<Input, Output, E, P> {
 
 impl<Input, Output, E, P> RetryBuilder<Input, Output, E, P>
 where
-    Input: Clone + Send + Sync + 'static,
-    Output: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    Input: Clone + Send + 'static,
+    Output: Send + 'static,
+    E: Send + 'static,
     P: Pipe<Input>,
 {
     fn new(source: P) -> Self {
@@ -127,7 +127,7 @@ where
 
     pub fn run<F>(self, operation: F) -> Task<Result<Output, E>>
     where
-        F: Fn(Input) -> Result<Output, E> + Send + Sync + 'static,
+        F: Fn(Input) -> Result<Output, E> + Send + 'static,
     {
         self.source.pipe(Retry::new(
             operation,
@@ -142,8 +142,8 @@ pub struct Unwrap;
 
 impl<T, E> Operator<Result<T, E>> for Unwrap
 where
-    T: Send + Sync + 'static,
-    E: std::fmt::Debug + Send + Sync + 'static,
+    T: Send + 'static,
+    E: std::fmt::Debug + Send + 'static,
 {
     type Output = T;
 
@@ -164,8 +164,8 @@ impl Expect {
 
 impl<T, E> Operator<Result<T, E>> for Expect
 where
-    T: Send + Sync + 'static,
-    E: std::fmt::Debug + Send + Sync + 'static,
+    T: Send + 'static,
+    E: std::fmt::Debug + Send + 'static,
 {
     type Output = T;
 
@@ -186,8 +186,8 @@ impl<T> UnwrapOr<T> {
 
 impl<T, E> Operator<Result<T, E>> for UnwrapOr<T>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
 {
     type Output = T;
 
@@ -208,9 +208,9 @@ impl<F> UnwrapOrElse<F> {
 
 impl<T, E, F> Operator<Result<T, E>> for UnwrapOrElse<F>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
-    F: FnOnce(E) -> T + Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
+    F: FnOnce(E) -> T + Send + 'static,
 {
     type Output = T;
 
@@ -223,8 +223,8 @@ pub struct ResultOk;
 
 impl<T, E> Operator<Result<T, E>> for ResultOk
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
 {
     type Output = Option<T>;
 
@@ -235,8 +235,8 @@ where
 
 pub trait ResultPipe<T, E>: Pipe<Result<T, E>> + Sized
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
 {
     fn unwrap(self) -> Task<T>
     where
@@ -258,7 +258,7 @@ where
 
     fn unwrap_or_else<F>(self, f: F) -> Task<T>
     where
-        F: FnOnce(E) -> T + Send + Sync + 'static,
+        F: FnOnce(E) -> T + Send + 'static,
     {
         self.pipe(UnwrapOrElse::new(f))
     }
@@ -270,8 +270,8 @@ where
 
 impl<T, E, P> ResultPipe<T, E> for P
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
     P: Pipe<Result<T, E>> + Sized,
 {
 }
@@ -280,7 +280,7 @@ pub struct OptionUnwrap;
 
 impl<T> Operator<Option<T>> for OptionUnwrap
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = T;
 
@@ -301,7 +301,7 @@ impl OptionExpect {
 
 impl<T> Operator<Option<T>> for OptionExpect
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = T;
 
@@ -322,7 +322,7 @@ impl<T> OptionUnwrapOr<T> {
 
 impl<T> Operator<Option<T>> for OptionUnwrapOr<T>
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = T;
 
@@ -343,8 +343,8 @@ impl<F> OptionUnwrapOrElse<F> {
 
 impl<T, F> Operator<Option<T>> for OptionUnwrapOrElse<F>
 where
-    T: Send + Sync + 'static,
-    F: FnOnce() -> T + Send + Sync + 'static,
+    T: Send + 'static,
+    F: FnOnce() -> T + Send + 'static,
 {
     type Output = T;
 
@@ -365,8 +365,8 @@ impl<E> OptionOkOr<E> {
 
 impl<T, E> Operator<Option<T>> for OptionOkOr<E>
 where
-    T: Send + Sync + 'static,
-    E: Send + Sync + 'static,
+    T: Send + 'static,
+    E: Send + 'static,
 {
     type Output = Result<T, E>;
 
@@ -377,7 +377,7 @@ where
 
 pub trait OptionPipe<T>: Pipe<Option<T>> + Sized
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     fn unwrap(self) -> Task<T> {
         self.pipe(OptionUnwrap)
@@ -393,14 +393,14 @@ where
 
     fn unwrap_or_else<F>(self, f: F) -> Task<T>
     where
-        F: FnOnce() -> T + Send + Sync + 'static,
+        F: FnOnce() -> T + Send + 'static,
     {
         self.pipe(OptionUnwrapOrElse::new(f))
     }
 
     fn ok_or<E>(self, error: E) -> Task<Result<T, E>>
     where
-        E: Send + Sync + 'static,
+        E: Send + 'static,
     {
         self.pipe(OptionOkOr::new(error))
     }
@@ -408,7 +408,7 @@ where
 
 impl<T, P> OptionPipe<T> for P
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
     P: Pipe<Option<T>> + Sized,
 {
 }

@@ -29,7 +29,7 @@ impl Timeout {
 
 impl<T> Operator<T> for Timeout
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = Result<T, TimeoutError>;
 
@@ -63,7 +63,7 @@ impl Delay {
 
 impl<T> Operator<T> for Delay
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     type Output = T;
 
@@ -78,7 +78,7 @@ where
 
 pub trait TimePipe<T>: Pipe<T> + Sized
 where
-    T: Send + Sync + 'static,
+    T: Send + 'static,
 {
     fn timeout(self, duration: Duration) -> Task<Result<T, TimeoutError>> {
         self.pipe(Timeout::new(duration))
@@ -89,7 +89,7 @@ where
     }
 }
 
-impl<T: Send + Sync + 'static, P: Pipe<T> + Sized> TimePipe<T> for P {}
+impl<T: Send + 'static, P: Pipe<T> + Sized> TimePipe<T> for P {}
 
 #[cfg(test)]
 mod tests {
