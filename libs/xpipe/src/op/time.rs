@@ -94,13 +94,12 @@ impl<T: Send + 'static, P: Pipe<T> + Sized> TimePipe<T> for P {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::task;
     use std::time::Instant;
 
     #[test]
     fn timeout_succeeds_for_fast_operation() {
-        let result = Task::from(42)
-            .pipe(Timeout::new(Duration::from_secs(1)))
-            .eval();
+        let result = task!(42).pipe(Timeout::new(Duration::from_secs(1))).eval();
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
@@ -108,7 +107,7 @@ mod tests {
 
     #[test]
     fn timeout_fails_for_slow_operation() {
-        let result = Task::from_lazy(|| {
+        let result = task!(|| {
             thread::sleep(Duration::from_millis(200));
             42
         })
@@ -130,7 +129,7 @@ mod tests {
 
     #[test]
     fn timeout_pipe_trait() {
-        let result = Task::from(42).timeout(Duration::from_secs(1)).eval();
+        let result = task!(42).timeout(Duration::from_secs(1)).eval();
 
         assert!(result.is_ok());
         assert_eq!(result.unwrap(), 42);
@@ -140,17 +139,16 @@ mod tests {
     fn delay_waits_before_execution() {
         let start = Instant::now();
         let delay_duration = Duration::from_millis(100);
-
-        let result = Task::from(42).pipe(Delay::new(delay_duration)).eval();
-
+        let result = task!(42).pipe(Delay::new(delay_duration)).eval();
         let elapsed = start.elapsed();
+        
         assert!(elapsed >= delay_duration);
         assert_eq!(result, 42);
     }
 
     #[test]
     fn delay_preserves_value() {
-        let result = Task::from("hello".to_string())
+        let result = task!("hello".to_string())
             .pipe(Delay::new(Duration::from_millis(10)))
             .eval();
 
@@ -161,8 +159,7 @@ mod tests {
     fn delay_pipe_trait() {
         let start = Instant::now();
         let delay_duration = Duration::from_millis(50);
-
-        let result = Task::from(42).delay(delay_duration).eval();
+        let result = task!(42).delay(delay_duration).eval();
 
         assert!(start.elapsed() >= delay_duration);
         assert_eq!(result, 42);
@@ -170,7 +167,7 @@ mod tests {
 
     #[test]
     fn delay_then_timeout_succeeds() {
-        let result = Task::from(42)
+        let result = task!(42)
             .delay(Duration::from_millis(10))
             .timeout(Duration::from_secs(1))
             .eval();
@@ -181,7 +178,7 @@ mod tests {
 
     #[test]
     fn timeout_includes_delay_time() {
-        let result = Task::from(42)
+        let result = task!(42)
             .delay(Duration::from_millis(200))
             .timeout(Duration::from_millis(50))
             .eval();

@@ -5,6 +5,7 @@ use crate::{AsyncTask, Operator, Pipe};
 pub struct Task<T>(LazyCell<T, Box<dyn FnOnce() -> T + Send>>);
 
 impl<T: Send + 'static> Task<T> {
+    #[doc(hidden)]
     pub fn from_static(value: T) -> Self {
         Self(LazyCell::new(Box::new(move || value)))
     }
@@ -15,6 +16,7 @@ impl<T: Send + 'static> Task<T> {
 }
 
 impl<T> Task<T> {
+    #[doc(hidden)]
     pub fn from_lazy(factory: impl FnOnce() -> T + Send + 'static) -> Self {
         Self(LazyCell::new(Box::new(factory)))
     }

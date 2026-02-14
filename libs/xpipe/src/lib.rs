@@ -21,6 +21,14 @@ pub trait Operator<Input> {
 
 #[macro_export]
 macro_rules! task {
+    (async ($($args:tt)*) => $($body:tt)+) => {
+        $crate::Routine::new(|$($args)*| {
+            $crate::Task::from_lazy(move || $($body)+).fork()
+        })
+    };
+    (($($args:tt)*) => $($body:tt)+) => {
+        $crate::Routine::new(|$($args)*| $($body)+)
+    };
     ($input:literal) => {
         $crate::Task::from_static($input)
     };
@@ -103,5 +111,17 @@ mod tests {
         let main_id = std::thread::current().id();
         let spawned_id = task!(async || std::thread::current().id()).eval();
         assert_ne!(main_id, spawned_id);
+    }
+
+    #[test]
+    fn task_routine() {
+        let result = task!((x: i32) => x + 1).eval(1);
+        assert_eq!(result, 2);
+    }
+
+    #[test]
+    fn task_async_routine() {
+        let result = task!(async (x: i32) => x + 1).eval(1).eval();
+        assert_eq!(result, 2);
     }
 }

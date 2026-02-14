@@ -416,13 +416,13 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::task;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicUsize, Ordering};
 
     #[test]
     fn retry_succeeds_first_try() {
-        let result: Result<i32, &str> =
-            Task::from(10).retry().attempts(3).run(|x| Ok(x * 2)).eval();
+        let result: Result<i32, &str> = task!(10).retry().attempts(3).run(|x| Ok(x * 2)).eval();
 
         assert_eq!(result, Ok(20));
     }
@@ -432,7 +432,7 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = counter.clone();
 
-        let result: Result<i32, &str> = Task::from(10)
+        let result: Result<i32, &str> = task!(10)
             .retry()
             .attempts(3)
             .delay(Duration::from_millis(1))
@@ -451,7 +451,7 @@ mod tests {
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = counter.clone();
 
-        let result: Result<i32, &str> = Task::from(10)
+        let result: Result<i32, &str> = task!(10)
             .retry()
             .attempts(2)
             .delay(Duration::from_millis(1))
@@ -467,53 +467,51 @@ mod tests {
 
     #[test]
     fn result_unwrap_ok() {
-        let result = Task::from(Ok::<i32, &str>(42)).unwrap().eval();
+        let result = task!(Ok::<i32, &str>(42)).unwrap().eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     #[should_panic]
     fn result_unwrap_err_panics() {
-        let _ = Task::from(Err::<i32, &str>("error")).unwrap().eval();
+        let _ = task!(Err::<i32, &str>("error")).unwrap().eval();
     }
 
     #[test]
     fn result_expect_ok() {
-        let result = Task::from(Ok::<i32, &str>(42))
-            .expect("should not fail")
-            .eval();
+        let result = task!(Ok::<i32, &str>(42)).expect("should not fail").eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     #[should_panic(expected = "custom message")]
     fn result_expect_err_panics_with_message() {
-        let _ = Task::from(Err::<i32, &str>("error"))
+        let _ = task!(Err::<i32, &str>("error"))
             .expect("custom message")
             .eval();
     }
 
     #[test]
     fn result_unwrap_or_ok() {
-        let result = Task::from(Ok::<i32, &str>(42)).unwrap_or(0).eval();
+        let result = task!(Ok::<i32, &str>(42)).unwrap_or(0).eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn result_unwrap_or_err() {
-        let result = Task::from(Err::<i32, &str>("error")).unwrap_or(0).eval();
+        let result = task!(Err::<i32, &str>("error")).unwrap_or(0).eval();
         assert_eq!(result, 0);
     }
 
     #[test]
     fn result_unwrap_or_else_ok() {
-        let result = Task::from(Ok::<i32, &str>(42)).unwrap_or_else(|_| 0).eval();
+        let result = task!(Ok::<i32, &str>(42)).unwrap_or_else(|_| 0).eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn result_unwrap_or_else_err() {
-        let result = Task::from(Err::<i32, &str>("error"))
+        let result = task!(Err::<i32, &str>("error"))
             .unwrap_or_else(|e| e.len() as i32)
             .eval();
         assert_eq!(result, 5);
@@ -521,67 +519,67 @@ mod tests {
 
     #[test]
     fn result_ok_some() {
-        let result = Task::from(Ok::<i32, &str>(42)).ok().eval();
+        let result = task!(Ok::<i32, &str>(42)).ok().eval();
         assert_eq!(result, Some(42));
     }
 
     #[test]
     fn result_ok_none() {
-        let result = Task::from(Err::<i32, &str>("error")).ok().eval();
+        let result = task!(Err::<i32, &str>("error")).ok().eval();
         assert_eq!(result, None);
     }
 
     #[test]
     fn option_unwrap_some() {
-        let result = Task::from(Some(42)).unwrap().eval();
+        let result = task!(Some(42)).unwrap().eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     #[should_panic]
     fn option_unwrap_none_panics() {
-        let _ = Task::from(None::<i32>).unwrap().eval();
+        let _ = task!(None::<i32>).unwrap().eval();
     }
 
     #[test]
     fn option_expect_some() {
-        let result = Task::from(Some(42)).expect("should not fail").eval();
+        let result = task!(Some(42)).expect("should not fail").eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn option_unwrap_or_some() {
-        let result = Task::from(Some(42)).unwrap_or(0).eval();
+        let result = task!(Some(42)).unwrap_or(0).eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn option_unwrap_or_none() {
-        let result = Task::from(None::<i32>).unwrap_or(0).eval();
+        let result = task!(None::<i32>).unwrap_or(0).eval();
         assert_eq!(result, 0);
     }
 
     #[test]
     fn option_unwrap_or_else_some() {
-        let result = Task::from(Some(42)).unwrap_or_else(|| 0).eval();
+        let result = task!(Some(42)).unwrap_or_else(|| 0).eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn option_unwrap_or_else_none() {
-        let result = Task::from(None::<i32>).unwrap_or_else(|| 100).eval();
+        let result = task!(None::<i32>).unwrap_or_else(|| 100).eval();
         assert_eq!(result, 100);
     }
 
     #[test]
     fn option_ok_or_some() {
-        let result: Result<i32, &str> = Task::from(Some(42)).ok_or("missing").eval();
+        let result: Result<i32, &str> = task!(Some(42)).ok_or("missing").eval();
         assert_eq!(result, Ok(42));
     }
 
     #[test]
     fn option_ok_or_none() {
-        let result: Result<i32, &str> = Task::from(None::<i32>).ok_or("missing").eval();
+        let result: Result<i32, &str> = task!(None::<i32>).ok_or("missing").eval();
         assert_eq!(result, Err("missing"));
     }
 }

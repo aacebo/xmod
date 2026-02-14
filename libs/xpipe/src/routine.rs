@@ -1,6 +1,7 @@
 pub struct Routine<In, Out>(Box<dyn Fn(In) -> Out>);
 
 impl<In, Out> Routine<In, Out> {
+    #[doc(hidden)]
     pub fn new(routine: impl Fn(In) -> Out + 'static) -> Self {
         Self(Box::new(routine))
     }

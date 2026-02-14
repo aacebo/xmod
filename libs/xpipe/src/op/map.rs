@@ -31,31 +31,30 @@ impl<T, P: Pipe<T> + Sized> MapPipe<T> for P {}
 mod tests {
     use super::*;
     use crate::Pipe;
+    use crate::task;
 
     #[test]
     fn transforms_value() {
-        let result = Task::from(5).pipe(Map::new(|x: i32| x * 2)).eval();
+        let result = task!(5).pipe(Map::new(|x: i32| x * 2)).eval();
         assert_eq!(result, 10);
     }
 
     #[test]
     fn changes_type() {
-        let result = Task::from(42).pipe(Map::new(|x: i32| x.to_string())).eval();
+        let result = task!(42).pipe(Map::new(|x: i32| x.to_string())).eval();
         assert_eq!(result, "42");
     }
 
     #[test]
     fn with_closure() {
         let multiplier = 3;
-        let result = Task::from(7)
-            .pipe(Map::new(move |x: i32| x * multiplier))
-            .eval();
+        let result = task!(7).pipe(Map::new(move |x: i32| x * multiplier)).eval();
         assert_eq!(result, 21);
     }
 
     #[test]
     fn chained() {
-        let result = Task::from(2)
+        let result = task!(2)
             .map(|x| x + 1)
             .map(|x| x * 2)
             .map(|x| x.to_string())
@@ -65,7 +64,7 @@ mod tests {
 
     #[test]
     fn map_pipe_trait() {
-        let result = Task::from(10).map(|x| x * 3).eval();
+        let result = task!(10).map(|x| x * 3).eval();
         assert_eq!(result, 30);
     }
 }

@@ -81,46 +81,47 @@ impl<T: Send + 'static, P: Pipe<T> + Sized> FilterPipe<T> for P {}
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::task;
 
     #[test]
     fn allows_matching_single_value() {
-        let result = Task::from(42).pipe(Filter::allow(|x| *x > 0)).eval();
+        let result = task!(42).pipe(Filter::allow(|x| *x > 0)).eval();
         assert_eq!(result, Some(42));
     }
 
     #[test]
     fn blocks_non_matching_single_value() {
-        let result = Task::from(-5).pipe(Filter::allow(|x| *x > 0)).eval();
+        let result = task!(-5).pipe(Filter::allow(|x| *x > 0)).eval();
         assert_eq!(result, None);
     }
 
     #[test]
     fn block_blocks_matching_value() {
-        let result = Task::from(42).pipe(Filter::block(|x| *x > 0)).eval();
+        let result = task!(42).pipe(Filter::block(|x| *x > 0)).eval();
         assert_eq!(result, None);
     }
 
     #[test]
     fn block_allows_non_matching_value() {
-        let result = Task::from(-5).pipe(Filter::block(|x| *x > 0)).eval();
+        let result = task!(-5).pipe(Filter::block(|x| *x > 0)).eval();
         assert_eq!(result, Some(-5));
     }
 
     #[test]
     fn filter_pipe_trait_single() {
-        let result = Task::from(42).filter(|x| *x > 0).eval();
+        let result = task!(42).filter(|x| *x > 0).eval();
         assert_eq!(result, Some(42));
     }
 
     #[test]
     fn filter_allow_pipe_trait() {
-        let result = Task::from(42).filter_allow(|x| *x > 0).eval();
+        let result = task!(42).filter_allow(|x| *x > 0).eval();
         assert_eq!(result, Some(42));
     }
 
     #[test]
     fn filter_block_pipe_trait() {
-        let result = Task::from(42).filter_block(|x| *x > 0).eval();
+        let result = task!(42).filter_block(|x| *x > 0).eval();
         assert_eq!(result, None);
     }
 }

@@ -35,12 +35,13 @@ impl<T, P: Pipe<T> + Sized> RunPipe<T> for P {}
 mod tests {
     use super::*;
     use crate::op::map::MapPipe;
+    use crate::task;
     use std::sync::Arc;
     use std::sync::atomic::{AtomicBool, Ordering};
 
     #[test]
     fn passes_value_through() {
-        let result = Task::from(42).pipe(Run::new(|_| {})).eval();
+        let result = task!(42).pipe(Run::new(|_| {})).eval();
         assert_eq!(result, 42);
     }
 
@@ -49,7 +50,7 @@ mod tests {
         let called = Arc::new(AtomicBool::new(false));
         let called_clone = called.clone();
 
-        let result = Task::from(42)
+        let result = task!(42)
             .pipe(Run::new(move |_| {
                 called_clone.store(true, Ordering::SeqCst);
             }))
@@ -61,7 +62,7 @@ mod tests {
 
     #[test]
     fn receives_correct_value() {
-        let result = Task::from(42).run(|x| assert_eq!(*x, 42)).eval();
+        let result = task!(42).run(|x| assert_eq!(*x, 42)).eval();
         assert_eq!(result, 42);
     }
 
@@ -70,7 +71,7 @@ mod tests {
         let called = Arc::new(AtomicBool::new(false));
         let called_clone = called.clone();
 
-        let result = Task::from(10)
+        let result = task!(10)
             .map(|x| x * 2)
             .run(move |x| {
                 assert_eq!(*x, 20);

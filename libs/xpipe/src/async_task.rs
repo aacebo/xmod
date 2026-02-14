@@ -85,37 +85,36 @@ impl<T: Send + 'static> Pipe<T> for AsyncTask<T> {
 mod tests {
     use super::*;
     use crate::op::MapPipe;
+    use crate::task;
 
     #[test]
     fn fork_and_eval() {
-        let result = Task::from(42).fork().eval();
+        let result = task!(42).fork().eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn fork_and_join() {
-        let result = Task::from(42).fork().join().eval();
+        let result = task!(42).fork().join().eval();
         assert_eq!(result, 42);
     }
 
     #[test]
     fn fork_runs_on_different_thread() {
         let main_id = std::thread::current().id();
-        let spawned_id = Task::from_lazy(move || std::thread::current().id())
-            .fork()
-            .eval();
+        let spawned_id = task!(move || std::thread::current().id()).fork().eval();
         assert_ne!(main_id, spawned_id);
     }
 
     #[test]
     fn fork_enables_parallelism() {
         let start = std::time::Instant::now();
-        let a = Task::from_lazy(|| {
+        let a = task!(|| {
             std::thread::sleep(std::time::Duration::from_millis(50));
             1
         })
         .fork();
-        let b = Task::from_lazy(|| {
+        let b = task!(|| {
             std::thread::sleep(std::time::Duration::from_millis(50));
             2
         })
@@ -128,7 +127,7 @@ mod tests {
 
     #[test]
     fn pipe_operators_on_async_task() {
-        let result = Task::from(10).fork().map(|x| x * 2).eval();
+        let result = task!(10).fork().map(|x| x * 2).eval();
         assert_eq!(result, 20);
     }
 
@@ -146,7 +145,7 @@ mod tests {
             RawWaker::new(std::ptr::null(), &VTABLE)
         }
 
-        let mut task = Task::from(42).fork();
+        let mut task = task!(42).fork();
         std::thread::sleep(std::time::Duration::from_millis(50));
 
         let waker = unsafe { Waker::from_raw(noop_raw_waker()) };

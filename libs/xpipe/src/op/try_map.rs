@@ -46,10 +46,11 @@ impl<T: Send + 'static, P: Pipe<T> + Sized> TryMapPipe<T> for P {}
 mod tests {
     use super::*;
     use crate::TaskError;
+    use crate::task;
 
     #[test]
     fn success() {
-        let result = Task::from("42".to_string())
+        let result = task!("42".to_string())
             .pipe(TryMap::new(|s: String| {
                 s.parse::<i32>().map_err(|e| TaskError::new(e.to_string()))
             }))
@@ -60,7 +61,7 @@ mod tests {
 
     #[test]
     fn failure() {
-        let result = Task::from("not_a_number".to_string())
+        let result = task!("not_a_number".to_string())
             .pipe(TryMap::new(|s: String| {
                 s.parse::<i32>().map_err(|e| TaskError::new(e.to_string()))
             }))
@@ -70,7 +71,7 @@ mod tests {
 
     #[test]
     fn with_custom_error() {
-        let result = Task::from(10)
+        let result = task!(10)
             .pipe(TryMap::new(|x: i32| {
                 if x > 5 {
                     Ok(x * 2)
@@ -85,7 +86,7 @@ mod tests {
 
     #[test]
     fn with_custom_error_failure() {
-        let result = Task::from(3)
+        let result = task!(3)
             .pipe(TryMap::new(|x: i32| {
                 if x > 5 {
                     Ok(x * 2)
@@ -99,7 +100,7 @@ mod tests {
 
     #[test]
     fn try_map_pipe_trait() {
-        let result = Task::from("42".to_string())
+        let result = task!("42".to_string())
             .try_map(|s| s.parse::<i32>().map_err(|e| TaskError::new(e.to_string())))
             .eval();
         assert!(result.is_ok());
