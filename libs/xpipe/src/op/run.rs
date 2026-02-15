@@ -49,7 +49,6 @@ mod tests {
     fn executes_side_effect() {
         let called = Arc::new(AtomicBool::new(false));
         let called_clone = called.clone();
-
         let result = task!(42)
             .pipe(Run::new(move |_| {
                 called_clone.store(true, Ordering::SeqCst);
@@ -70,7 +69,6 @@ mod tests {
     fn chained_with_map() {
         let called = Arc::new(AtomicBool::new(false));
         let called_clone = called.clone();
-
         let result = task!(10)
             .map(|x| x * 2)
             .run(move |x| {

@@ -150,35 +150,30 @@ mod tests {
     #[test]
     fn and_passes_through_error() {
         let result: Result<i32, &str> = task!(Err("already error")).and(|_: &i32| Ok(())).eval();
-
         assert_eq!(result, Err("already error"));
     }
 
     #[test]
     fn or_uses_ok_value() {
         let result = task!(Ok::<i32, &str>(10)).or(|| 0).eval();
-
         assert_eq!(result, 10);
     }
 
     #[test]
     fn or_uses_fallback_on_error() {
         let result = task!(Err::<i32, &str>("error")).or(|| 42).eval();
-
         assert_eq!(result, 42);
     }
 
     #[test]
     fn or_else_map_uses_ok_value() {
         let result = task!(Ok::<i32, i32>(10)).or_else_map(|e| e * 2).eval();
-
         assert_eq!(result, 10);
     }
 
     #[test]
     fn or_else_map_transforms_error() {
         let result = task!(Err::<i32, i32>(21)).or_else_map(|e| e * 2).eval();
-
         assert_eq!(result, 42);
     }
 

@@ -10,10 +10,10 @@ struct State<T> {
     waker: Option<Waker>,
 }
 
-pub struct AsyncTask<T>(Arc<(Mutex<State<T>>, Condvar)>);
+pub struct ForkHandle<T>(Arc<(Mutex<State<T>>, Condvar)>);
 
-impl<T: Send + 'static> AsyncTask<T> {
-    pub(crate) fn spawn(task: Task<T>) -> Self {
+impl<T: Send + 'static> ForkHandle<T> {
+    fn spawn(task: Task<T>) -> Self {
         let shared = Arc::new((
             Mutex::new(State {
                 result: None,
@@ -59,7 +59,7 @@ impl<T: Send + 'static> AsyncTask<T> {
     }
 }
 
-impl<T: Send + 'static> Future for AsyncTask<T> {
+impl<T: Send + 'static> Future for ForkHandle<T> {
     type Output = T;
 
     fn poll(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<T> {
@@ -75,9 +75,19 @@ impl<T: Send + 'static> Future for AsyncTask<T> {
     }
 }
 
-impl<T: Send + 'static> Pipe<T> for AsyncTask<T> {
+impl<T: Send + 'static> Pipe<T> for ForkHandle<T> {
     fn pipe<Op: Operator<T>>(self, op: Op) -> Task<Op::Output> {
         op.apply(self.join())
+    }
+}
+
+pub trait ForkPipe<T: Send + 'static> {
+    fn fork(self) -> ForkHandle<T>;
+}
+
+impl<T: Send + 'static> ForkPipe<T> for Task<T> {
+    fn fork(self) -> ForkHandle<T> {
+        ForkHandle::spawn(self)
     }
 }
 
@@ -102,19 +112,19 @@ mod tests {
     #[test]
     fn fork_runs_on_different_thread() {
         let main_id = std::thread::current().id();
-        let spawned_id = task!(move || std::thread::current().id()).fork().eval();
+        let spawned_id = task!(move () => std::thread::current().id()).fork().eval();
         assert_ne!(main_id, spawned_id);
     }
 
     #[test]
     fn fork_enables_parallelism() {
         let start = std::time::Instant::now();
-        let a = task!(|| {
+        let a = task!(() => {
             std::thread::sleep(std::time::Duration::from_millis(50));
             1
         })
         .fork();
-        let b = task!(|| {
+        let b = task!(() => {
             std::thread::sleep(std::time::Duration::from_millis(50));
             2
         })
@@ -126,31 +136,14 @@ mod tests {
     }
 
     #[test]
-    fn pipe_operators_on_async_task() {
+    fn pipe_operators_on_fork_handle() {
         let result = task!(10).fork().map(|x| x * 2).eval();
         assert_eq!(result, 20);
     }
 
-    #[test]
-    fn future_impl() {
-        use std::task::{RawWaker, RawWakerVTable};
-
-        fn noop_raw_waker() -> RawWaker {
-            fn no_op(_: *const ()) {}
-            fn clone(p: *const ()) -> RawWaker {
-                RawWaker::new(p, &VTABLE)
-            }
-
-            const VTABLE: RawWakerVTable = RawWakerVTable::new(clone, no_op, no_op, no_op);
-            RawWaker::new(std::ptr::null(), &VTABLE)
-        }
-
-        let mut task = task!(42).fork();
-        std::thread::sleep(std::time::Duration::from_millis(50));
-
-        let waker = unsafe { Waker::from_raw(noop_raw_waker()) };
-        let mut cx = Context::from_waker(&waker);
-        let result = Pin::new(&mut task).poll(&mut cx);
-        assert!(matches!(result, Poll::Ready(42)));
+    #[tokio::test]
+    async fn future_impl() {
+        let result = task!(42).fork().await;
+        assert_eq!(result, 42);
     }
 }

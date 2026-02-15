@@ -6,7 +6,7 @@ impl<In, Out> Routine<In, Out> {
         Self(Box::new(routine))
     }
 
-    pub fn eval(self, input: In) -> Out {
+    pub fn eval(&self, input: In) -> Out {
         self.0(input)
     }
 }

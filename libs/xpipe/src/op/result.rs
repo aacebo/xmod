@@ -431,7 +431,6 @@ mod tests {
     fn retry_succeeds_after_failures() {
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = counter.clone();
-
         let result: Result<i32, &str> = task!(10)
             .retry()
             .attempts(3)
@@ -450,7 +449,6 @@ mod tests {
     fn retry_exhausts_attempts() {
         let counter = Arc::new(AtomicUsize::new(0));
         let counter_clone = counter.clone();
-
         let result: Result<i32, &str> = task!(10)
             .retry()
             .attempts(2)

@@ -107,7 +107,7 @@ mod tests {
 
     #[test]
     fn timeout_fails_for_slow_operation() {
-        let result = task!(|| {
+        let result = task!(() => {
             thread::sleep(Duration::from_millis(200));
             42
         })

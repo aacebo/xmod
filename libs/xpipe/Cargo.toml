@@ -10,3 +10,6 @@ repository.workspace = true
 
 [dependencies]
 xok = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

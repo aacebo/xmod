@@ -67,4 +67,16 @@ mod tests {
         let result = task!(10).map(|x| x * 3).eval();
         assert_eq!(result, 30);
     }
+
+    #[tokio::test]
+    async fn async_closure() {
+        let result = task!(10).map(async |v| v * 2).eval().await;
+        assert_eq!(result, 20);
+    }
+
+    #[tokio::test]
+    async fn async_closure_chained() {
+        let result = task!(2).map(async |v| v + 1).eval().await;
+        assert_eq!(result, 3);
+    }
 }

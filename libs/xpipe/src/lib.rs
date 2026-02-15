@@ -1,10 +1,8 @@
-mod async_task;
 mod error;
 pub mod op;
 mod routine;
 mod task;
 
-pub use async_task::*;
 pub use error::*;
 pub use routine::*;
 pub use task::*;
@@ -21,28 +19,25 @@ pub trait Operator<Input> {
 
 #[macro_export]
 macro_rules! task {
-    (async ($($args:tt)*) => $($body:tt)+) => {
-        $crate::Routine::new(|$($args)*| {
-            $crate::Task::from_lazy(move || $($body)+).fork()
-        })
+    (async move () => $($body:tt)+) => {{
+        use $crate::op::ForkPipe;
+        $crate::Task::from_lazy(move || $($body)+).fork()
+    }};
+    (async () => $($body:tt)+) => {{
+        use $crate::op::ForkPipe;
+        $crate::Task::from_lazy(|| $($body)+).fork()
+    }};
+    (move () => $($body:tt)+) => {
+        $crate::Task::from_lazy(move || $($body)+)
+    };
+    (() => $($body:tt)+) => {
+        $crate::Task::from_lazy(|| $($body)+)
     };
     (($($args:tt)*) => $($body:tt)+) => {
         $crate::Routine::new(|$($args)*| $($body)+)
     };
     ($input:literal) => {
         $crate::Task::from_static($input)
-    };
-    (async || $($input:tt)+) => {
-        $crate::Task::from_lazy(|| $($input)+).fork()
-    };
-    (async move || $($input:tt)+) => {
-        $crate::Task::from_lazy(move || $($input)+).fork()
-    };
-    (|| $($input:tt)+) => {
-        $crate::Task::from_lazy(|| $($input)+)
-    };
-    (move || $($input:tt)+) => {
-        $crate::Task::from_lazy(move || $($input)+)
     };
     ($input:expr) => {
         $crate::Task::from_static($input)
@@ -64,15 +59,15 @@ mod tests {
     }
 
     #[test]
-    fn task_closure() {
-        let result = task!(|| 1 + 2).eval();
+    fn task_lazy() {
+        let result = task!(() => 1 + 2).eval();
         assert_eq!(result, 3);
     }
 
     #[test]
-    fn task_move_closure() {
+    fn task_move_lazy() {
         let x = 10;
-        let result = task!(move || x * 2).eval();
+        let result = task!(move () => x * 2).eval();
         assert_eq!(result, 20);
     }
 
@@ -94,34 +89,28 @@ mod tests {
     }
 
     #[test]
-    fn task_async_closure() {
-        let result = task!(async || 42).eval();
+    fn task_async() {
+        let result = task!(async () => 42).eval();
         assert_eq!(result, 42);
     }
 
     #[test]
-    fn task_async_move_closure() {
+    fn task_async_move() {
         let x = 5;
-        let result = task!(async move || x * 3).eval();
+        let result = task!(async move () => x * 3).eval();
         assert_eq!(result, 15);
     }
 
     #[test]
     fn task_async_runs_on_different_thread() {
         let main_id = std::thread::current().id();
-        let spawned_id = task!(async || std::thread::current().id()).eval();
+        let spawned_id = task!(async () => std::thread::current().id()).eval();
         assert_ne!(main_id, spawned_id);
     }
 
     #[test]
     fn task_routine() {
-        let result = task!((x: i32) => x + 1).eval(1);
-        assert_eq!(result, 2);
-    }
-
-    #[test]
-    fn task_async_routine() {
-        let result = task!(async (x: i32) => x + 1).eval(1).eval();
+        let result = task!((x) => x + 1).eval(1);
         assert_eq!(result, 2);
     }
 }
