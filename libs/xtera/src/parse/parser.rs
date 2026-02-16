@@ -2,8 +2,8 @@ use crate::{
     Template,
     ast::{
         ArrayExpr, BinaryExpr, BinaryOp, CallExpr, Expr, ForNode, IdentExpr, IfBranch, IfNode,
-        IncludeNode, IndexExpr, InterpNode, MemberExpr, Node, ObjectExpr, PipeExpr, Span,
-        SwitchCase, SwitchNode, TextNode, UnaryExpr, UnaryOp, ValueExpr,
+        IncludeNode, IndexExpr, InterpNode, MatchCase, MatchNode, MemberExpr, Node, ObjectExpr,
+        PipeExpr, Span, TextNode, UnaryExpr, UnaryOp, ValueExpr,
     },
 };
 
@@ -83,13 +83,10 @@ impl<'src> Parser<'src> {
                 let span = sp.span.merge(self.last_span());
                 Ok(Some(Node::For(ForNode { span, ..for_node })))
             }
-            LexToken::AtSwitch => {
-                let switch_node = self.parse_switch()?;
+            LexToken::AtMatch => {
+                let match_node = self.parse_match()?;
                 let span = sp.span.merge(self.last_span());
-                Ok(Some(Node::Switch(SwitchNode {
-                    span,
-                    ..switch_node
-                })))
+                Ok(Some(Node::Match(MatchNode { span, ..match_node })))
             }
             LexToken::AtInclude => {
                 let include_node = self.parse_include(sp.span)?;
@@ -206,7 +203,7 @@ impl<'src> Parser<'src> {
         })
     }
 
-    fn parse_switch(&mut self) -> Result<SwitchNode> {
+    fn parse_match(&mut self) -> Result<MatchNode> {
         self.expect_expr_token(&Token::LParen)?;
         let expr = self.parse_expr()?;
         self.expect_expr_token(&Token::RParen)?;
@@ -231,7 +228,7 @@ impl<'src> Parser<'src> {
                     let value = self.parse_expr()?;
                     self.expect_expr_token(&Token::RParen)?;
                     let body = self.parse_block_body()?;
-                    cases.push(SwitchCase {
+                    cases.push(MatchCase {
                         value,
                         body,
                         span: sp.span.merge(self.last_span()),
@@ -247,7 +244,7 @@ impl<'src> Parser<'src> {
                 }
                 LexToken::Eof => {
                     return Err(ParseError::new(
-                        "unexpected end of input in @switch block",
+                        "unexpected end of input in @match block",
                         sp.span,
                     ));
                 }
@@ -260,7 +257,7 @@ impl<'src> Parser<'src> {
             }
         }
 
-        Ok(SwitchNode {
+        Ok(MatchNode {
             expr,
             cases,
             default,
@@ -900,14 +897,17 @@ mod tests {
     }
 
     #[test]
-    fn switch_block() {
-        let tpl = parse("@switch (color) { @case ('red') { Red! } @case ('blue') { Blue! } @default { Other } }").unwrap();
+    fn match_block() {
+        let tpl = parse(
+            "@match (color) { @case ('red') { Red! } @case ('blue') { Blue! } @default { Other } }",
+        )
+        .unwrap();
         match &tpl.nodes()[0] {
-            Node::Switch(SwitchNode { cases, default, .. }) => {
+            Node::Match(MatchNode { cases, default, .. }) => {
                 assert_eq!(cases.len(), 2);
                 assert!(default.is_some());
             }
-            other => panic!("expected switch, got {other:?}"),
+            other => panic!("expected match, got {other:?}"),
         }
     }
 

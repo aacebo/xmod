@@ -2,14 +2,14 @@ mod for_node;
 mod if_node;
 mod include;
 mod interp;
-mod switch;
+mod match_node;
 mod text;
 
 pub use for_node::*;
 pub use if_node::*;
 pub use include::*;
 pub use interp::*;
-pub use switch::*;
+pub use match_node::*;
 pub use text::*;
 
 use super::{Result, Span};
@@ -21,7 +21,7 @@ pub enum Node {
     Interp(InterpNode),
     If(IfNode),
     For(ForNode),
-    Switch(SwitchNode),
+    Match(MatchNode),
     Include(IncludeNode),
 }
 
@@ -32,7 +32,7 @@ impl Node {
             Self::Interp(n) => n.span,
             Self::If(n) => n.span,
             Self::For(n) => n.span,
-            Self::Switch(n) => n.span,
+            Self::Match(n) => n.span,
             Self::Include(n) => n.span,
         }
     }
@@ -43,7 +43,7 @@ impl Node {
             Self::Interp(n) => n.render(scope),
             Self::If(n) => n.render(scope),
             Self::For(n) => n.render(scope),
-            Self::Switch(n) => n.render(scope),
+            Self::Match(n) => n.render(scope),
             Self::Include(n) => n.render(scope),
         }
     }

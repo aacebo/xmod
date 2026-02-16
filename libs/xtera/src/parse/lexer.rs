@@ -28,8 +28,8 @@ pub enum LexToken {
     AtElse,
     /// `@for`
     AtFor,
-    /// `@switch`
-    AtSwitch,
+    /// `@match`
+    AtMatch,
     /// `@case`
     AtCase,
     /// `@default`
@@ -48,7 +48,7 @@ const AT_KEYWORDS: &[(&str, LexToken)] = &[
     ("if", LexToken::AtIf),
     ("else", LexToken::AtElse),
     ("for", LexToken::AtFor),
-    ("switch", LexToken::AtSwitch),
+    ("match", LexToken::AtMatch),
     ("case", LexToken::AtCase),
     ("default", LexToken::AtDefault),
     ("include", LexToken::AtInclude),

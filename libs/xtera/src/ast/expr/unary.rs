@@ -26,3 +26,38 @@ impl UnaryExpr {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::ast::ValueExpr;
+
+    fn val(v: xval::Value) -> Box<Expr> {
+        Box::new(Expr::Value(ValueExpr {
+            value: v,
+            span: Span::new(0, 1),
+        }))
+    }
+
+    #[test]
+    fn not() {
+        let ctx = Scope::new();
+        let expr = UnaryExpr {
+            op: UnaryOp::Not,
+            operand: val(xval::Value::from_bool(true)),
+            span: Span::new(0, 1),
+        };
+        assert_eq!(expr.eval(&ctx).unwrap(), false);
+    }
+
+    #[test]
+    fn neg() {
+        let ctx = Scope::new();
+        let expr = UnaryExpr {
+            op: UnaryOp::Neg,
+            operand: val(xval::Value::from_i64(5)),
+            span: Span::new(0, 1),
+        };
+        assert_eq!(expr.eval(&ctx).unwrap(), -5i64);
+    }
+}
