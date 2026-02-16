@@ -50,28 +50,90 @@ impl UInt {
     pub fn to_u8(&self) -> u8 {
         match self {
             Self::U8(v) => *v,
-            v => panic!("expected u8, received {}", std::any::type_name_of_val(v)),
+            Self::U16(v) => *v as u8,
+            Self::U32(v) => *v as u8,
+            Self::U64(v) => *v as u8,
         }
     }
 
     pub fn to_u16(&self) -> u16 {
         match self {
+            Self::U8(v) => *v as u16,
             Self::U16(v) => *v,
-            v => panic!("expected u16, received {}", std::any::type_name_of_val(v)),
+            Self::U32(v) => *v as u16,
+            Self::U64(v) => *v as u16,
         }
     }
 
     pub fn to_u32(&self) -> u32 {
         match self {
+            Self::U8(v) => *v as u32,
+            Self::U16(v) => *v as u32,
             Self::U32(v) => *v,
-            v => panic!("expected u32, received {}", std::any::type_name_of_val(v)),
+            Self::U64(v) => *v as u32,
         }
     }
 
     pub fn to_u64(&self) -> u64 {
         match self {
+            Self::U8(v) => *v as u64,
+            Self::U16(v) => *v as u64,
+            Self::U32(v) => *v as u64,
             Self::U64(v) => *v,
-            v => panic!("expected u64, received {}", std::any::type_name_of_val(v)),
+        }
+    }
+
+    pub fn to_i8(&self) -> i8 {
+        match self {
+            Self::U8(v) => *v as i8,
+            Self::U16(v) => *v as i8,
+            Self::U32(v) => *v as i8,
+            Self::U64(v) => *v as i8,
+        }
+    }
+
+    pub fn to_i16(&self) -> i16 {
+        match self {
+            Self::U8(v) => *v as i16,
+            Self::U16(v) => *v as i16,
+            Self::U32(v) => *v as i16,
+            Self::U64(v) => *v as i16,
+        }
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Self::U8(v) => *v as i32,
+            Self::U16(v) => *v as i32,
+            Self::U32(v) => *v as i32,
+            Self::U64(v) => *v as i32,
+        }
+    }
+
+    pub fn to_i64(&self) -> i64 {
+        match self {
+            Self::U8(v) => *v as i64,
+            Self::U16(v) => *v as i64,
+            Self::U32(v) => *v as i64,
+            Self::U64(v) => *v as i64,
+        }
+    }
+
+    pub fn to_f32(&self) -> f32 {
+        match self {
+            Self::U8(v) => *v as f32,
+            Self::U16(v) => *v as f32,
+            Self::U32(v) => *v as f32,
+            Self::U64(v) => *v as f32,
+        }
+    }
+
+    pub fn to_f64(&self) -> f64 {
+        match self {
+            Self::U8(v) => *v as f64,
+            Self::U16(v) => *v as f64,
+            Self::U32(v) => *v as f64,
+            Self::U64(v) => *v as f64,
         }
     }
 
@@ -367,27 +429,25 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "expected u8")]
-    fn to_u8_panics_on_mismatch() {
-        UInt::from_u32(1).to_u8();
+    fn to_u64_cross_variant() {
+        assert_eq!(UInt::from_u8(5).to_u64(), 5);
+        assert_eq!(UInt::from_u16(300).to_u64(), 300);
+        assert_eq!(UInt::from_u32(100_000).to_u64(), 100_000);
     }
 
     #[test]
-    #[should_panic(expected = "expected u16")]
-    fn to_u16_panics_on_mismatch() {
-        UInt::from_u32(1).to_u16();
+    fn to_u8_truncates() {
+        assert_eq!(UInt::from_u64(500).to_u8(), 500u64 as u8);
     }
 
     #[test]
-    #[should_panic(expected = "expected u32")]
-    fn to_u32_panics_on_mismatch() {
-        UInt::from_u64(1).to_u32();
+    fn to_i64_from_uint() {
+        assert_eq!(UInt::from_u32(42).to_i64(), 42);
     }
 
     #[test]
-    #[should_panic(expected = "expected u64")]
-    fn to_u64_panics_on_mismatch() {
-        UInt::from_u8(1).to_u64();
+    fn to_f64_from_uint() {
+        assert_eq!(UInt::from_u32(42).to_f64(), 42.0);
     }
 
     #[test]

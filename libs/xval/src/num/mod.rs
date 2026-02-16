@@ -74,11 +74,19 @@ impl Number {
     }
 
     pub fn to_f32(&self) -> f32 {
-        self.as_float().to_f32()
+        match self {
+            Self::Int(v) => v.to_f32(),
+            Self::UInt(v) => v.to_f32(),
+            Self::Float(v) => v.to_f32(),
+        }
     }
 
     pub fn to_f64(&self) -> f64 {
-        self.as_float().to_f64()
+        match self {
+            Self::Int(v) => v.to_f64(),
+            Self::UInt(v) => v.to_f64(),
+            Self::Float(v) => v.to_f64(),
+        }
     }
 }
 
@@ -100,19 +108,35 @@ impl Number {
     }
 
     pub fn to_i8(&self) -> i8 {
-        self.as_int().to_i8()
+        match self {
+            Self::Int(v) => v.to_i8(),
+            Self::UInt(v) => v.to_i8(),
+            Self::Float(v) => v.to_i8(),
+        }
     }
 
     pub fn to_i16(&self) -> i16 {
-        self.as_int().to_i16()
+        match self {
+            Self::Int(v) => v.to_i16(),
+            Self::UInt(v) => v.to_i16(),
+            Self::Float(v) => v.to_i16(),
+        }
     }
 
     pub fn to_i32(&self) -> i32 {
-        self.as_int().to_i32()
+        match self {
+            Self::Int(v) => v.to_i32(),
+            Self::UInt(v) => v.to_i32(),
+            Self::Float(v) => v.to_i32(),
+        }
     }
 
     pub fn to_i64(&self) -> i64 {
-        self.as_int().to_i64()
+        match self {
+            Self::Int(v) => v.to_i64(),
+            Self::UInt(v) => v.to_i64(),
+            Self::Float(v) => v.to_i64(),
+        }
     }
 }
 
@@ -134,19 +158,35 @@ impl Number {
     }
 
     pub fn to_u8(&self) -> u8 {
-        self.as_uint().to_u8()
+        match self {
+            Self::Int(v) => v.to_u8(),
+            Self::UInt(v) => v.to_u8(),
+            Self::Float(v) => v.to_u8(),
+        }
     }
 
     pub fn to_u16(&self) -> u16 {
-        self.as_uint().to_u16()
+        match self {
+            Self::Int(v) => v.to_u16(),
+            Self::UInt(v) => v.to_u16(),
+            Self::Float(v) => v.to_u16(),
+        }
     }
 
     pub fn to_u32(&self) -> u32 {
-        self.as_uint().to_u32()
+        match self {
+            Self::Int(v) => v.to_u32(),
+            Self::UInt(v) => v.to_u32(),
+            Self::Float(v) => v.to_u32(),
+        }
     }
 
     pub fn to_u64(&self) -> u64 {
-        self.as_uint().to_u64()
+        match self {
+            Self::Int(v) => v.to_u64(),
+            Self::UInt(v) => v.to_u64(),
+            Self::Float(v) => v.to_u64(),
+        }
     }
 }
 
@@ -231,6 +271,18 @@ mod tests {
     #[should_panic(expected = "expected UInt")]
     fn as_uint_panics_on_mismatch() {
         Number::from_i32(1).as_uint();
+    }
+
+    #[test]
+    fn to_i64_cross_variant() {
+        assert_eq!(Number::from_u32(42).to_i64(), 42);
+        assert_eq!(Number::from_f64(3.14).to_i64(), 3);
+    }
+
+    #[test]
+    fn to_f64_cross_variant() {
+        assert_eq!(Number::from_i32(42).to_f64(), 42.0);
+        assert_eq!(Number::from_u32(42).to_f64(), 42.0);
     }
 
     #[test]

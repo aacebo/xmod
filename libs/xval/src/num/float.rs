@@ -32,14 +32,70 @@ impl Float {
     pub fn to_f64(&self) -> f64 {
         match self {
             Self::F64(v) => *v,
-            v => panic!("expected f64, received {}", std::any::type_name_of_val(v)),
+            Self::F32(v) => *v as f64,
         }
     }
 
     pub fn to_f32(&self) -> f32 {
         match self {
             Self::F32(v) => *v,
-            v => panic!("expected f32, received {}", std::any::type_name_of_val(v)),
+            Self::F64(v) => *v as f32,
+        }
+    }
+
+    pub fn to_i8(&self) -> i8 {
+        match self {
+            Self::F32(v) => *v as i8,
+            Self::F64(v) => *v as i8,
+        }
+    }
+
+    pub fn to_i16(&self) -> i16 {
+        match self {
+            Self::F32(v) => *v as i16,
+            Self::F64(v) => *v as i16,
+        }
+    }
+
+    pub fn to_i32(&self) -> i32 {
+        match self {
+            Self::F32(v) => *v as i32,
+            Self::F64(v) => *v as i32,
+        }
+    }
+
+    pub fn to_i64(&self) -> i64 {
+        match self {
+            Self::F32(v) => *v as i64,
+            Self::F64(v) => *v as i64,
+        }
+    }
+
+    pub fn to_u8(&self) -> u8 {
+        match self {
+            Self::F32(v) => *v as u8,
+            Self::F64(v) => *v as u8,
+        }
+    }
+
+    pub fn to_u16(&self) -> u16 {
+        match self {
+            Self::F32(v) => *v as u16,
+            Self::F64(v) => *v as u16,
+        }
+    }
+
+    pub fn to_u32(&self) -> u32 {
+        match self {
+            Self::F32(v) => *v as u32,
+            Self::F64(v) => *v as u32,
+        }
+    }
+
+    pub fn to_u64(&self) -> u64 {
+        match self {
+            Self::F32(v) => *v as u64,
+            Self::F64(v) => *v as u64,
         }
     }
 
@@ -215,15 +271,25 @@ mod tests {
     }
 
     #[test]
-    #[should_panic(expected = "expected f32")]
-    fn to_f32_panics_on_mismatch() {
-        Float::from_f64(1.0).to_f32();
+    fn to_f64_cross_variant() {
+        let v = Float::from_f32(1.5).to_f64();
+        assert!((v - 1.5).abs() < 0.001);
     }
 
     #[test]
-    #[should_panic(expected = "expected f64")]
-    fn to_f64_panics_on_mismatch() {
-        Float::from_f32(1.0).to_f64();
+    fn to_f32_cross_variant() {
+        assert_eq!(Float::from_f64(1.5).to_f32(), 1.5);
+    }
+
+    #[test]
+    fn to_i64_from_float() {
+        assert_eq!(Float::from_f64(3.14).to_i64(), 3);
+        assert_eq!(Float::from_f32(2.9).to_i64(), 2);
+    }
+
+    #[test]
+    fn to_u64_from_float() {
+        assert_eq!(Float::from_f64(42.7).to_u64(), 42);
     }
 
     #[test]
