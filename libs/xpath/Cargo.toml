@@ -1,5 +1,5 @@
 [package]
-name = "xsch"
+name = "xpath"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -8,11 +8,5 @@ documentation.workspace = true
 homepage.workspace = true
 repository.workspace = true
 
-[features]
-default = []
-serde = ["dep:serde"]
-
 [dependencies]
 xok = { workspace = true }
-xval = { workspace = true }
-serde = { workspace = true, optional = true }

@@ -15,6 +15,7 @@ repository = "https://www.github.com/aacebo/xmod"
 [workspace.dependencies]
 xok = { path = "./libs/xok", version = "0.0.0" }
 xflux = { path = "./libs/xflux", version = "0.0.0" }
+xpath = { path = "./libs/xpath", version = "0.0.0" }
 xpipe = { path = "./libs/xpipe", version = "0.0.0" }
 xsch = { path = "./libs/xsch", version = "0.0.0" }
 xtera = { path = "./libs/xtera", version = "0.0.0"}

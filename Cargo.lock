@@ -215,6 +215,13 @@ dependencies = [
 ]
 
 [[package]]
+name = "xpath"
+version = "0.0.0"
+dependencies = [
+ "xok",
+]
+
+[[package]]
 name = "xpipe"
 version = "0.0.0"
 dependencies = [
@@ -225,6 +232,11 @@ dependencies = [
 [[package]]
 name = "xsch"
 version = "0.0.0"
+dependencies = [
+ "serde",
+ "xok",
+ "xval",
+]
 
 [[package]]
 name = "xtera"
