@@ -1,9 +1,10 @@
+use crate::ast::{
+    BinaryOp, Expr, ExprKind, ForBlock, IfBlock, IfBranch, Literal, Node, NodeKind, Span,
+    SwitchBlock, SwitchCase, Template, UnaryOp,
+};
+
 use super::error::{ParseError, Result};
-use super::expr::{Expr, ExprKind, Literal};
 use super::lexer::{LexToken, Lexer, Spanned};
-use super::node::*;
-use super::op::{BinaryOp, UnaryOp};
-use super::span::Span;
 use super::token::Token;
 
 pub struct Parser<'src> {
@@ -496,6 +497,42 @@ impl<'src> Parser<'src> {
                 let span = sp.span.merge(end.span);
                 Ok(Expr::new(expr.kind, span))
             }
+            LexToken::Expr(Token::LBracket) => {
+                let mut elements = Vec::new();
+                let peeked = self.lexer.peek_expr()?;
+                if peeked.token != LexToken::Expr(Token::RBracket) {
+                    elements.push(self.parse_expr()?);
+                    loop {
+                        let peeked = self.lexer.peek_expr()?;
+                        if peeked.token != LexToken::Expr(Token::Comma) {
+                            break;
+                        }
+                        self.lexer.next_expr()?;
+                        elements.push(self.parse_expr()?);
+                    }
+                }
+                let end = self.expect_expr_token(&Token::RBracket)?;
+                let span = sp.span.merge(end.span);
+                Ok(Expr::new(ExprKind::Array(elements), span))
+            }
+            LexToken::Expr(Token::LBrace) => {
+                let mut entries = Vec::new();
+                let peeked = self.lexer.peek_expr()?;
+                if peeked.token != LexToken::Expr(Token::RBrace) {
+                    entries.push(self.parse_object_entry()?);
+                    loop {
+                        let peeked = self.lexer.peek_expr()?;
+                        if peeked.token != LexToken::Expr(Token::Comma) {
+                            break;
+                        }
+                        self.lexer.next_expr()?;
+                        entries.push(self.parse_object_entry()?);
+                    }
+                }
+                let end = self.expect_expr_token(&Token::RBrace)?;
+                let span = sp.span.merge(end.span);
+                Ok(Expr::new(ExprKind::Object(entries), span))
+            }
             other => Err(ParseError::new(
                 format!("expected expression, got {other:?}"),
                 sp.span,
@@ -525,6 +562,24 @@ impl<'src> Parser<'src> {
         }
 
         Ok(args)
+    }
+
+    /// Parse a single object entry: `key: value`.
+    fn parse_object_entry(&mut self) -> Result<(String, Expr)> {
+        let key_sp = self.lexer.next_expr()?;
+        let key = match key_sp.token {
+            LexToken::Expr(Token::Ident(s)) => s,
+            LexToken::Expr(Token::String(s)) => s,
+            other => {
+                return Err(ParseError::new(
+                    format!("expected object key, got {other:?}"),
+                    key_sp.span,
+                ));
+            }
+        };
+        self.expect_expr_token(&Token::Colon)?;
+        let value = self.parse_expr()?;
+        Ok((key, value))
     }
 
     // ── Helpers ─────────────────────────────────────────────────────
@@ -581,8 +636,8 @@ impl<'src> Parser<'src> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::parse;
-    use super::*;
+    use crate::ast::*;
+    use crate::parse::parse;
 
     #[test]
     fn plain_text() {
@@ -874,5 +929,79 @@ mod tests {
     fn empty_template() {
         let tpl = parse("").unwrap();
         assert!(tpl.nodes.is_empty());
+    }
+
+    #[test]
+    fn array_literal() {
+        let tpl = parse("{{ [1, 2, 3] }}").unwrap();
+        match &tpl.nodes[0].kind {
+            NodeKind::Interpolation(Expr {
+                kind: ExprKind::Array(elements),
+                ..
+            }) => {
+                assert_eq!(elements.len(), 3);
+            }
+            other => panic!("expected array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn array_empty() {
+        let tpl = parse("{{ [] }}").unwrap();
+        match &tpl.nodes[0].kind {
+            NodeKind::Interpolation(Expr {
+                kind: ExprKind::Array(elements),
+                ..
+            }) => {
+                assert!(elements.is_empty());
+            }
+            other => panic!("expected array, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn object_literal() {
+        let tpl = parse("{{ { a: 1, b: '2' } }}").unwrap();
+        match &tpl.nodes[0].kind {
+            NodeKind::Interpolation(Expr {
+                kind: ExprKind::Object(entries),
+                ..
+            }) => {
+                assert_eq!(entries.len(), 2);
+                assert_eq!(entries[0].0, "a");
+                assert_eq!(entries[1].0, "b");
+            }
+            other => panic!("expected object, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn object_empty() {
+        let tpl = parse("{{ {} }}").unwrap();
+        match &tpl.nodes[0].kind {
+            NodeKind::Interpolation(Expr {
+                kind: ExprKind::Object(entries),
+                ..
+            }) => {
+                assert!(entries.is_empty());
+            }
+            other => panic!("expected object, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn nested_object_in_array() {
+        let tpl = parse("{{ [{ a: 1 }, { b: 2 }] }}").unwrap();
+        match &tpl.nodes[0].kind {
+            NodeKind::Interpolation(Expr {
+                kind: ExprKind::Array(elements),
+                ..
+            }) => {
+                assert_eq!(elements.len(), 2);
+                assert!(matches!(&elements[0].kind, ExprKind::Object(_)));
+                assert!(matches!(&elements[1].kind, ExprKind::Object(_)));
+            }
+            other => panic!("expected array, got {other:?}"),
+        }
     }
 }

@@ -1,7 +1,8 @@
 use logos::Logos;
 
+use crate::ast::Span;
+
 use super::error::{ParseError, Result};
-use super::span::Span;
 use super::token::Token;
 
 /// A positioned token.
@@ -53,7 +54,6 @@ const AT_KEYWORDS: &[(&str, LexToken)] = &[
 pub struct Lexer<'src> {
     source: &'src str,
     pos: usize,
-    pushback: Option<Spanned>,
     peeked_expr: Option<Spanned>,
     brace_depth: usize,
 }
@@ -63,7 +63,6 @@ impl<'src> Lexer<'src> {
         Self {
             source,
             pos: 0,
-            pushback: None,
             peeked_expr: None,
             brace_depth: 0,
         }
@@ -75,10 +74,6 @@ impl<'src> Lexer<'src> {
 
     pub fn close_brace(&mut self) {
         self.brace_depth = self.brace_depth.saturating_sub(1);
-    }
-
-    pub fn unread(&mut self, spanned: Spanned) {
-        self.pushback = Some(spanned);
     }
 
     /// Check if remaining source (after whitespace) starts with the
@@ -117,10 +112,6 @@ impl<'src> Lexer<'src> {
     /// Scan the next token in text mode. Stops at `{{`, `@keyword`,
     /// `}` (when brace_depth > 0), or EOF.
     pub fn next_text(&mut self) -> Result<Spanned> {
-        if let Some(sp) = self.pushback.take() {
-            return Ok(sp);
-        }
-
         let start = self.pos;
         let bytes = self.source.as_bytes();
         let len = bytes.len();
@@ -392,21 +383,5 @@ mod tests {
 
         let next = lex.next_expr().unwrap();
         assert_eq!(next.token, peeked.token);
-    }
-
-    #[test]
-    fn unread() {
-        let mut lex = Lexer::new("hello {{ x }}");
-
-        let sp = lex.next_text().unwrap();
-        assert_eq!(sp.token, LexToken::Text("hello ".to_string()));
-
-        let sp2 = lex.next_text().unwrap();
-        assert_eq!(sp2.token, LexToken::InterpolStart);
-
-        lex.unread(sp2.clone());
-
-        let sp3 = lex.next_text().unwrap();
-        assert_eq!(sp3, sp2);
     }
 }

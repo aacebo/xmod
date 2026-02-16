@@ -46,6 +46,12 @@ pub enum ExprKind {
 
     /// Unary operation: `!a`, `-a`.
     Unary { op: UnaryOp, operand: Box<Expr> },
+
+    /// Array literal: `[1, 2, 3]`.
+    Array(Vec<Expr>),
+
+    /// Object literal: `{ a: 1, b: 'two' }`.
+    Object(Vec<(String, Expr)>),
 }
 
 #[derive(Debug, Clone, PartialEq)]
