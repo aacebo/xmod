@@ -59,11 +59,11 @@ impl<'src> Parser<'src> {
 
         match sp.token {
             LexToken::Text(s) => Ok(Some(Node::new(NodeKind::Text(s), sp.span))),
-            LexToken::InterpolStart => {
+            LexToken::InterpStart => {
                 let expr = self.parse_expr()?;
-                let end = self.expect_interpol_end()?;
+                let end = self.expect_interp_end()?;
                 let span = sp.span.merge(end.span);
-                Ok(Some(Node::new(NodeKind::Interpolation(expr), span)))
+                Ok(Some(Node::new(NodeKind::Interp(expr), span)))
             }
             LexToken::AtIf => {
                 let if_block = self.parse_if(sp.span)?;
@@ -131,6 +131,7 @@ impl<'src> Parser<'src> {
                     body,
                     span: sp.span.merge(self.last_span()),
                 });
+
                 continue;
             }
 
@@ -425,6 +426,7 @@ impl<'src> Parser<'src> {
                             ));
                         }
                     };
+
                     let span = expr.span.merge(field_sp.span);
                     expr = Expr::new(
                         ExprKind::Member {
@@ -514,6 +516,7 @@ impl<'src> Parser<'src> {
                         elements.push(self.parse_expr()?);
                     }
                 }
+
                 let end = self.expect_expr_token(&Token::RBracket)?;
                 let span = sp.span.merge(end.span);
                 Ok(Expr::new(ExprKind::Array(elements), span))
@@ -532,6 +535,7 @@ impl<'src> Parser<'src> {
                         entries.push(self.parse_object_entry()?);
                     }
                 }
+
                 let end = self.expect_expr_token(&Token::RBrace)?;
                 let span = sp.span.merge(end.span);
                 Ok(Expr::new(ExprKind::Object(entries), span))
@@ -580,6 +584,7 @@ impl<'src> Parser<'src> {
                 ));
             }
         };
+
         self.expect_expr_token(&Token::Colon)?;
         let value = self.parse_expr()?;
         Ok((key, value))
@@ -600,10 +605,10 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn expect_interpol_end(&mut self) -> Result<Spanned> {
+    fn expect_interp_end(&mut self) -> Result<Spanned> {
         let sp = self.lexer.next_expr()?;
 
-        if sp.token == LexToken::InterpolEnd {
+        if sp.token == LexToken::InterpEnd {
             Ok(sp)
         } else {
             Err(ParseError::new(
@@ -650,12 +655,12 @@ mod tests {
     }
 
     #[test]
-    fn interpolation() {
+    fn interp() {
         let tpl = parse("hello {{ name }}").unwrap();
         assert_eq!(tpl.nodes.len(), 2);
         assert!(matches!(&tpl.nodes[0].kind, NodeKind::Text(s) if s == "hello "));
         assert!(
-            matches!(&tpl.nodes[1].kind, NodeKind::Interpolation(Expr { kind: ExprKind::Ident(s), .. }) if s == "name")
+            matches!(&tpl.nodes[1].kind, NodeKind::Interp(Expr { kind: ExprKind::Ident(s), .. }) if s == "name")
         );
     }
 
@@ -664,7 +669,7 @@ mod tests {
         let tpl = parse("{{ value | uppercase }}").unwrap();
         assert_eq!(tpl.nodes.len(), 1);
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Pipe { name, args, .. },
                 ..
             }) => {
@@ -679,7 +684,7 @@ mod tests {
     fn pipe_with_args() {
         let tpl = parse("{{ value | slice:0:5 }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Pipe { name, args, .. },
                 ..
             }) => {
@@ -694,7 +699,7 @@ mod tests {
     fn binary_precedence() {
         let tpl = parse("{{ a + b * c }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Binary { op, right, .. },
                 ..
             }) => {
@@ -715,7 +720,7 @@ mod tests {
     fn unary() {
         let tpl = parse("{{ !done }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Unary { op, .. },
                 ..
             }) => {
@@ -729,7 +734,7 @@ mod tests {
     fn member_access() {
         let tpl = parse("{{ obj.field }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Member { field, .. },
                 ..
             }) => {
@@ -744,7 +749,7 @@ mod tests {
         let tpl = parse("{{ arr[0] }}").unwrap();
         assert!(matches!(
             &tpl.nodes[0].kind,
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Index { .. },
                 ..
             })
@@ -755,7 +760,7 @@ mod tests {
     fn function_call() {
         let tpl = parse("{{ greet('world') }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Call { args, .. },
                 ..
             }) => {
@@ -769,7 +774,7 @@ mod tests {
     fn method_call() {
         let tpl = parse("{{ obj.method(1, 2) }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Call { callee, args, .. },
                 ..
             }) => {
@@ -873,7 +878,7 @@ mod tests {
         let tpl = parse("{{ null }}").unwrap();
         assert!(matches!(
             &tpl.nodes[0].kind,
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Null),
                 ..
             })
@@ -882,7 +887,7 @@ mod tests {
         let tpl = parse("{{ true }}").unwrap();
         assert!(matches!(
             &tpl.nodes[0].kind,
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Bool(true)),
                 ..
             })
@@ -891,7 +896,7 @@ mod tests {
         let tpl = parse("{{ 42 }}").unwrap();
         assert!(matches!(
             &tpl.nodes[0].kind,
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Int(42)),
                 ..
             })
@@ -900,7 +905,7 @@ mod tests {
         let tpl = parse("{{ 3.14 }}").unwrap();
         assert!(matches!(
             &tpl.nodes[0].kind,
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Float(n)),
                 ..
             }) if (n - 3.14).abs() < f64::EPSILON
@@ -911,7 +916,7 @@ mod tests {
     fn grouped_expression() {
         let tpl = parse("{{ (a + b) * c }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Binary { op, left, .. },
                 ..
             }) => {
@@ -938,7 +943,7 @@ mod tests {
     fn array_literal() {
         let tpl = parse("{{ [1, 2, 3] }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..
             }) => {
@@ -952,7 +957,7 @@ mod tests {
     fn array_empty() {
         let tpl = parse("{{ [] }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..
             }) => {
@@ -966,7 +971,7 @@ mod tests {
     fn object_literal() {
         let tpl = parse("{{ { a: 1, b: '2' } }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Object(entries),
                 ..
             }) => {
@@ -982,7 +987,7 @@ mod tests {
     fn object_empty() {
         let tpl = parse("{{ {} }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Object(entries),
                 ..
             }) => {
@@ -996,7 +1001,7 @@ mod tests {
     fn nested_object_in_array() {
         let tpl = parse("{{ [{ a: 1 }, { b: 2 }] }}").unwrap();
         match &tpl.nodes[0].kind {
-            NodeKind::Interpolation(Expr {
+            NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..
             }) => {

@@ -19,7 +19,7 @@ pub enum NodeKind {
     Text(String),
 
     /// `{{ expr }}`.
-    Interpolation(Expr),
+    Interp(Expr),
 
     /// `@if (cond) { body } @else if (cond) { body } @else { body }`.
     If(IfBlock),

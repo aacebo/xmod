@@ -18,10 +18,10 @@ pub struct Spanned {
 pub enum LexToken {
     /// Raw text content.
     Text(String),
-    /// Start of interpolation `{{`.
-    InterpolStart,
-    /// End of interpolation `}}`.
-    InterpolEnd,
+    /// Start of interp `{{`.
+    InterpStart,
+    /// End of interp `}}`.
+    InterpEnd,
     /// `@if`
     AtIf,
     /// `@else`
@@ -138,7 +138,7 @@ impl<'src> Lexer<'src> {
 
                 self.pos = text_end + 2;
                 return Ok(Spanned {
-                    token: LexToken::InterpolStart,
+                    token: LexToken::InterpStart,
                     span: Span::new(text_end, text_end + 2),
                 });
             }
@@ -246,7 +246,7 @@ impl<'src> Lexer<'src> {
             let span = Span::new(self.pos, self.pos + 2);
             self.pos += 2;
             return Ok(Spanned {
-                token: LexToken::InterpolEnd,
+                token: LexToken::InterpEnd,
                 span,
             });
         }
@@ -310,19 +310,19 @@ mod tests {
     }
 
     #[test]
-    fn interpolation() {
+    fn interp() {
         let mut lex = Lexer::new("hello {{ name }}");
         let sp = lex.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Text("hello ".to_string()));
 
         let sp = lex.next_text().unwrap();
-        assert_eq!(sp.token, LexToken::InterpolStart);
+        assert_eq!(sp.token, LexToken::InterpStart);
 
         let sp = lex.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::Ident("name".to_string())));
 
         let sp = lex.next_expr().unwrap();
-        assert_eq!(sp.token, LexToken::InterpolEnd);
+        assert_eq!(sp.token, LexToken::InterpEnd);
     }
 
     #[test]
@@ -376,7 +376,7 @@ mod tests {
     fn peek_expr() {
         let mut lex = Lexer::new("{{ a }}");
 
-        let _ = lex.next_text().unwrap(); // InterpolStart
+        let _ = lex.next_text().unwrap(); // InterpStart
 
         let peeked = lex.peek_expr().unwrap().clone();
         assert_eq!(peeked.token, LexToken::Expr(Token::Ident("a".to_string())));

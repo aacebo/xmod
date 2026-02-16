@@ -1,8 +1,10 @@
-use crate::ast::{Node, NodeKind};
+pub mod for_block;
+pub mod if_block;
+pub mod interp;
+pub mod switch_block;
 
-use super::context::Context;
-use super::error::{EvalError, EvalErrorKind, Result};
-use super::expr::{eval_expr, is_truthy};
+use crate::ast::{Node, NodeKind};
+use crate::eval::{Context, Result};
 
 pub fn render(nodes: &[Node], ctx: &mut Context) -> Result<String> {
     let mut output = String::new();
@@ -12,72 +14,18 @@ pub fn render(nodes: &[Node], ctx: &mut Context) -> Result<String> {
     Ok(output)
 }
 
-fn render_node(node: &Node, ctx: &mut Context, output: &mut String) -> Result<()> {
+pub fn render_node(node: &Node, ctx: &mut Context, output: &mut String) -> Result<()> {
     match &node.kind {
-        NodeKind::Text(s) => {
-            output.push_str(s);
-        }
-        NodeKind::Interpolation(expr) => {
-            let val = eval_expr(expr, ctx)?;
-            output.push_str(&val.to_string());
-        }
-        NodeKind::If(if_block) => {
-            let mut matched = false;
-            for branch in &if_block.branches {
-                let cond = eval_expr(&branch.condition, ctx)?;
-                if is_truthy(&cond) {
-                    render_nodes_into(&branch.body, ctx, output)?;
-                    matched = true;
-                    break;
-                }
-            }
-            if !matched {
-                if let Some(else_body) = &if_block.else_body {
-                    render_nodes_into(else_body, ctx, output)?;
-                }
-            }
-        }
-        NodeKind::For(for_block) => {
-            let iterable = eval_expr(&for_block.iterable, ctx)?;
-            if !iterable.is_array() {
-                return Err(EvalError::new(
-                    EvalErrorKind::NotIterable,
-                    for_block.iterable.span,
-                ));
-            }
-            let arr = iterable.as_array();
-
-            // Save vars, iterate with binding, restore.
-            let saved = ctx.child_scope();
-            for item in arr.items() {
-                let val = item.as_value();
-                ctx.set(for_block.binding.clone(), val);
-                render_nodes_into(&for_block.body, ctx, output)?;
-            }
-            ctx.with_vars(saved);
-        }
-        NodeKind::Switch(switch_block) => {
-            let expr_val = eval_expr(&switch_block.expr, ctx)?;
-            let mut matched = false;
-            for case in &switch_block.cases {
-                let case_val = eval_expr(&case.value, ctx)?;
-                if expr_val == case_val {
-                    render_nodes_into(&case.body, ctx, output)?;
-                    matched = true;
-                    break;
-                }
-            }
-            if !matched {
-                if let Some(default_body) = &switch_block.default {
-                    render_nodes_into(default_body, ctx, output)?;
-                }
-            }
-        }
+        NodeKind::Text(s) => output.push_str(s),
+        NodeKind::Interp(expr) => interp::render_interp(expr, ctx, output)?,
+        NodeKind::If(block) => if_block::render_if(block, ctx, output)?,
+        NodeKind::For(block) => for_block::render_for(block, ctx, output)?,
+        NodeKind::Switch(block) => switch_block::render_switch(block, ctx, output)?,
     }
     Ok(())
 }
 
-fn render_nodes_into(nodes: &[Node], ctx: &mut Context, output: &mut String) -> Result<()> {
+pub fn render_nodes_into(nodes: &[Node], ctx: &mut Context, output: &mut String) -> Result<()> {
     for node in nodes {
         render_node(node, ctx, output)?;
     }
@@ -101,14 +49,14 @@ mod tests {
     }
 
     #[test]
-    fn interpolation() {
+    fn interp() {
         let mut ctx = Context::new();
         ctx.set("name", xval::Value::from_str("Alice"));
         assert_eq!(render("Hello {{ name }}!", &mut ctx), "Hello Alice!");
     }
 
     #[test]
-    fn interpolation_expr() {
+    fn interp_expr() {
         let mut ctx = Context::new();
         assert_eq!(render("{{ 1 + 2 }}", &mut ctx), "3");
     }

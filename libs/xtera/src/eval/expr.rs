@@ -5,12 +5,13 @@ use crate::ast::{BinaryOp, Expr, ExprKind, Literal, Span, UnaryOp};
 use super::context::Context;
 use super::error::{EvalError, EvalErrorKind, Result};
 
-pub(crate) fn eval_expr(expr: &Expr, ctx: &Context) -> Result<xval::Value> {
+pub fn eval_expr(expr: &Expr, ctx: &Context) -> Result<xval::Value> {
     match &expr.kind {
         ExprKind::Literal(lit) => eval_literal(lit),
         ExprKind::Ident(name) => ctx.get(name).cloned().ok_or_else(|| {
             EvalError::new(EvalErrorKind::UndefinedVariable(name.clone()), expr.span)
         }),
+
         ExprKind::Member { object, field } => eval_member(object, field, expr.span, ctx),
         ExprKind::Index { object, index } => eval_index(object, index, expr.span, ctx),
         ExprKind::Call { .. } => Err(EvalError::new(EvalErrorKind::NotCallable, expr.span)),
@@ -22,13 +23,16 @@ pub(crate) fn eval_expr(expr: &Expr, ctx: &Context) -> Result<xval::Value> {
                 .iter()
                 .map(|e| eval_expr(e, ctx))
                 .collect::<Result<_>>()?;
+
             Ok(xval::Value::from_array(values))
         }
+
         ExprKind::Object(entries) => {
             let mut map = HashMap::new();
             for (key, val_expr) in entries {
                 map.insert(xval::Ident::key(key), eval_expr(val_expr, ctx)?);
             }
+
             Ok(xval::Value::from_struct(map))
         }
     }
@@ -55,6 +59,7 @@ fn eval_member(object: &Expr, field: &str, span: Span, ctx: &Context) -> Result<
             span,
         ));
     }
+
     obj.as_struct()
         .field(xval::Ident::key(field))
         .map(|v| v.as_value())
@@ -100,9 +105,11 @@ fn eval_pipe(
         .iter()
         .map(|a| eval_expr(a, ctx))
         .collect::<Result<_>>()?;
+
     let pipe_fn = ctx
         .get_pipe(name)
         .ok_or_else(|| EvalError::new(EvalErrorKind::UndefinedPipe(name.to_string()), span))?;
+
     pipe_fn(&val, &evaluated_args)
 }
 
@@ -122,6 +129,7 @@ fn eval_binary(
             }
             return eval_expr(right, ctx);
         }
+
         BinaryOp::Or => {
             let left_val = eval_expr(left, ctx)?;
             if is_truthy(&left_val) {
@@ -129,6 +137,7 @@ fn eval_binary(
             }
             return eval_expr(right, ctx);
         }
+
         _ => {}
     }
 
@@ -208,7 +217,7 @@ fn eval_unary(op: UnaryOp, operand: &Expr, span: Span, ctx: &Context) -> Result<
 
 // ── helpers ──
 
-pub(crate) fn is_truthy(val: &xval::Value) -> bool {
+pub fn is_truthy(val: &xval::Value) -> bool {
     match val {
         xval::Value::Null => false,
         xval::Value::Bool(b) => b.to_bool(),
@@ -334,6 +343,7 @@ fn eval_arithmetic(l: Numeric, op: BinaryOp, r: Numeric, span: Span) -> Result<x
     let (Numeric::Int(li), Numeric::Int(ri)) = (l, r) else {
         unreachable!()
     };
+
     match op {
         BinaryOp::Add => Ok(xval::Value::from_i64(li + ri)),
         BinaryOp::Sub => Ok(xval::Value::from_i64(li - ri)),
