@@ -1,3 +1,4 @@
+pub mod eval;
 mod expr;
 mod node;
 mod op;

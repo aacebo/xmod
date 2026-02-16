@@ -1,6 +1,6 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::{Template, eval};
+use crate::{Template, ast::eval};
 
 pub trait Pipe {
     fn invoke(&self, this: &xval::Value, args: &[xval::Value]) -> eval::Result<xval::Value>;
@@ -63,5 +63,91 @@ impl Scope {
         self.template(name)
             .expect("template not found")
             .render(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    struct NoopPipe;
+    impl Pipe for NoopPipe {
+        fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> eval::Result<xval::Value> {
+            Ok(val.clone())
+        }
+    }
+
+    struct ConstFunc(xval::Value);
+    impl Func for ConstFunc {
+        fn invoke(&self, _args: &[xval::Value]) -> eval::Result<xval::Value> {
+            Ok(self.0.clone())
+        }
+    }
+
+    #[test]
+    fn var_set_and_get() {
+        let mut scope = Scope::new();
+        scope.set_var("x", xval::Value::from_i64(42));
+        assert_eq!(*scope.var("x").unwrap(), 42i64);
+    }
+
+    #[test]
+    fn var_missing_returns_none() {
+        let scope = Scope::new();
+        assert!(scope.var("x").is_none());
+    }
+
+    #[test]
+    fn var_overwrite() {
+        let mut scope = Scope::new();
+        scope.set_var("x", xval::Value::from_i64(1));
+        scope.set_var("x", xval::Value::from_i64(2));
+        assert_eq!(*scope.var("x").unwrap(), 2i64);
+    }
+
+    #[test]
+    fn pipe_set_and_get() {
+        let mut scope = Scope::new();
+        scope.set_pipe("noop", NoopPipe);
+        assert!(scope.pipe("noop").is_some());
+    }
+
+    #[test]
+    fn pipe_missing_returns_none() {
+        let scope = Scope::new();
+        assert!(scope.pipe("noop").is_none());
+    }
+
+    #[test]
+    fn func_set_and_get() {
+        let mut scope = Scope::new();
+        scope.set_func("greet", ConstFunc(xval::Value::from_str("hi")));
+        assert!(scope.func("greet").is_some());
+    }
+
+    #[test]
+    fn func_missing_returns_none() {
+        let scope = Scope::new();
+        assert!(scope.func("greet").is_none());
+    }
+
+    #[test]
+    fn template_set_and_render() {
+        let mut scope = Scope::new();
+        scope.set_var("name", xval::Value::from_str("world"));
+        let tpl = Template::parse("hello {{ name }}").unwrap();
+        scope.set_template("greeting", tpl);
+        assert_eq!(scope.render("greeting").unwrap(), "hello world");
+    }
+
+    #[test]
+    fn clone_isolates_mutations() {
+        let mut scope = Scope::new();
+        scope.set_var("x", xval::Value::from_i64(1));
+        let mut cloned = scope.clone();
+        cloned.set_var("x", xval::Value::from_i64(2));
+        cloned.set_var("y", xval::Value::from_i64(3));
+        assert_eq!(*scope.var("x").unwrap(), 1i64);
+        assert!(scope.var("y").is_none());
     }
 }

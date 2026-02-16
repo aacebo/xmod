@@ -10,6 +10,5 @@ repository.workspace = true
 
 [dependencies]
 logos = { version = "0.16" }
-uuid = { version = "1.21", features = ["v4"] }
 
 xval = { workspace = true }

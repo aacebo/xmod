@@ -1,4 +1,4 @@
-use crate::ast::Span;
+use super::Span;
 
 pub type Result<T> = std::result::Result<T, EvalError>;
 
@@ -66,6 +66,51 @@ impl std::fmt::Display for EvalErrorKind {
 
 impl std::error::Error for EvalError {}
 
+// ── shared helpers ──
+
+pub fn is_truthy(val: &xval::Value) -> bool {
+    match val {
+        xval::Value::Null => false,
+        xval::Value::Bool(b) => b.to_bool(),
+        xval::Value::Number(n) => n.to_f64() != 0.0,
+        xval::Value::String(s) => !s.as_str().is_empty(),
+        xval::Value::Object(o) => !o.is_empty(),
+    }
+}
+
+pub(crate) fn expect_number<'a>(val: &'a xval::Value, span: Span) -> Result<&'a xval::Number> {
+    match val {
+        xval::Value::Number(n) => Ok(n),
+        other => Err(EvalError::new(
+            EvalErrorKind::TypeError {
+                expected: "number",
+                got: value_type_name(other),
+            },
+            span,
+        )),
+    }
+}
+
+pub(crate) fn value_to_usize(val: &xval::Value, span: Span) -> Result<usize> {
+    let n = expect_number(val, span)?;
+    let v = n.to_i64();
+    if v >= 0 {
+        Ok(v as usize)
+    } else {
+        Err(EvalError::new(EvalErrorKind::InvalidIndex, span))
+    }
+}
+
+pub(crate) fn value_type_name(val: &xval::Value) -> String {
+    match val {
+        xval::Value::Null => "null".to_string(),
+        xval::Value::Bool(_) => "bool".to_string(),
+        xval::Value::Number(_) => "number".to_string(),
+        xval::Value::String(_) => "string".to_string(),
+        xval::Value::Object(o) => o.name().to_string(),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -113,5 +158,18 @@ mod tests {
             err.to_string(),
             "eval error at 0..4: index 5 out of bounds (len 3)"
         );
+    }
+
+    #[test]
+    fn truthiness() {
+        assert!(!is_truthy(&xval::Value::Null));
+        assert!(!is_truthy(&xval::Value::from_bool(false)));
+        assert!(is_truthy(&xval::Value::from_bool(true)));
+        assert!(!is_truthy(&xval::Value::from_i64(0)));
+        assert!(is_truthy(&xval::Value::from_i64(1)));
+        assert!(!is_truthy(&xval::Value::from_f64(0.0)));
+        assert!(is_truthy(&xval::Value::from_f64(0.1)));
+        assert!(!is_truthy(&xval::Value::from_str("")));
+        assert!(is_truthy(&xval::Value::from_str("x")));
     }
 }

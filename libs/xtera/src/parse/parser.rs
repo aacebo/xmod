@@ -1,8 +1,9 @@
 use crate::{
     Template,
     ast::{
-        BinaryOp, Expr, ExprKind, ForBlock, IfBlock, IfBranch, Literal, Node, NodeKind, Span,
-        SwitchBlock, SwitchCase, UnaryOp,
+        ArrayExpr, BinaryExpr, BinaryOp, CallExpr, Expr, ForNode, IdentExpr, IfBranch, IfNode,
+        IndexExpr, InterpNode, MemberExpr, Node, ObjectExpr, PipeExpr, Span, SwitchCase,
+        SwitchNode, TextNode, UnaryExpr, UnaryOp, ValueExpr,
     },
 };
 
@@ -32,8 +33,8 @@ impl<'src> Parser<'src> {
             nodes
                 .first()
                 .unwrap()
-                .span
-                .merge(nodes.last().unwrap().span)
+                .span()
+                .merge(nodes.last().unwrap().span())
         };
 
         Ok(Template::new(nodes, span))
@@ -58,27 +59,37 @@ impl<'src> Parser<'src> {
         let sp = self.lexer.next_text()?;
 
         match sp.token {
-            LexToken::Text(s) => Ok(Some(Node::new(NodeKind::Text(s), sp.span))),
+            LexToken::Text(s) => Ok(Some(Node::Text(TextNode {
+                text: s,
+                span: sp.span,
+            }))),
             LexToken::InterpStart => {
                 let expr = self.parse_expr()?;
                 let end = self.expect_interp_end()?;
                 let span = sp.span.merge(end.span);
-                Ok(Some(Node::new(NodeKind::Interp(expr), span)))
+                Ok(Some(Node::Interp(InterpNode { expr, span })))
             }
             LexToken::AtIf => {
-                let if_block = self.parse_if(sp.span)?;
+                let (branches, else_body) = self.parse_if(sp.span)?;
                 let span = sp.span.merge(self.last_span());
-                Ok(Some(Node::new(NodeKind::If(if_block), span)))
+                Ok(Some(Node::If(IfNode {
+                    branches,
+                    else_body,
+                    span,
+                })))
             }
             LexToken::AtFor => {
-                let for_block = self.parse_for()?;
+                let for_node = self.parse_for()?;
                 let span = sp.span.merge(self.last_span());
-                Ok(Some(Node::new(NodeKind::For(for_block), span)))
+                Ok(Some(Node::For(ForNode { span, ..for_node })))
             }
             LexToken::AtSwitch => {
-                let switch_block = self.parse_switch()?;
+                let switch_node = self.parse_switch()?;
                 let span = sp.span.merge(self.last_span());
-                Ok(Some(Node::new(NodeKind::Switch(switch_block), span)))
+                Ok(Some(Node::Switch(SwitchNode {
+                    span,
+                    ..switch_node
+                })))
             }
             LexToken::CloseBrace | LexToken::Eof => Ok(None),
             other => Err(ParseError::new(
@@ -88,7 +99,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn parse_if(&mut self, start_span: Span) -> Result<IfBlock> {
+    fn parse_if(&mut self, start_span: Span) -> Result<(Vec<IfBranch>, Option<Vec<Node>>)> {
         let mut branches = Vec::new();
 
         // First branch
@@ -104,15 +115,11 @@ impl<'src> Parser<'src> {
 
         let mut else_body = None;
 
-        // Check for @else / @else if chains.
-        // We use `starts_with_at_keyword` to peek ahead without
-        // consuming text (which would greedily eat the `{` as raw text).
         loop {
             if !self.lexer.starts_with_at_keyword("else") {
                 break;
             }
 
-            // Consume whitespace and @else
             self.lexer.skip_whitespace();
             let sp = self.lexer.next_text()?;
             if sp.token != LexToken::AtElse {
@@ -122,10 +129,9 @@ impl<'src> Parser<'src> {
                 ));
             }
 
-            // Check for @else if
             if self.lexer.starts_with_at_keyword("if") {
                 self.lexer.skip_whitespace();
-                let _ = self.lexer.next_text()?; // consume @if
+                let _ = self.lexer.next_text()?;
 
                 self.expect_expr_token(&Token::LParen)?;
                 let condition = self.parse_expr()?;
@@ -140,21 +146,16 @@ impl<'src> Parser<'src> {
                 continue;
             }
 
-            // plain @else
             else_body = Some(self.parse_block_body()?);
             break;
         }
 
-        Ok(IfBlock {
-            branches,
-            else_body,
-        })
+        Ok((branches, else_body))
     }
 
-    fn parse_for(&mut self) -> Result<ForBlock> {
+    fn parse_for(&mut self) -> Result<ForNode> {
         self.expect_expr_token(&Token::LParen)?;
 
-        // binding
         let binding_sp = self.lexer.next_expr()?;
         let binding = match binding_sp.token {
             LexToken::Expr(Token::Ident(s)) => s,
@@ -166,7 +167,6 @@ impl<'src> Parser<'src> {
             }
         };
 
-        // `of`
         let of_sp = self.lexer.next_expr()?;
         if of_sp.token != LexToken::Expr(Token::Of) {
             return Err(ParseError::new(
@@ -175,13 +175,10 @@ impl<'src> Parser<'src> {
             ));
         }
 
-        // iterable expression
         let iterable = self.parse_expr()?;
 
-        // `;`
         self.expect_expr_token(&Token::Semi)?;
 
-        // `track`
         let track_sp = self.lexer.next_expr()?;
         if track_sp.token != LexToken::Expr(Token::Track) {
             return Err(ParseError::new(
@@ -190,22 +187,22 @@ impl<'src> Parser<'src> {
             ));
         }
 
-        // track expression
         let track = self.parse_expr()?;
 
         self.expect_expr_token(&Token::RParen)?;
 
         let body = self.parse_block_body()?;
 
-        Ok(ForBlock {
+        Ok(ForNode {
             binding,
             iterable,
             track,
             body,
+            span: Span::new(0, 0), // will be overwritten by caller
         })
     }
 
-    fn parse_switch(&mut self) -> Result<SwitchBlock> {
+    fn parse_switch(&mut self) -> Result<SwitchNode> {
         self.expect_expr_token(&Token::LParen)?;
         let expr = self.parse_expr()?;
         self.expect_expr_token(&Token::RParen)?;
@@ -218,7 +215,6 @@ impl<'src> Parser<'src> {
         loop {
             let sp = self.lexer.next_text()?;
 
-            // Skip whitespace-only text
             let sp = if matches!(&sp.token, LexToken::Text(s) if s.trim().is_empty()) {
                 self.lexer.next_text()?
             } else {
@@ -260,21 +256,20 @@ impl<'src> Parser<'src> {
             }
         }
 
-        Ok(SwitchBlock {
+        Ok(SwitchNode {
             expr,
             cases,
             default,
+            span: Span::new(0, 0), // will be overwritten by caller
         })
     }
 
-    /// Parse a block body: expects `{`, template nodes, then `}`.
     fn parse_block_body(&mut self) -> Result<Vec<Node>> {
         self.expect_expr_token(&Token::LBrace)?;
         self.lexer.open_brace();
 
         let nodes = self.parse_nodes()?;
 
-        // parse_nodes returns when it encounters CloseBrace or Eof
         self.lexer.close_brace();
 
         Ok(nodes)
@@ -282,12 +277,10 @@ impl<'src> Parser<'src> {
 
     // ── Expression parsing ──────────────────────────────────────────
 
-    /// Parse a full expression (entry point).
     fn parse_expr(&mut self) -> Result<Expr> {
         self.parse_pipe_expr()
     }
 
-    /// Parse a pipe expression: `expr | name:arg1:arg2`.
     fn parse_pipe_expr(&mut self) -> Result<Expr> {
         let mut expr = self.parse_binary(0)?;
 
@@ -297,9 +290,8 @@ impl<'src> Parser<'src> {
                 break;
             }
 
-            self.lexer.next_expr()?; // consume `|`
+            self.lexer.next_expr()?;
 
-            // Pipe name
             let name_sp = self.lexer.next_expr()?;
             let name = match name_sp.token {
                 LexToken::Expr(Token::Ident(s)) => s,
@@ -311,7 +303,6 @@ impl<'src> Parser<'src> {
                 }
             };
 
-            // Optional pipe args: `:arg1:arg2`
             let mut args = Vec::new();
             loop {
                 let peeked = self.lexer.peek_expr()?;
@@ -319,25 +310,22 @@ impl<'src> Parser<'src> {
                     break;
                 }
 
-                self.lexer.next_expr()?; // consume `:`
+                self.lexer.next_expr()?;
                 args.push(self.parse_binary(0)?);
             }
 
-            let span = expr.span.merge(name_sp.span);
-            expr = Expr::new(
-                ExprKind::Pipe {
-                    value: Box::new(expr),
-                    name,
-                    args,
-                },
+            let span = expr.span().merge(name_sp.span);
+            expr = Expr::Pipe(PipeExpr {
+                value: Box::new(expr),
+                name,
+                args,
                 span,
-            );
+            });
         }
 
         Ok(expr)
     }
 
-    /// Pratt precedence climbing for binary operators.
     fn parse_binary(&mut self, min_bp: u8) -> Result<Expr> {
         let mut left = self.parse_unary()?;
 
@@ -358,24 +346,21 @@ impl<'src> Parser<'src> {
                 break;
             }
 
-            self.lexer.next_expr()?; // consume operator
+            self.lexer.next_expr()?;
 
             let right = self.parse_binary(r_bp)?;
-            let span = left.span.merge(right.span);
-            left = Expr::new(
-                ExprKind::Binary {
-                    left: Box::new(left),
-                    op,
-                    right: Box::new(right),
-                },
+            let span = left.span().merge(right.span());
+            left = Expr::Binary(BinaryExpr {
+                left: Box::new(left),
+                op,
+                right: Box::new(right),
                 span,
-            );
+            });
         }
 
         Ok(left)
     }
 
-    /// Parse a unary expression: `!expr`, `-expr`, or postfix.
     fn parse_unary(&mut self) -> Result<Expr> {
         let peeked = self.lexer.peek_expr()?;
 
@@ -383,32 +368,27 @@ impl<'src> Parser<'src> {
             LexToken::Expr(Token::Bang) => {
                 let sp = self.lexer.next_expr()?;
                 let operand = self.parse_unary()?;
-                let span = sp.span.merge(operand.span);
-                Ok(Expr::new(
-                    ExprKind::Unary {
-                        op: UnaryOp::Not,
-                        operand: Box::new(operand),
-                    },
+                let span = sp.span.merge(operand.span());
+                Ok(Expr::Unary(UnaryExpr {
+                    op: UnaryOp::Not,
+                    operand: Box::new(operand),
                     span,
-                ))
+                }))
             }
             LexToken::Expr(Token::Minus) => {
                 let sp = self.lexer.next_expr()?;
                 let operand = self.parse_unary()?;
-                let span = sp.span.merge(operand.span);
-                Ok(Expr::new(
-                    ExprKind::Unary {
-                        op: UnaryOp::Neg,
-                        operand: Box::new(operand),
-                    },
+                let span = sp.span.merge(operand.span());
+                Ok(Expr::Unary(UnaryExpr {
+                    op: UnaryOp::Neg,
+                    operand: Box::new(operand),
                     span,
-                ))
+                }))
             }
             _ => self.parse_postfix(),
         }
     }
 
-    /// Parse postfix expressions: `.field`, `[index]`, `(args)`.
     fn parse_postfix(&mut self) -> Result<Expr> {
         let mut expr = self.parse_atom()?;
 
@@ -417,11 +397,10 @@ impl<'src> Parser<'src> {
 
             match &peeked.token {
                 LexToken::Expr(Token::Dot) => {
-                    self.lexer.next_expr()?; // consume `.`
+                    self.lexer.next_expr()?;
                     let field_sp = self.lexer.next_expr()?;
                     let field = match field_sp.token {
                         LexToken::Expr(Token::Ident(s)) => s,
-                        // Allow keywords as field names
                         LexToken::Expr(Token::Of) => "of".to_string(),
                         LexToken::Expr(Token::Track) => "track".to_string(),
                         other => {
@@ -432,40 +411,34 @@ impl<'src> Parser<'src> {
                         }
                     };
 
-                    let span = expr.span.merge(field_sp.span);
-                    expr = Expr::new(
-                        ExprKind::Member {
-                            object: Box::new(expr),
-                            field,
-                        },
+                    let span = expr.span().merge(field_sp.span);
+                    expr = Expr::Member(MemberExpr {
+                        object: Box::new(expr),
+                        field,
                         span,
-                    );
+                    });
                 }
                 LexToken::Expr(Token::LBracket) => {
-                    self.lexer.next_expr()?; // consume `[`
+                    self.lexer.next_expr()?;
                     let index = self.parse_expr()?;
                     let end = self.expect_expr_token(&Token::RBracket)?;
-                    let span = expr.span.merge(end.span);
-                    expr = Expr::new(
-                        ExprKind::Index {
-                            object: Box::new(expr),
-                            index: Box::new(index),
-                        },
+                    let span = expr.span().merge(end.span);
+                    expr = Expr::Index(IndexExpr {
+                        object: Box::new(expr),
+                        index: Box::new(index),
                         span,
-                    );
+                    });
                 }
                 LexToken::Expr(Token::LParen) => {
-                    self.lexer.next_expr()?; // consume `(`
+                    self.lexer.next_expr()?;
                     let args = self.parse_args()?;
                     let end = self.expect_expr_token(&Token::RParen)?;
-                    let span = expr.span.merge(end.span);
-                    expr = Expr::new(
-                        ExprKind::Call {
-                            callee: Box::new(expr),
-                            args,
-                        },
+                    let span = expr.span().merge(end.span);
+                    expr = Expr::Call(CallExpr {
+                        callee: Box::new(expr),
+                        args,
                         span,
-                    );
+                    });
                 }
                 _ => break,
             }
@@ -474,38 +447,52 @@ impl<'src> Parser<'src> {
         Ok(expr)
     }
 
-    /// Parse an atom: literal, identifier, or `(expr)`.
     fn parse_atom(&mut self) -> Result<Expr> {
         let sp = self.lexer.next_expr()?;
 
         match sp.token {
-            LexToken::Expr(Token::Int(n)) => {
-                Ok(Expr::new(ExprKind::Literal(Literal::Int(n)), sp.span))
-            }
-            LexToken::Expr(Token::Float(n)) => {
-                Ok(Expr::new(ExprKind::Literal(Literal::Float(n)), sp.span))
-            }
-            LexToken::Expr(Token::String(s)) => {
-                Ok(Expr::new(ExprKind::Literal(Literal::String(s)), sp.span))
-            }
-            LexToken::Expr(Token::True) => {
-                Ok(Expr::new(ExprKind::Literal(Literal::Bool(true)), sp.span))
-            }
-            LexToken::Expr(Token::False) => {
-                Ok(Expr::new(ExprKind::Literal(Literal::Bool(false)), sp.span))
-            }
-            LexToken::Expr(Token::Null) => Ok(Expr::new(ExprKind::Literal(Literal::Null), sp.span)),
-            LexToken::Expr(Token::Ident(s)) => Ok(Expr::new(ExprKind::Ident(s), sp.span)),
-            // Contextual keywords treated as identifiers
-            LexToken::Expr(Token::Of) => Ok(Expr::new(ExprKind::Ident("of".to_string()), sp.span)),
-            LexToken::Expr(Token::Track) => {
-                Ok(Expr::new(ExprKind::Ident("track".to_string()), sp.span))
-            }
+            LexToken::Expr(Token::Int(n)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_i64(n),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Float(n)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_f64(n),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::String(s)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_string(s),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::True) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_bool(true),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::False) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_bool(false),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Null) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::Null,
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Ident(s)) => Ok(Expr::Ident(IdentExpr {
+                name: s,
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Of) => Ok(Expr::Ident(IdentExpr {
+                name: "of".to_string(),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Track) => Ok(Expr::Ident(IdentExpr {
+                name: "track".to_string(),
+                span: sp.span,
+            })),
             LexToken::Expr(Token::LParen) => {
-                let expr = self.parse_expr()?;
+                let inner = self.parse_expr()?;
                 let end = self.expect_expr_token(&Token::RParen)?;
                 let span = sp.span.merge(end.span);
-                Ok(Expr::new(expr.kind, span))
+                // Re-wrap with the parenthesized span
+                Ok(Self::with_span(inner, span))
             }
             LexToken::Expr(Token::LBracket) => {
                 let mut elements = Vec::new();
@@ -524,7 +511,7 @@ impl<'src> Parser<'src> {
 
                 let end = self.expect_expr_token(&Token::RBracket)?;
                 let span = sp.span.merge(end.span);
-                Ok(Expr::new(ExprKind::Array(elements), span))
+                Ok(Expr::Array(ArrayExpr { elements, span }))
             }
             LexToken::Expr(Token::LBrace) => {
                 let mut entries = Vec::new();
@@ -543,7 +530,7 @@ impl<'src> Parser<'src> {
 
                 let end = self.expect_expr_token(&Token::RBrace)?;
                 let span = sp.span.merge(end.span);
-                Ok(Expr::new(ExprKind::Object(entries), span))
+                Ok(Expr::Object(ObjectExpr { entries, span }))
             }
             other => Err(ParseError::new(
                 format!("expected expression, got {other:?}"),
@@ -552,7 +539,6 @@ impl<'src> Parser<'src> {
         }
     }
 
-    /// Parse a comma-separated list of expressions (for function args).
     fn parse_args(&mut self) -> Result<Vec<Expr>> {
         let mut args = Vec::new();
 
@@ -569,14 +555,13 @@ impl<'src> Parser<'src> {
                 break;
             }
 
-            self.lexer.next_expr()?; // consume `,`
+            self.lexer.next_expr()?;
             args.push(self.parse_expr()?);
         }
 
         Ok(args)
     }
 
-    /// Parse a single object entry: `key: value`.
     fn parse_object_entry(&mut self) -> Result<(String, Expr)> {
         let key_sp = self.lexer.next_expr()?;
         let key = match key_sp.token {
@@ -627,6 +612,52 @@ impl<'src> Parser<'src> {
         Span::new(self.source_len, self.source_len)
     }
 
+    /// Re-create an Expr with a new span (for parenthesized expressions).
+    fn with_span(expr: Expr, span: Span) -> Expr {
+        match expr {
+            Expr::Value(mut e) => {
+                e.span = span;
+                Expr::Value(e)
+            }
+            Expr::Ident(mut e) => {
+                e.span = span;
+                Expr::Ident(e)
+            }
+            Expr::Member(mut e) => {
+                e.span = span;
+                Expr::Member(e)
+            }
+            Expr::Index(mut e) => {
+                e.span = span;
+                Expr::Index(e)
+            }
+            Expr::Call(mut e) => {
+                e.span = span;
+                Expr::Call(e)
+            }
+            Expr::Pipe(mut e) => {
+                e.span = span;
+                Expr::Pipe(e)
+            }
+            Expr::Binary(mut e) => {
+                e.span = span;
+                Expr::Binary(e)
+            }
+            Expr::Unary(mut e) => {
+                e.span = span;
+                Expr::Unary(e)
+            }
+            Expr::Array(mut e) => {
+                e.span = span;
+                Expr::Array(e)
+            }
+            Expr::Object(mut e) => {
+                e.span = span;
+                Expr::Object(e)
+            }
+        }
+    }
+
     fn token_to_binary_op(token: &Token) -> Option<BinaryOp> {
         match token {
             Token::Plus => Some(BinaryOp::Add),
@@ -656,16 +687,18 @@ mod tests {
     fn plain_text() {
         let tpl = parse("hello world").unwrap();
         assert_eq!(tpl.nodes().len(), 1);
-        assert!(matches!(&tpl.nodes()[0].kind, NodeKind::Text(s) if s == "hello world"));
+        assert!(
+            matches!(&tpl.nodes()[0], Node::Text(TextNode { text, .. }) if text == "hello world")
+        );
     }
 
     #[test]
     fn interp() {
         let tpl = parse("hello {{ name }}").unwrap();
         assert_eq!(tpl.nodes().len(), 2);
-        assert!(matches!(&tpl.nodes()[0].kind, NodeKind::Text(s) if s == "hello "));
+        assert!(matches!(&tpl.nodes()[0], Node::Text(TextNode { text, .. }) if text == "hello "));
         assert!(
-            matches!(&tpl.nodes()[1].kind, NodeKind::Interp(Expr { kind: ExprKind::Ident(s), .. }) if s == "name")
+            matches!(&tpl.nodes()[1], Node::Interp(InterpNode { expr: Expr::Ident(IdentExpr { name, .. }), .. }) if name == "name")
         );
     }
 
@@ -673,9 +706,9 @@ mod tests {
     fn pipe() {
         let tpl = parse("{{ value | uppercase }}").unwrap();
         assert_eq!(tpl.nodes().len(), 1);
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Pipe { name, args, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Pipe(PipeExpr { name, args, .. }),
                 ..
             }) => {
                 assert_eq!(name, "uppercase");
@@ -688,9 +721,9 @@ mod tests {
     #[test]
     fn pipe_with_args() {
         let tpl = parse("{{ value | slice:0:5 }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Pipe { name, args, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Pipe(PipeExpr { name, args, .. }),
                 ..
             }) => {
                 assert_eq!(name, "slice");
@@ -703,18 +736,18 @@ mod tests {
     #[test]
     fn binary_precedence() {
         let tpl = parse("{{ a + b * c }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Binary { op, right, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Binary(BinaryExpr { op, right, .. }),
                 ..
             }) => {
                 assert_eq!(*op, BinaryOp::Add);
                 assert!(matches!(
-                    &right.kind,
-                    ExprKind::Binary {
+                    &**right,
+                    Expr::Binary(BinaryExpr {
                         op: BinaryOp::Mul,
                         ..
-                    }
+                    })
                 ));
             }
             other => panic!("expected binary, got {other:?}"),
@@ -724,9 +757,9 @@ mod tests {
     #[test]
     fn unary() {
         let tpl = parse("{{ !done }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Unary { op, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Unary(UnaryExpr { op, .. }),
                 ..
             }) => {
                 assert_eq!(*op, UnaryOp::Not);
@@ -738,9 +771,9 @@ mod tests {
     #[test]
     fn member_access() {
         let tpl = parse("{{ obj.field }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Member { field, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Member(MemberExpr { field, .. }),
                 ..
             }) => {
                 assert_eq!(field, "field");
@@ -753,9 +786,9 @@ mod tests {
     fn index_access() {
         let tpl = parse("{{ arr[0] }}").unwrap();
         assert!(matches!(
-            &tpl.nodes()[0].kind,
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Index { .. },
+            &tpl.nodes()[0],
+            Node::Interp(InterpNode {
+                expr: Expr::Index(_),
                 ..
             })
         ));
@@ -764,9 +797,9 @@ mod tests {
     #[test]
     fn function_call() {
         let tpl = parse("{{ greet('world') }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Call { args, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Call(CallExpr { args, .. }),
                 ..
             }) => {
                 assert_eq!(args.len(), 1);
@@ -778,13 +811,13 @@ mod tests {
     #[test]
     fn method_call() {
         let tpl = parse("{{ obj.method(1, 2) }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Call { callee, args, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Call(CallExpr { callee, args, .. }),
                 ..
             }) => {
                 assert!(
-                    matches!(&callee.kind, ExprKind::Member { field, .. } if field == "method")
+                    matches!(&**callee, Expr::Member(MemberExpr { field, .. }) if field == "method")
                 );
                 assert_eq!(args.len(), 2);
             }
@@ -796,10 +829,11 @@ mod tests {
     fn if_block() {
         let tpl = parse("@if (show) { visible }").unwrap();
         assert_eq!(tpl.nodes().len(), 1);
-        match &tpl.nodes()[0].kind {
-            NodeKind::If(IfBlock {
+        match &tpl.nodes()[0] {
+            Node::If(IfNode {
                 branches,
                 else_body,
+                ..
             }) => {
                 assert_eq!(branches.len(), 1);
                 assert!(else_body.is_none());
@@ -811,10 +845,11 @@ mod tests {
     #[test]
     fn if_else_block() {
         let tpl = parse("@if (show) { visible } @else { hidden }").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::If(IfBlock {
+        match &tpl.nodes()[0] {
+            Node::If(IfNode {
                 branches,
                 else_body,
+                ..
             }) => {
                 assert_eq!(branches.len(), 1);
                 assert!(else_body.is_some());
@@ -826,10 +861,11 @@ mod tests {
     #[test]
     fn if_else_if_else() {
         let tpl = parse("@if (a) { one } @else @if (b) { two } @else { three }").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::If(IfBlock {
+        match &tpl.nodes()[0] {
+            Node::If(IfNode {
                 branches,
                 else_body,
+                ..
             }) => {
                 assert_eq!(branches.len(), 2);
                 assert!(else_body.is_some());
@@ -842,8 +878,8 @@ mod tests {
     fn for_block() {
         let tpl = parse("@for (item of items; track item.id) { {{ item.name }} }").unwrap();
         assert_eq!(tpl.nodes().len(), 1);
-        match &tpl.nodes()[0].kind {
-            NodeKind::For(ForBlock { binding, body, .. }) => {
+        match &tpl.nodes()[0] {
+            Node::For(ForNode { binding, body, .. }) => {
                 assert_eq!(binding, "item");
                 assert!(!body.is_empty());
             }
@@ -854,8 +890,8 @@ mod tests {
     #[test]
     fn switch_block() {
         let tpl = parse("@switch (color) { @case ('red') { Red! } @case ('blue') { Blue! } @default { Other } }").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Switch(SwitchBlock { cases, default, .. }) => {
+        match &tpl.nodes()[0] {
+            Node::Switch(SwitchNode { cases, default, .. }) => {
                 assert_eq!(cases.len(), 2);
                 assert!(default.is_some());
             }
@@ -869,9 +905,9 @@ mod tests {
             parse("@for (item of items; track item.id) { @if (item.visible) { {{ item.name }} } }")
                 .unwrap();
         assert_eq!(tpl.nodes().len(), 1);
-        match &tpl.nodes()[0].kind {
-            NodeKind::For(ForBlock { body, .. }) => {
-                let has_if = body.iter().any(|n| matches!(&n.kind, NodeKind::If(_)));
+        match &tpl.nodes()[0] {
+            Node::For(ForNode { body, .. }) => {
+                let has_if = body.iter().any(|n| matches!(n, Node::If(_)));
                 assert!(has_if);
             }
             other => panic!("expected for, got {other:?}"),
@@ -882,56 +918,68 @@ mod tests {
     fn literals() {
         let tpl = parse("{{ null }}").unwrap();
         assert!(matches!(
-            &tpl.nodes()[0].kind,
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Literal(Literal::Null),
+            &tpl.nodes()[0],
+            Node::Interp(InterpNode {
+                expr: Expr::Value(ValueExpr {
+                    value: xval::Value::Null,
+                    ..
+                }),
                 ..
             })
         ));
 
         let tpl = parse("{{ true }}").unwrap();
         assert!(matches!(
-            &tpl.nodes()[0].kind,
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Literal(Literal::Bool(true)),
+            &tpl.nodes()[0],
+            Node::Interp(InterpNode {
+                expr: Expr::Value(ValueExpr {
+                    value: xval::Value::Bool(_),
+                    ..
+                }),
                 ..
             })
         ));
 
         let tpl = parse("{{ 42 }}").unwrap();
         assert!(matches!(
-            &tpl.nodes()[0].kind,
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Literal(Literal::Int(42)),
+            &tpl.nodes()[0],
+            Node::Interp(InterpNode {
+                expr: Expr::Value(ValueExpr {
+                    value: xval::Value::Number(_),
+                    ..
+                }),
                 ..
             })
         ));
 
         let tpl = parse("{{ 3.14 }}").unwrap();
         assert!(matches!(
-            &tpl.nodes()[0].kind,
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Literal(Literal::Float(n)),
+            &tpl.nodes()[0],
+            Node::Interp(InterpNode {
+                expr: Expr::Value(ValueExpr {
+                    value: xval::Value::Number(_),
+                    ..
+                }),
                 ..
-            }) if (n - 3.14).abs() < f64::EPSILON
+            })
         ));
     }
 
     #[test]
     fn grouped_expression() {
         let tpl = parse("{{ (a + b) * c }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Binary { op, left, .. },
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Binary(BinaryExpr { op, left, .. }),
                 ..
             }) => {
                 assert_eq!(*op, BinaryOp::Mul);
                 assert!(matches!(
-                    &left.kind,
-                    ExprKind::Binary {
+                    &**left,
+                    Expr::Binary(BinaryExpr {
                         op: BinaryOp::Add,
                         ..
-                    }
+                    })
                 ));
             }
             other => panic!("expected binary, got {other:?}"),
@@ -947,9 +995,9 @@ mod tests {
     #[test]
     fn array_literal() {
         let tpl = parse("{{ [1, 2, 3] }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Array(elements),
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Array(ArrayExpr { elements, .. }),
                 ..
             }) => {
                 assert_eq!(elements.len(), 3);
@@ -961,9 +1009,9 @@ mod tests {
     #[test]
     fn array_empty() {
         let tpl = parse("{{ [] }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Array(elements),
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Array(ArrayExpr { elements, .. }),
                 ..
             }) => {
                 assert!(elements.is_empty());
@@ -975,9 +1023,9 @@ mod tests {
     #[test]
     fn object_literal() {
         let tpl = parse("{{ { a: 1, b: '2' } }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Object(entries),
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Object(ObjectExpr { entries, .. }),
                 ..
             }) => {
                 assert_eq!(entries.len(), 2);
@@ -991,9 +1039,9 @@ mod tests {
     #[test]
     fn object_empty() {
         let tpl = parse("{{ {} }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Object(entries),
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Object(ObjectExpr { entries, .. }),
                 ..
             }) => {
                 assert!(entries.is_empty());
@@ -1005,14 +1053,14 @@ mod tests {
     #[test]
     fn nested_object_in_array() {
         let tpl = parse("{{ [{ a: 1 }, { b: 2 }] }}").unwrap();
-        match &tpl.nodes()[0].kind {
-            NodeKind::Interp(Expr {
-                kind: ExprKind::Array(elements),
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Array(ArrayExpr { elements, .. }),
                 ..
             }) => {
                 assert_eq!(elements.len(), 2);
-                assert!(matches!(&elements[0].kind, ExprKind::Object(_)));
-                assert!(matches!(&elements[1].kind, ExprKind::Object(_)));
+                assert!(matches!(&elements[0], Expr::Object(_)));
+                assert!(matches!(&elements[1], Expr::Object(_)));
             }
             other => panic!("expected array, got {other:?}"),
         }
