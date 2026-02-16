@@ -11,7 +11,6 @@ pub fn eval_expr(expr: &Expr, ctx: &Scope) -> Result<xval::Value> {
         ExprKind::Ident(name) => ctx.var(name).cloned().ok_or_else(|| {
             EvalError::new(EvalErrorKind::UndefinedVariable(name.clone()), expr.span)
         }),
-
         ExprKind::Member { object, field } => eval_member(object, field, expr.span, ctx),
         ExprKind::Index { object, index } => eval_index(object, index, expr.span, ctx),
         ExprKind::Call { callee, args } => eval_call(callee, args, expr.span, ctx),
@@ -26,7 +25,6 @@ pub fn eval_expr(expr: &Expr, ctx: &Scope) -> Result<xval::Value> {
 
             Ok(xval::Value::from_array(values))
         }
-
         ExprKind::Object(entries) => {
             let mut map = HashMap::new();
             for (key, val_expr) in entries {
