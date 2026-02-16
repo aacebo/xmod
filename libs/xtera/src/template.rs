@@ -12,7 +12,7 @@ impl Template {
         Self { nodes, span }
     }
 
-    pub fn parse(source: &str) -> parse::Result<Self> {
-        parse::parse(source)
+    pub fn parse(src: &str) -> parse::Result<Self> {
+        parse::parse(src)
     }
 }
