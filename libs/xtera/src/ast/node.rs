@@ -1,12 +1,5 @@
 use super::{Expr, Span};
 
-/// A parsed template — a sequence of nodes.
-#[derive(Debug, Clone, PartialEq)]
-pub struct Template {
-    pub nodes: Vec<Node>,
-    pub span: Span,
-}
-
 /// A single top-level template node.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Node {

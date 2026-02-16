@@ -1,6 +1,9 @@
-use crate::ast::{
-    BinaryOp, Expr, ExprKind, ForBlock, IfBlock, IfBranch, Literal, Node, NodeKind, Span,
-    SwitchBlock, SwitchCase, Template, UnaryOp,
+use crate::{
+    Template,
+    ast::{
+        BinaryOp, Expr, ExprKind, ForBlock, IfBlock, IfBranch, Literal, Node, NodeKind, Span,
+        SwitchBlock, SwitchCase, UnaryOp,
+    },
 };
 
 use super::error::{ParseError, Result};
@@ -33,7 +36,7 @@ impl<'src> Parser<'src> {
                 .merge(nodes.last().unwrap().span)
         };
 
-        Ok(Template { nodes, span })
+        Ok(Template::new(nodes, span))
     }
 
     // ── Template-level parsing ──────────────────────────────────────
