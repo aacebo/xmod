@@ -30,10 +30,6 @@ pub enum LexToken {
     AtFor,
     /// `@match`
     AtMatch,
-    /// `@case`
-    AtCase,
-    /// `@default`
-    AtDefault,
     /// `@include`
     AtInclude,
     /// Closing brace `}` that ends a block body.
@@ -49,8 +45,6 @@ const AT_KEYWORDS: &[(&str, LexToken)] = &[
     ("else", LexToken::AtElse),
     ("for", LexToken::AtFor),
     ("match", LexToken::AtMatch),
-    ("case", LexToken::AtCase),
-    ("default", LexToken::AtDefault),
     ("include", LexToken::AtInclude),
 ];
 
@@ -59,6 +53,7 @@ pub struct Lexer<'src> {
     pos: usize,
     peeked_expr: Option<Spanned>,
     brace_depth: usize,
+    interp_depth: usize,
 }
 
 impl<'src> Lexer<'src> {
@@ -68,6 +63,7 @@ impl<'src> Lexer<'src> {
             pos: 0,
             peeked_expr: None,
             brace_depth: 0,
+            interp_depth: 0,
         }
     }
 
@@ -140,6 +136,7 @@ impl<'src> Lexer<'src> {
                 }
 
                 self.pos = text_end + 2;
+                self.interp_depth += 1;
                 return Ok(Spanned {
                     token: LexToken::InterpStart,
                     span: Span::new(text_end, text_end + 2),
@@ -244,14 +241,30 @@ impl<'src> Lexer<'src> {
             });
         }
 
-        // Check for `}}`
-        if rem.starts_with("}}") {
+        // Check for `}}` — only treat as InterpEnd when inside an interpolation
+        if rem.starts_with("}}") && self.interp_depth > 0 {
             let span = Span::new(self.pos, self.pos + 2);
             self.pos += 2;
+            self.interp_depth -= 1;
             return Ok(Spanned {
                 token: LexToken::InterpEnd,
                 span,
             });
+        }
+
+        // Check for `@match` in expression mode
+        if rem.starts_with("@match") {
+            let after = &rem[6..];
+            if after.is_empty()
+                || !after.as_bytes()[0].is_ascii_alphanumeric() && after.as_bytes()[0] != b'_'
+            {
+                let span = Span::new(self.pos, self.pos + 6);
+                self.pos += 6;
+                return Ok(Spanned {
+                    token: LexToken::AtMatch,
+                    span,
+                });
+            }
         }
 
         let mut lex = Token::lexer(rem);

@@ -144,6 +144,9 @@ pub enum Token {
 
     #[token(";")]
     Semi,
+
+    #[token("=>")]
+    FatArrow,
 }
 
 #[cfg(test)]

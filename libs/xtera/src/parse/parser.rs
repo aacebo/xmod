@@ -201,61 +201,152 @@ impl<'src> Parser<'src> {
         let expr = self.parse_expr()?;
         self.expect_expr_token(&Token::RParen)?;
         self.expect_expr_token(&Token::LBrace)?;
-        self.lexer.open_brace();
 
-        let mut cases = Vec::new();
+        let mut arms = Vec::new();
         let mut default: Option<BlockNode> = None;
 
         loop {
-            let sp = self.lexer.next_text()?;
+            let peeked = self.lexer.peek_expr()?;
+            if peeked.token == LexToken::Expr(Token::RBrace) {
+                self.lexer.next_expr()?;
+                break;
+            }
 
-            let sp = if matches!(&sp.token, LexToken::Text(s) if s.trim().is_empty()) {
-                self.lexer.next_text()?
+            if peeked.token == LexToken::Eof {
+                return Err(ParseError::new(
+                    "unexpected end of input in @match block",
+                    peeked.span,
+                ));
+            }
+
+            let pattern_sp = self.lexer.next_expr()?;
+            let is_default =
+                matches!(&pattern_sp.token, LexToken::Expr(Token::Ident(s)) if s == "_");
+
+            self.expect_expr_token(&Token::FatArrow)?;
+
+            if is_default {
+                let body = self.parse_block_body()?;
+                default = Some(body);
             } else {
-                sp
-            };
+                let pattern = Self::spanned_to_expr(pattern_sp)?;
+                let body = self.parse_block_body()?;
+                let span = pattern.span().merge(body.span);
+                arms.push(MatchNodeArm {
+                    pattern,
+                    body,
+                    span,
+                });
+            }
 
-            match sp.token {
-                LexToken::AtCase => {
-                    self.expect_expr_token(&Token::LParen)?;
-                    let value = self.parse_expr()?;
-                    self.expect_expr_token(&Token::RParen)?;
-                    let body = self.parse_block_body()?;
-                    cases.push(MatchCase {
-                        value,
-                        body,
-                        span: sp.span.merge(self.last_span()),
-                    });
-                }
-                LexToken::AtDefault => {
-                    let body = self.parse_block_body()?;
-                    default = Some(body);
-                }
-                LexToken::CloseBrace => {
-                    self.lexer.close_brace();
-                    break;
-                }
-                LexToken::Eof => {
-                    return Err(ParseError::new(
-                        "unexpected end of input in @match block",
-                        sp.span,
-                    ));
-                }
-                other => {
-                    return Err(ParseError::new(
-                        format!("expected @case, @default, or '}}', got {other:?}"),
-                        sp.span,
-                    ));
-                }
+            // Optional trailing comma
+            let peeked = self.lexer.peek_expr()?;
+            if peeked.token == LexToken::Expr(Token::Comma) {
+                self.lexer.next_expr()?;
             }
         }
 
         Ok(MatchNode {
             expr,
-            cases,
+            arms,
             default,
             span: Span::new(0, 0), // will be overwritten by caller
         })
+    }
+
+    fn parse_match_expr(&mut self, start_span: Span) -> Result<Expr> {
+        self.expect_expr_token(&Token::LParen)?;
+        let expr = self.parse_expr()?;
+        self.expect_expr_token(&Token::RParen)?;
+        self.expect_expr_token(&Token::LBrace)?;
+
+        let mut arms = Vec::new();
+        let mut default: Option<Box<Expr>> = None;
+
+        loop {
+            let peeked = self.lexer.peek_expr()?;
+            if peeked.token == LexToken::Expr(Token::RBrace) {
+                let end = self.lexer.next_expr()?;
+                let span = start_span.merge(end.span);
+                return Ok(Expr::Match(MatchExpr {
+                    expr: Box::new(expr),
+                    arms,
+                    default,
+                    span,
+                }));
+            }
+
+            if peeked.token == LexToken::Eof {
+                return Err(ParseError::new(
+                    "unexpected end of input in @match expression",
+                    peeked.span,
+                ));
+            }
+
+            let pattern_sp = self.lexer.next_expr()?;
+            let is_default =
+                matches!(&pattern_sp.token, LexToken::Expr(Token::Ident(s)) if s == "_");
+
+            self.expect_expr_token(&Token::FatArrow)?;
+
+            let value = self.parse_expr()?;
+
+            if is_default {
+                default = Some(Box::new(value));
+            } else {
+                let pattern = Self::spanned_to_expr(pattern_sp)?;
+                let span = pattern.span().merge(value.span());
+                arms.push(MatchArm {
+                    pattern,
+                    value,
+                    span,
+                });
+            }
+
+            // Optional trailing comma
+            let peeked = self.lexer.peek_expr()?;
+            if peeked.token == LexToken::Expr(Token::Comma) {
+                self.lexer.next_expr()?;
+            }
+        }
+    }
+
+    /// Convert a single already-consumed spanned token into an Expr atom.
+    fn spanned_to_expr(sp: Spanned) -> Result<Expr> {
+        match sp.token {
+            LexToken::Expr(Token::Int(n)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_i64(n),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Float(n)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_f64(n),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::String(s)) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_string(s),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::True) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_bool(true),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::False) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::from_bool(false),
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Null) => Ok(Expr::Value(ValueExpr {
+                value: xval::Value::Null,
+                span: sp.span,
+            })),
+            LexToken::Expr(Token::Ident(s)) => Ok(Expr::Ident(IdentExpr {
+                name: s,
+                span: sp.span,
+            })),
+            other => Err(ParseError::new(
+                format!("expected match pattern, got {other:?}"),
+                sp.span,
+            )),
+        }
     }
 
     fn parse_include(&mut self, start_span: Span) -> Result<IncludeNode> {
@@ -540,6 +631,7 @@ impl<'src> Parser<'src> {
                 let span = sp.span.merge(end.span);
                 Ok(Expr::Object(ObjectExpr { entries, span }))
             }
+            LexToken::AtMatch => self.parse_match_expr(sp.span),
             other => Err(ParseError::new(
                 format!("expected expression, got {other:?}"),
                 sp.span,
@@ -662,6 +754,10 @@ impl<'src> Parser<'src> {
             Expr::Object(mut e) => {
                 e.span = span;
                 Expr::Object(e)
+            }
+            Expr::Match(mut e) => {
+                e.span = span;
+                Expr::Match(e)
             }
         }
     }
@@ -897,16 +993,30 @@ mod tests {
 
     #[test]
     fn match_block() {
-        let tpl = parse(
-            "@match (color) { @case ('red') { Red! } @case ('blue') { Blue! } @default { Other } }",
-        )
-        .unwrap();
+        let tpl =
+            parse("@match (color) { 'red' => { Red! }, 'blue' => { Blue! }, _ => { Other } }")
+                .unwrap();
         match &tpl.nodes()[0] {
-            Node::Match(MatchNode { cases, default, .. }) => {
-                assert_eq!(cases.len(), 2);
+            Node::Match(MatchNode { arms, default, .. }) => {
+                assert_eq!(arms.len(), 2);
                 assert!(default.is_some());
             }
             other => panic!("expected match, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn match_expr() {
+        let tpl = parse("{{ @match (status) { 'on' => 'yes', _ => 'no' } }}").unwrap();
+        match &tpl.nodes()[0] {
+            Node::Interp(InterpNode {
+                expr: Expr::Match(MatchExpr { arms, default, .. }),
+                ..
+            }) => {
+                assert_eq!(arms.len(), 1);
+                assert!(default.is_some());
+            }
+            other => panic!("expected match expr, got {other:?}"),
         }
     }
 

@@ -66,7 +66,7 @@ mod tests {
         );
 
         let tpl = Template::parse(
-            "@for (c of colors; track c) {@match (c) { @case ('red') {R} @case ('blue') {B} @default {?} }}",
+            "@for (c of colors; track c) {@match (c) { 'red' => {R}, 'blue' => {B}, _ => {?} }}",
         )
         .unwrap();
         s.set_template("main", tpl);
@@ -127,7 +127,7 @@ mod tests {
             "page",
             Template::parse(concat!(
                 "@include('header')",
-                "@match (theme) { @case ('dark') {<body class='dark'>} @case ('light') {<body class='light'>} @default {<body>} }",
+                "@match (theme) { 'dark' => {<body class='dark'>}, 'light' => {<body class='light'>}, _ => {<body>} }",
                 "@for (user of users; track user) {",
                 "@if (user == 'alice') {<b>{{ user }}</b>}",
                 "@else{<span>{{ user }}</span>}",

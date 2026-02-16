@@ -3,6 +3,7 @@ mod binary;
 mod call;
 mod ident;
 mod index;
+mod match_expr;
 mod member;
 mod object;
 mod pipe;
@@ -14,6 +15,7 @@ pub use binary::*;
 pub use call::*;
 pub use ident::*;
 pub use index::*;
+pub use match_expr::*;
 pub use member::*;
 pub use object::*;
 pub use pipe::*;
@@ -35,6 +37,7 @@ pub enum Expr {
     Unary(UnaryExpr),
     Array(ArrayExpr),
     Object(ObjectExpr),
+    Match(MatchExpr),
 }
 
 impl Expr {
@@ -50,6 +53,7 @@ impl Expr {
             Self::Unary(e) => e.span,
             Self::Array(e) => e.span,
             Self::Object(e) => e.span,
+            Self::Match(e) => e.span,
         }
     }
 
@@ -65,6 +69,7 @@ impl Expr {
             Self::Unary(e) => e.eval(scope),
             Self::Array(e) => e.eval(scope),
             Self::Object(e) => e.eval(scope),
+            Self::Match(e) => e.eval(scope),
         }
     }
 }
