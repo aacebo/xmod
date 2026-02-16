@@ -1,4 +1,4 @@
-use crate::{ast, parse};
+use crate::{ast, eval, parse};
 
 /// A parsed template — a sequence of nodes.
 #[derive(Debug, Clone, PartialEq)]
@@ -14,5 +14,9 @@ impl Template {
 
     pub fn parse(src: &str) -> parse::Result<Self> {
         parse::parse(src)
+    }
+
+    pub fn render(&self, ctx: &mut eval::Context) -> eval::Result<String> {
+        eval::render(&self.nodes, ctx)
     }
 }
