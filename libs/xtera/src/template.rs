@@ -1,23 +1,22 @@
 use crate::{Scope, ast, parse};
 
-/// A parsed template — a sequence of nodes.
+/// A parsed template — a block of nodes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Template {
-    nodes: Vec<ast::Node>,
-    span: ast::Span,
+    block: ast::BlockNode,
 }
 
 impl Template {
-    pub(crate) fn new(nodes: Vec<ast::Node>, span: ast::Span) -> Self {
-        Self { nodes, span }
+    pub(crate) fn new(block: ast::BlockNode) -> Self {
+        Self { block }
     }
 
     pub fn nodes(&self) -> &[ast::Node] {
-        &self.nodes
+        &self.block.nodes
     }
 
     pub fn span(&self) -> &ast::Span {
-        &self.span
+        &self.block.span
     }
 
     pub fn parse(src: &str) -> parse::Result<Self> {
@@ -25,6 +24,6 @@ impl Template {
     }
 
     pub fn render(&self, scope: &Scope) -> ast::Result<String> {
-        ast::render_nodes(&self.nodes, scope)
+        self.block.render(scope)
     }
 }

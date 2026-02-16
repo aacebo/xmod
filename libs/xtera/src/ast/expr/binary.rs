@@ -42,7 +42,7 @@ impl BinaryExpr {
             BinaryOp::Ne => Ok(xval::Value::from_bool(left_val != right_val)),
             BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => {
                 Self::eval_comparison(&left_val, self.op, &right_val)
-            },
+            }
             BinaryOp::Add if left_val.is_string() || right_val.is_string() => Ok(
                 xval::Value::from_string(format!("{}{}", left_val, right_val)),
             ),
@@ -50,7 +50,7 @@ impl BinaryExpr {
                 let l = expect_number(&left_val, self.span)?;
                 let r = expect_number(&right_val, self.span)?;
                 Self::eval_arithmetic(l, self.op, r, self.span)
-            },
+            }
             BinaryOp::And | BinaryOp::Or => unreachable!(),
         }
     }

@@ -1,3 +1,4 @@
+mod block;
 mod for_node;
 mod if_node;
 mod include;
@@ -5,6 +6,7 @@ mod interp;
 mod match_node;
 mod text;
 
+pub use block::*;
 pub use for_node::*;
 pub use if_node::*;
 pub use include::*;
@@ -23,6 +25,7 @@ pub enum Node {
     For(ForNode),
     Match(MatchNode),
     Include(IncludeNode),
+    Block(BlockNode),
 }
 
 impl Node {
@@ -34,6 +37,7 @@ impl Node {
             Self::For(n) => n.span,
             Self::Match(n) => n.span,
             Self::Include(n) => n.span,
+            Self::Block(n) => n.span,
         }
     }
 
@@ -45,14 +49,7 @@ impl Node {
             Self::For(n) => n.render(scope),
             Self::Match(n) => n.render(scope),
             Self::Include(n) => n.render(scope),
+            Self::Block(n) => n.render(scope),
         }
     }
-}
-
-pub fn render_nodes(nodes: &[Node], scope: &Scope) -> Result<String> {
-    let mut output = String::new();
-    for node in nodes {
-        output.push_str(&node.render(scope)?);
-    }
-    Ok(output)
 }

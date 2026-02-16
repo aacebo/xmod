@@ -42,7 +42,7 @@ mod tests {
             ],
             span: Span::new(0, 1),
         };
-        
+
         let result = expr.eval(&ctx).unwrap();
         assert!(result.is_array());
         assert_eq!(result.as_array().len(), 2);

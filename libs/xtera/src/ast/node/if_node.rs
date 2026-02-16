@@ -1,12 +1,12 @@
 use crate::Scope;
 use crate::ast::{Expr, Result, Span, is_truthy};
 
-use super::{Node, render_nodes};
+use super::BlockNode;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IfNode {
     pub branches: Vec<IfBranch>,
-    pub else_body: Option<Vec<Node>>,
+    pub else_body: Option<BlockNode>,
     pub span: Span,
 }
 
@@ -16,12 +16,12 @@ impl IfNode {
             let cond = branch.condition.eval(scope)?;
 
             if is_truthy(&cond) {
-                return render_nodes(&branch.body, scope);
+                return branch.body.render(scope);
             }
         }
 
         if let Some(else_body) = &self.else_body {
-            return render_nodes(else_body, scope);
+            return else_body.render(scope);
         }
 
         Ok(String::new())
@@ -31,14 +31,14 @@ impl IfNode {
 #[derive(Debug, Clone, PartialEq)]
 pub struct IfBranch {
     pub condition: Expr,
-    pub body: Vec<Node>,
+    pub body: BlockNode,
     pub span: Span,
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{TextNode, ValueExpr};
+    use crate::ast::{Node, TextNode, ValueExpr};
 
     fn val(v: xval::Value) -> Expr {
         Expr::Value(ValueExpr {
@@ -54,13 +54,20 @@ mod tests {
         })
     }
 
+    fn block(nodes: Vec<Node>) -> BlockNode {
+        BlockNode {
+            nodes,
+            span: Span::new(0, 1),
+        }
+    }
+
     #[test]
     fn render_true_branch() {
         let scope = Scope::new();
         let node = IfNode {
             branches: vec![IfBranch {
                 condition: val(xval::Value::from_bool(true)),
-                body: vec![text("yes")],
+                body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
             else_body: None,
@@ -76,10 +83,10 @@ mod tests {
         let node = IfNode {
             branches: vec![IfBranch {
                 condition: val(xval::Value::from_bool(false)),
-                body: vec![text("yes")],
+                body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
-            else_body: Some(vec![text("no")]),
+            else_body: Some(block(vec![text("no")])),
             span: Span::new(0, 1),
         };
 
@@ -92,7 +99,7 @@ mod tests {
         let node = IfNode {
             branches: vec![IfBranch {
                 condition: val(xval::Value::from_bool(false)),
-                body: vec![text("yes")],
+                body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
             else_body: None,
@@ -109,19 +116,19 @@ mod tests {
             branches: vec![
                 IfBranch {
                     condition: val(xval::Value::from_bool(false)),
-                    body: vec![text("first")],
+                    body: block(vec![text("first")]),
                     span: Span::new(0, 1),
                 },
                 IfBranch {
                     condition: val(xval::Value::from_bool(true)),
-                    body: vec![text("second")],
+                    body: block(vec![text("second")]),
                     span: Span::new(0, 1),
                 },
             ],
-            else_body: Some(vec![text("else")]),
+            else_body: Some(block(vec![text("else")])),
             span: Span::new(0, 1),
         };
-        
+
         assert_eq!(node.render(&scope).unwrap(), "second");
     }
 }

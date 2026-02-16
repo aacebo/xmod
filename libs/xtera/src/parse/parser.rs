@@ -1,11 +1,4 @@
-use crate::{
-    Template,
-    ast::{
-        ArrayExpr, BinaryExpr, BinaryOp, CallExpr, Expr, ForNode, IdentExpr, IfBranch, IfNode,
-        IncludeNode, IndexExpr, InterpNode, MatchCase, MatchNode, MemberExpr, Node, ObjectExpr,
-        PipeExpr, Span, TextNode, UnaryExpr, UnaryOp, ValueExpr,
-    },
-};
+use crate::{Template, ast::*};
 
 use super::error::{ParseError, Result};
 use super::lexer::{LexToken, Lexer, Spanned};
@@ -37,7 +30,7 @@ impl<'src> Parser<'src> {
                 .merge(nodes.last().unwrap().span())
         };
 
-        Ok(Template::new(nodes, span))
+        Ok(Template::new(BlockNode { nodes, span }))
     }
 
     // ── Template-level parsing ──────────────────────────────────────
@@ -100,7 +93,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn parse_if(&mut self, start_span: Span) -> Result<(Vec<IfBranch>, Option<Vec<Node>>)> {
+    fn parse_if(&mut self, start_span: Span) -> Result<(Vec<IfBranch>, Option<BlockNode>)> {
         let mut branches = Vec::new();
 
         // First branch
@@ -114,7 +107,7 @@ impl<'src> Parser<'src> {
             span: start_span.merge(self.last_span()),
         });
 
-        let mut else_body = None;
+        let mut else_body: Option<BlockNode> = None;
 
         loop {
             if !self.lexer.starts_with_at_keyword("else") {
@@ -211,7 +204,7 @@ impl<'src> Parser<'src> {
         self.lexer.open_brace();
 
         let mut cases = Vec::new();
-        let mut default = None;
+        let mut default: Option<BlockNode> = None;
 
         loop {
             let sp = self.lexer.next_text()?;
@@ -273,15 +266,21 @@ impl<'src> Parser<'src> {
         Ok(IncludeNode { name, span })
     }
 
-    fn parse_block_body(&mut self) -> Result<Vec<Node>> {
-        self.expect_expr_token(&Token::LBrace)?;
+    fn parse_block_body(&mut self) -> Result<BlockNode> {
+        let start = self.expect_expr_token(&Token::LBrace)?;
         self.lexer.open_brace();
 
         let nodes = self.parse_nodes()?;
 
         self.lexer.close_brace();
 
-        Ok(nodes)
+        let span = if nodes.is_empty() {
+            start.span
+        } else {
+            start.span.merge(nodes.last().unwrap().span())
+        };
+
+        Ok(BlockNode { nodes, span })
     }
 
     // ── Expression parsing ──────────────────────────────────────────
@@ -890,7 +889,7 @@ mod tests {
         match &tpl.nodes()[0] {
             Node::For(ForNode { binding, body, .. }) => {
                 assert_eq!(binding, "item");
-                assert!(!body.is_empty());
+                assert!(!body.nodes.is_empty());
             }
             other => panic!("expected for, got {other:?}"),
         }
@@ -919,7 +918,7 @@ mod tests {
         assert_eq!(tpl.nodes().len(), 1);
         match &tpl.nodes()[0] {
             Node::For(ForNode { body, .. }) => {
-                let has_if = body.iter().any(|n| matches!(n, Node::If(_)));
+                let has_if = body.nodes.iter().any(|n| matches!(n, Node::If(_)));
                 assert!(has_if);
             }
             other => panic!("expected for, got {other:?}"),

@@ -1,14 +1,14 @@
 use crate::Scope;
 use crate::ast::{EvalError, Expr, NotIterableError, Result, Span};
 
-use super::{Node, render_nodes};
+use super::BlockNode;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ForNode {
     pub binding: String,
     pub iterable: Expr,
     pub track: Expr,
-    pub body: Vec<Node>,
+    pub body: BlockNode,
     pub span: Span,
 }
 
@@ -28,7 +28,7 @@ impl ForNode {
         for item in arr.items() {
             let mut inner = scope.clone();
             inner.set_var(&self.binding, item.as_value());
-            output.push_str(&render_nodes(&self.body, &inner)?);
+            output.push_str(&self.body.render(&inner)?);
         }
 
         Ok(output)
@@ -38,7 +38,7 @@ impl ForNode {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ast::{IdentExpr, TextNode};
+    use crate::ast::{IdentExpr, InterpNode, Node, TextNode};
 
     fn ident_expr(name: &str) -> Expr {
         Expr::Ident(IdentExpr {
@@ -52,6 +52,13 @@ mod tests {
             text: s.into(),
             span: Span::new(0, 1),
         })
+    }
+
+    fn block(nodes: Vec<Node>) -> BlockNode {
+        BlockNode {
+            nodes,
+            span: Span::new(0, 1),
+        }
     }
 
     #[test]
@@ -70,14 +77,14 @@ mod tests {
             binding: "n".into(),
             iterable: ident_expr("items"),
             track: ident_expr("n"),
-            body: vec![
+            body: block(vec![
                 text("["),
-                Node::Interp(super::super::InterpNode {
+                Node::Interp(InterpNode {
                     expr: ident_expr("n"),
                     span: Span::new(0, 1),
                 }),
                 text("]"),
-            ],
+            ]),
             span: Span::new(0, 1),
         };
         assert_eq!(node.render(&scope).unwrap(), "[1][2][3]");
@@ -92,7 +99,7 @@ mod tests {
             binding: "n".into(),
             iterable: ident_expr("items"),
             track: ident_expr("n"),
-            body: vec![text("x")],
+            body: block(vec![text("x")]),
             span: Span::new(0, 1),
         };
 
@@ -108,10 +115,10 @@ mod tests {
             binding: "n".into(),
             iterable: ident_expr("items"),
             track: ident_expr("n"),
-            body: vec![text("x")],
+            body: block(vec![text("x")]),
             span: Span::new(0, 1),
         };
-        
+
         let err = node.render(&scope).unwrap_err();
         assert!(matches!(err, EvalError::NotIterable(_)));
     }

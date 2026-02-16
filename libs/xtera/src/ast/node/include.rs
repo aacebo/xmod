@@ -54,7 +54,7 @@ mod tests {
             name: val_expr(xval::Value::from_str("greeting")),
             span: Span::new(0, 1),
         };
-        
+
         assert_eq!(node.render(&scope).unwrap(), "hello");
     }
 
@@ -65,7 +65,7 @@ mod tests {
             name: val_expr(xval::Value::from_str("missing")),
             span: Span::new(0, 1),
         };
-        
+
         let err = node.render(&scope).unwrap_err();
         assert!(matches!(err, EvalError::UndefinedTemplate(_)));
     }
