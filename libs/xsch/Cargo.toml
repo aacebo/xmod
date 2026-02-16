@@ -15,4 +15,5 @@ serde = ["dep:serde"]
 [dependencies]
 xok = { workspace = true }
 xval = { workspace = true }
+xpath = { workspace = true }
 serde = { workspace = true, optional = true }

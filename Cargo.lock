@@ -218,6 +218,8 @@ dependencies = [
 name = "xpath"
 version = "0.0.0"
 dependencies = [
+ "serde",
+ "serde_json",
  "xok",
 ]
 
@@ -235,6 +237,7 @@ version = "0.0.0"
 dependencies = [
  "serde",
  "xok",
+ "xpath",
  "xval",
 ]
 

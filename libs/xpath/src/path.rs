@@ -73,6 +73,27 @@ impl std::ops::Index<usize> for Path {
     }
 }
 
+#[cfg(feature = "serde")]
+impl serde::Serialize for Path {
+    fn serialize<S>(&self, s: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        s.serialize_str(&self.to_string())
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Path {
+    fn deserialize<D>(d: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let value = String::deserialize(d)?;
+        Self::parse(&value).map_err(serde::de::Error::custom)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -199,5 +220,53 @@ mod tests {
         assert!(path.is_empty());
         assert_eq!(path.len(), 0);
         assert_eq!(path.last(), None);
+    }
+
+    #[cfg(feature = "serde")]
+    mod serde_tests {
+        use super::*;
+
+        #[test]
+        fn serialize() {
+            let path = Path::parse("users/0/name").unwrap();
+            let json = serde_json::to_string(&path).unwrap();
+            assert_eq!(json, r#""users/0/name""#);
+        }
+
+        #[test]
+        fn serialize_empty() {
+            let path = Path::default();
+            let json = serde_json::to_string(&path).unwrap();
+            assert_eq!(json, r#""""#);
+        }
+
+        #[test]
+        fn deserialize() {
+            let path: Path = serde_json::from_str(r#""users/0/name""#).unwrap();
+            assert_eq!(path.len(), 3);
+            assert_eq!(path[0], Segment::Key("users".into()));
+            assert_eq!(path[1], Segment::Index(0));
+            assert_eq!(path[2], Segment::Key("name".into()));
+        }
+
+        #[test]
+        fn deserialize_empty() {
+            let path: Path = serde_json::from_str(r#""""#).unwrap();
+            assert!(path.is_empty());
+        }
+
+        #[test]
+        fn deserialize_invalid() {
+            let result = serde_json::from_str::<Path>(r#""a//b""#);
+            assert!(result.is_err());
+        }
+
+        #[test]
+        fn roundtrip() {
+            let original = Path::parse("a/1/b/2").unwrap();
+            let json = serde_json::to_string(&original).unwrap();
+            let restored: Path = serde_json::from_str(&json).unwrap();
+            assert_eq!(original, restored);
+        }
     }
 }
