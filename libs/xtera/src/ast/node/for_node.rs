@@ -15,6 +15,7 @@ pub struct ForNode {
 impl ForNode {
     pub fn render(&self, scope: &Scope) -> Result<String> {
         let iterable = self.iterable.eval(scope)?;
+
         if !iterable.is_array() {
             return Err(EvalError::NotIterable(NotIterableError {
                 span: self.iterable.span(),
@@ -94,6 +95,7 @@ mod tests {
             body: vec![text("x")],
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "");
     }
 
@@ -109,6 +111,7 @@ mod tests {
             body: vec![text("x")],
             span: Span::new(0, 1),
         };
+        
         let err = node.render(&scope).unwrap_err();
         assert!(matches!(err, EvalError::NotIterable(_)));
     }

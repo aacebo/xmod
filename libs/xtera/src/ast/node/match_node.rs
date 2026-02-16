@@ -76,6 +76,7 @@ mod tests {
             default: None,
             span: Span::new(0, 1),
         };
+        
         assert_eq!(node.render(&scope).unwrap(), "B");
     }
 
@@ -92,6 +93,7 @@ mod tests {
             default: Some(vec![text("default")]),
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "default");
     }
 
@@ -108,6 +110,7 @@ mod tests {
             default: None,
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "");
     }
 }

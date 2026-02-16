@@ -14,6 +14,7 @@ impl IfNode {
     pub fn render(&self, scope: &Scope) -> Result<String> {
         for branch in &self.branches {
             let cond = branch.condition.eval(scope)?;
+
             if is_truthy(&cond) {
                 return render_nodes(&branch.body, scope);
             }
@@ -65,6 +66,7 @@ mod tests {
             else_body: None,
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "yes");
     }
 
@@ -80,6 +82,7 @@ mod tests {
             else_body: Some(vec![text("no")]),
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "no");
     }
 
@@ -95,6 +98,7 @@ mod tests {
             else_body: None,
             span: Span::new(0, 1),
         };
+
         assert_eq!(node.render(&scope).unwrap(), "");
     }
 
@@ -117,6 +121,7 @@ mod tests {
             else_body: Some(vec![text("else")]),
             span: Span::new(0, 1),
         };
+        
         assert_eq!(node.render(&scope).unwrap(), "second");
     }
 }
