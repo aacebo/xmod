@@ -1,0 +1,196 @@
+mod division_by_zero;
+mod index_out_of_bounds;
+mod invalid_index;
+mod not_callable;
+mod not_iterable;
+mod type_error;
+mod undefined_field;
+mod undefined_pipe;
+mod undefined_template;
+mod undefined_variable;
+
+pub use division_by_zero::*;
+pub use index_out_of_bounds::*;
+pub use invalid_index::*;
+pub use not_callable::*;
+pub use not_iterable::*;
+pub use type_error::*;
+pub use undefined_field::*;
+pub use undefined_pipe::*;
+pub use undefined_template::*;
+pub use undefined_variable::*;
+
+use super::Span;
+
+pub type Result<T> = std::result::Result<T, EvalError>;
+
+#[derive(Debug, Clone, PartialEq)]
+pub enum EvalError {
+    UndefinedVariable(UndefinedVariableError),
+    UndefinedPipe(UndefinedPipeError),
+    UndefinedField(UndefinedFieldError),
+    UndefinedTemplate(UndefinedTemplateError),
+    IndexOutOfBounds(IndexOutOfBoundsError),
+    TypeError(TypeError),
+    DivisionByZero(DivisionByZeroError),
+    NotCallable(NotCallableError),
+    NotIterable(NotIterableError),
+    InvalidIndex(InvalidIndexError),
+}
+
+impl EvalError {
+    pub fn span(&self) -> Span {
+        match self {
+            Self::UndefinedVariable(e) => e.span,
+            Self::UndefinedPipe(e) => e.span,
+            Self::UndefinedField(e) => e.span,
+            Self::UndefinedTemplate(e) => e.span,
+            Self::IndexOutOfBounds(e) => e.span,
+            Self::TypeError(e) => e.span,
+            Self::DivisionByZero(e) => e.span,
+            Self::NotCallable(e) => e.span,
+            Self::NotIterable(e) => e.span,
+            Self::InvalidIndex(e) => e.span,
+        }
+    }
+}
+
+impl std::fmt::Display for EvalError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let span = self.span();
+        write!(f, "eval error at {}..{}: ", span.start, span.end)?;
+        match self {
+            Self::UndefinedVariable(e) => write!(f, "{e}"),
+            Self::UndefinedPipe(e) => write!(f, "{e}"),
+            Self::UndefinedField(e) => write!(f, "{e}"),
+            Self::UndefinedTemplate(e) => write!(f, "{e}"),
+            Self::IndexOutOfBounds(e) => write!(f, "{e}"),
+            Self::TypeError(e) => write!(f, "{e}"),
+            Self::DivisionByZero(e) => write!(f, "{e}"),
+            Self::NotCallable(e) => write!(f, "{e}"),
+            Self::NotIterable(e) => write!(f, "{e}"),
+            Self::InvalidIndex(e) => write!(f, "{e}"),
+        }
+    }
+}
+
+impl std::error::Error for EvalError {}
+
+// ── shared helpers ──
+
+pub fn is_truthy(val: &xval::Value) -> bool {
+    match val {
+        xval::Value::Null => false,
+        xval::Value::Bool(b) => b.to_bool(),
+        xval::Value::Number(n) => n.to_f64() != 0.0,
+        xval::Value::String(s) => !s.as_str().is_empty(),
+        xval::Value::Object(o) => !o.is_empty(),
+    }
+}
+
+pub(crate) fn expect_number<'a>(val: &'a xval::Value, span: Span) -> Result<&'a xval::Number> {
+    match val {
+        xval::Value::Number(n) => Ok(n),
+        other => Err(EvalError::TypeError(TypeError {
+            expected: "number",
+            got: value_type_name(other),
+            span,
+        })),
+    }
+}
+
+pub(crate) fn value_to_usize(val: &xval::Value, span: Span) -> Result<usize> {
+    let n = expect_number(val, span)?;
+    let v = n.to_i64();
+    if v >= 0 {
+        Ok(v as usize)
+    } else {
+        Err(EvalError::InvalidIndex(InvalidIndexError { span }))
+    }
+}
+
+pub(crate) fn value_type_name(val: &xval::Value) -> String {
+    match val {
+        xval::Value::Null => "null".to_string(),
+        xval::Value::Bool(_) => "bool".to_string(),
+        xval::Value::Number(_) => "number".to_string(),
+        xval::Value::String(_) => "string".to_string(),
+        xval::Value::Object(o) => o.name().to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn display_undefined_variable() {
+        let err = EvalError::UndefinedVariable(UndefinedVariableError {
+            name: "x".into(),
+            span: Span::new(0, 1),
+        });
+        assert_eq!(
+            err.to_string(),
+            "eval error at 0..1: undefined variable 'x'"
+        );
+    }
+
+    #[test]
+    fn display_type_error() {
+        let err = EvalError::TypeError(TypeError {
+            expected: "number",
+            got: "string".into(),
+            span: Span::new(5, 10),
+        });
+        assert_eq!(
+            err.to_string(),
+            "eval error at 5..10: expected number, got string"
+        );
+    }
+
+    #[test]
+    fn display_division_by_zero() {
+        let err = EvalError::DivisionByZero(DivisionByZeroError {
+            span: Span::new(3, 8),
+        });
+        assert_eq!(err.to_string(), "eval error at 3..8: division by zero");
+    }
+
+    #[test]
+    fn display_index_out_of_bounds() {
+        let err = EvalError::IndexOutOfBounds(IndexOutOfBoundsError {
+            index: 5,
+            len: 3,
+            span: Span::new(0, 4),
+        });
+        assert_eq!(
+            err.to_string(),
+            "eval error at 0..4: index 5 out of bounds (len 3)"
+        );
+    }
+
+    #[test]
+    fn display_undefined_template() {
+        let err = EvalError::UndefinedTemplate(UndefinedTemplateError {
+            name: "header".into(),
+            span: Span::new(0, 10),
+        });
+        assert_eq!(
+            err.to_string(),
+            "eval error at 0..10: undefined template 'header'"
+        );
+    }
+
+    #[test]
+    fn truthiness() {
+        assert!(!is_truthy(&xval::Value::Null));
+        assert!(!is_truthy(&xval::Value::from_bool(false)));
+        assert!(is_truthy(&xval::Value::from_bool(true)));
+        assert!(!is_truthy(&xval::Value::from_i64(0)));
+        assert!(is_truthy(&xval::Value::from_i64(1)));
+        assert!(!is_truthy(&xval::Value::from_f64(0.0)));
+        assert!(is_truthy(&xval::Value::from_f64(0.1)));
+        assert!(!is_truthy(&xval::Value::from_str("")));
+        assert!(is_truthy(&xval::Value::from_str("x")));
+    }
+}

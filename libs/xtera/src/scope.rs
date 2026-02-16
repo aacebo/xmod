@@ -1,13 +1,13 @@
 use std::{collections::BTreeMap, sync::Arc};
 
-use crate::{Template, ast::eval};
+use crate::{Template, ast};
 
 pub trait Pipe {
-    fn invoke(&self, this: &xval::Value, args: &[xval::Value]) -> eval::Result<xval::Value>;
+    fn invoke(&self, this: &xval::Value, args: &[xval::Value]) -> ast::Result<xval::Value>;
 }
 
 pub trait Func {
-    fn invoke(&self, args: &[xval::Value]) -> eval::Result<xval::Value>;
+    fn invoke(&self, args: &[xval::Value]) -> ast::Result<xval::Value>;
 }
 
 #[derive(Default, Clone)]
@@ -59,7 +59,7 @@ impl Scope {
         self
     }
 
-    pub fn render(&self, name: &str) -> eval::Result<String> {
+    pub fn render(&self, name: &str) -> ast::Result<String> {
         self.template(name)
             .expect("template not found")
             .render(self)
@@ -72,14 +72,14 @@ mod tests {
 
     struct NoopPipe;
     impl Pipe for NoopPipe {
-        fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> eval::Result<xval::Value> {
+        fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> ast::Result<xval::Value> {
             Ok(val.clone())
         }
     }
 
     struct ConstFunc(xval::Value);
     impl Func for ConstFunc {
-        fn invoke(&self, _args: &[xval::Value]) -> eval::Result<xval::Value> {
+        fn invoke(&self, _args: &[xval::Value]) -> ast::Result<xval::Value> {
             Ok(self.0.clone())
         }
     }
@@ -138,6 +138,25 @@ mod tests {
         let tpl = Template::parse("hello {{ name }}").unwrap();
         scope.set_template("greeting", tpl);
         assert_eq!(scope.render("greeting").unwrap(), "hello world");
+    }
+
+    #[test]
+    fn include_template() {
+        let mut scope = Scope::new();
+        scope.set_var("name", xval::Value::from_str("world"));
+        scope.set_template("header", Template::parse("Hello {{ name }}!").unwrap());
+        scope.set_template(
+            "page",
+            Template::parse("@include('header') Welcome.").unwrap(),
+        );
+        assert_eq!(scope.render("page").unwrap(), "Hello world! Welcome.");
+    }
+
+    #[test]
+    fn include_missing_template() {
+        let mut scope = Scope::new();
+        scope.set_template("page", Template::parse("@include('missing')").unwrap());
+        assert!(scope.render("page").is_err());
     }
 
     #[test]

@@ -24,7 +24,7 @@ impl Template {
         parse::parse(src)
     }
 
-    pub fn render(&self, scope: &Scope) -> ast::eval::Result<String> {
+    pub fn render(&self, scope: &Scope) -> ast::Result<String> {
         ast::render_nodes(&self.nodes, scope)
     }
 }

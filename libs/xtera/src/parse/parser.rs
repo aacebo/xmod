@@ -2,8 +2,8 @@ use crate::{
     Template,
     ast::{
         ArrayExpr, BinaryExpr, BinaryOp, CallExpr, Expr, ForNode, IdentExpr, IfBranch, IfNode,
-        IndexExpr, InterpNode, MemberExpr, Node, ObjectExpr, PipeExpr, Span, SwitchCase,
-        SwitchNode, TextNode, UnaryExpr, UnaryOp, ValueExpr,
+        IncludeNode, IndexExpr, InterpNode, MemberExpr, Node, ObjectExpr, PipeExpr, Span,
+        SwitchCase, SwitchNode, TextNode, UnaryExpr, UnaryOp, ValueExpr,
     },
 };
 
@@ -90,6 +90,10 @@ impl<'src> Parser<'src> {
                     span,
                     ..switch_node
                 })))
+            }
+            LexToken::AtInclude => {
+                let include_node = self.parse_include(sp.span)?;
+                Ok(Some(Node::Include(include_node)))
             }
             LexToken::CloseBrace | LexToken::Eof => Ok(None),
             other => Err(ParseError::new(
@@ -262,6 +266,14 @@ impl<'src> Parser<'src> {
             default,
             span: Span::new(0, 0), // will be overwritten by caller
         })
+    }
+
+    fn parse_include(&mut self, start_span: Span) -> Result<IncludeNode> {
+        self.expect_expr_token(&Token::LParen)?;
+        let name = self.parse_expr()?;
+        let end = self.expect_expr_token(&Token::RParen)?;
+        let span = start_span.merge(end.span);
+        Ok(IncludeNode { name, span })
     }
 
     fn parse_block_body(&mut self) -> Result<Vec<Node>> {
@@ -1064,5 +1076,33 @@ mod tests {
             }
             other => panic!("expected array, got {other:?}"),
         }
+    }
+
+    #[test]
+    fn include_block() {
+        let tpl = parse("@include('header')").unwrap();
+        assert_eq!(tpl.nodes().len(), 1);
+        assert!(matches!(&tpl.nodes()[0], Node::Include(_)));
+    }
+
+    #[test]
+    fn include_with_dynamic_name() {
+        let tpl = parse("@include(name)").unwrap();
+        assert_eq!(tpl.nodes().len(), 1);
+        match &tpl.nodes()[0] {
+            Node::Include(IncludeNode { name, .. }) => {
+                assert!(matches!(name, Expr::Ident(_)));
+            }
+            other => panic!("expected include, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn include_in_text() {
+        let tpl = parse("before @include('x') after").unwrap();
+        assert_eq!(tpl.nodes().len(), 3);
+        assert!(matches!(&tpl.nodes()[0], Node::Text(_)));
+        assert!(matches!(&tpl.nodes()[1], Node::Include(_)));
+        assert!(matches!(&tpl.nodes()[2], Node::Text(_)));
     }
 }

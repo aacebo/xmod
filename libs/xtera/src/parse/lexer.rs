@@ -34,6 +34,8 @@ pub enum LexToken {
     AtCase,
     /// `@default`
     AtDefault,
+    /// `@include`
+    AtInclude,
     /// Closing brace `}` that ends a block body.
     CloseBrace,
     /// An expression-mode token produced by logos.
@@ -49,6 +51,7 @@ const AT_KEYWORDS: &[(&str, LexToken)] = &[
     ("switch", LexToken::AtSwitch),
     ("case", LexToken::AtCase),
     ("default", LexToken::AtDefault),
+    ("include", LexToken::AtInclude),
 ];
 
 pub struct Lexer<'src> {
