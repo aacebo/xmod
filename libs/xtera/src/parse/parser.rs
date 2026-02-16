@@ -115,7 +115,12 @@ impl<'src> Parser<'src> {
             // Consume whitespace and @else
             self.lexer.skip_whitespace();
             let sp = self.lexer.next_text()?;
-            debug_assert_eq!(sp.token, LexToken::AtElse);
+            if sp.token != LexToken::AtElse {
+                return Err(ParseError::new(
+                    format!("expected @else, got {:?}", sp.token),
+                    sp.span,
+                ));
+            }
 
             // Check for @else if
             if self.lexer.starts_with_at_keyword("if") {
@@ -650,25 +655,25 @@ mod tests {
     #[test]
     fn plain_text() {
         let tpl = parse("hello world").unwrap();
-        assert_eq!(tpl.nodes.len(), 1);
-        assert!(matches!(&tpl.nodes[0].kind, NodeKind::Text(s) if s == "hello world"));
+        assert_eq!(tpl.nodes().len(), 1);
+        assert!(matches!(&tpl.nodes()[0].kind, NodeKind::Text(s) if s == "hello world"));
     }
 
     #[test]
     fn interp() {
         let tpl = parse("hello {{ name }}").unwrap();
-        assert_eq!(tpl.nodes.len(), 2);
-        assert!(matches!(&tpl.nodes[0].kind, NodeKind::Text(s) if s == "hello "));
+        assert_eq!(tpl.nodes().len(), 2);
+        assert!(matches!(&tpl.nodes()[0].kind, NodeKind::Text(s) if s == "hello "));
         assert!(
-            matches!(&tpl.nodes[1].kind, NodeKind::Interp(Expr { kind: ExprKind::Ident(s), .. }) if s == "name")
+            matches!(&tpl.nodes()[1].kind, NodeKind::Interp(Expr { kind: ExprKind::Ident(s), .. }) if s == "name")
         );
     }
 
     #[test]
     fn pipe() {
         let tpl = parse("{{ value | uppercase }}").unwrap();
-        assert_eq!(tpl.nodes.len(), 1);
-        match &tpl.nodes[0].kind {
+        assert_eq!(tpl.nodes().len(), 1);
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Pipe { name, args, .. },
                 ..
@@ -683,7 +688,7 @@ mod tests {
     #[test]
     fn pipe_with_args() {
         let tpl = parse("{{ value | slice:0:5 }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Pipe { name, args, .. },
                 ..
@@ -698,7 +703,7 @@ mod tests {
     #[test]
     fn binary_precedence() {
         let tpl = parse("{{ a + b * c }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Binary { op, right, .. },
                 ..
@@ -719,7 +724,7 @@ mod tests {
     #[test]
     fn unary() {
         let tpl = parse("{{ !done }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Unary { op, .. },
                 ..
@@ -733,7 +738,7 @@ mod tests {
     #[test]
     fn member_access() {
         let tpl = parse("{{ obj.field }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Member { field, .. },
                 ..
@@ -748,7 +753,7 @@ mod tests {
     fn index_access() {
         let tpl = parse("{{ arr[0] }}").unwrap();
         assert!(matches!(
-            &tpl.nodes[0].kind,
+            &tpl.nodes()[0].kind,
             NodeKind::Interp(Expr {
                 kind: ExprKind::Index { .. },
                 ..
@@ -759,7 +764,7 @@ mod tests {
     #[test]
     fn function_call() {
         let tpl = parse("{{ greet('world') }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Call { args, .. },
                 ..
@@ -773,7 +778,7 @@ mod tests {
     #[test]
     fn method_call() {
         let tpl = parse("{{ obj.method(1, 2) }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Call { callee, args, .. },
                 ..
@@ -790,8 +795,8 @@ mod tests {
     #[test]
     fn if_block() {
         let tpl = parse("@if (show) { visible }").unwrap();
-        assert_eq!(tpl.nodes.len(), 1);
-        match &tpl.nodes[0].kind {
+        assert_eq!(tpl.nodes().len(), 1);
+        match &tpl.nodes()[0].kind {
             NodeKind::If(IfBlock {
                 branches,
                 else_body,
@@ -806,7 +811,7 @@ mod tests {
     #[test]
     fn if_else_block() {
         let tpl = parse("@if (show) { visible } @else { hidden }").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::If(IfBlock {
                 branches,
                 else_body,
@@ -821,7 +826,7 @@ mod tests {
     #[test]
     fn if_else_if_else() {
         let tpl = parse("@if (a) { one } @else @if (b) { two } @else { three }").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::If(IfBlock {
                 branches,
                 else_body,
@@ -836,8 +841,8 @@ mod tests {
     #[test]
     fn for_block() {
         let tpl = parse("@for (item of items; track item.id) { {{ item.name }} }").unwrap();
-        assert_eq!(tpl.nodes.len(), 1);
-        match &tpl.nodes[0].kind {
+        assert_eq!(tpl.nodes().len(), 1);
+        match &tpl.nodes()[0].kind {
             NodeKind::For(ForBlock { binding, body, .. }) => {
                 assert_eq!(binding, "item");
                 assert!(!body.is_empty());
@@ -849,7 +854,7 @@ mod tests {
     #[test]
     fn switch_block() {
         let tpl = parse("@switch (color) { @case ('red') { Red! } @case ('blue') { Blue! } @default { Other } }").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Switch(SwitchBlock { cases, default, .. }) => {
                 assert_eq!(cases.len(), 2);
                 assert!(default.is_some());
@@ -863,8 +868,8 @@ mod tests {
         let tpl =
             parse("@for (item of items; track item.id) { @if (item.visible) { {{ item.name }} } }")
                 .unwrap();
-        assert_eq!(tpl.nodes.len(), 1);
-        match &tpl.nodes[0].kind {
+        assert_eq!(tpl.nodes().len(), 1);
+        match &tpl.nodes()[0].kind {
             NodeKind::For(ForBlock { body, .. }) => {
                 let has_if = body.iter().any(|n| matches!(&n.kind, NodeKind::If(_)));
                 assert!(has_if);
@@ -877,7 +882,7 @@ mod tests {
     fn literals() {
         let tpl = parse("{{ null }}").unwrap();
         assert!(matches!(
-            &tpl.nodes[0].kind,
+            &tpl.nodes()[0].kind,
             NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Null),
                 ..
@@ -886,7 +891,7 @@ mod tests {
 
         let tpl = parse("{{ true }}").unwrap();
         assert!(matches!(
-            &tpl.nodes[0].kind,
+            &tpl.nodes()[0].kind,
             NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Bool(true)),
                 ..
@@ -895,7 +900,7 @@ mod tests {
 
         let tpl = parse("{{ 42 }}").unwrap();
         assert!(matches!(
-            &tpl.nodes[0].kind,
+            &tpl.nodes()[0].kind,
             NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Int(42)),
                 ..
@@ -904,7 +909,7 @@ mod tests {
 
         let tpl = parse("{{ 3.14 }}").unwrap();
         assert!(matches!(
-            &tpl.nodes[0].kind,
+            &tpl.nodes()[0].kind,
             NodeKind::Interp(Expr {
                 kind: ExprKind::Literal(Literal::Float(n)),
                 ..
@@ -915,7 +920,7 @@ mod tests {
     #[test]
     fn grouped_expression() {
         let tpl = parse("{{ (a + b) * c }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Binary { op, left, .. },
                 ..
@@ -936,13 +941,13 @@ mod tests {
     #[test]
     fn empty_template() {
         let tpl = parse("").unwrap();
-        assert!(tpl.nodes.is_empty());
+        assert!(tpl.nodes().is_empty());
     }
 
     #[test]
     fn array_literal() {
         let tpl = parse("{{ [1, 2, 3] }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..
@@ -956,7 +961,7 @@ mod tests {
     #[test]
     fn array_empty() {
         let tpl = parse("{{ [] }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..
@@ -970,7 +975,7 @@ mod tests {
     #[test]
     fn object_literal() {
         let tpl = parse("{{ { a: 1, b: '2' } }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Object(entries),
                 ..
@@ -986,7 +991,7 @@ mod tests {
     #[test]
     fn object_empty() {
         let tpl = parse("{{ {} }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Object(entries),
                 ..
@@ -1000,7 +1005,7 @@ mod tests {
     #[test]
     fn nested_object_in_array() {
         let tpl = parse("{{ [{ a: 1 }, { b: 2 }] }}").unwrap();
-        match &tpl.nodes[0].kind {
+        match &tpl.nodes()[0].kind {
             NodeKind::Interp(Expr {
                 kind: ExprKind::Array(elements),
                 ..

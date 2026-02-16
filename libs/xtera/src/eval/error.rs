@@ -28,6 +28,8 @@ pub enum EvalErrorKind {
     NotIterable,
     /// Index expression did not evaluate to an integer.
     InvalidIndex,
+    /// Integer overflow during arithmetic.
+    Overflow,
 }
 
 impl EvalError {
@@ -60,6 +62,7 @@ impl std::fmt::Display for EvalErrorKind {
             Self::NotCallable => write!(f, "value is not callable"),
             Self::NotIterable => write!(f, "value is not iterable"),
             Self::InvalidIndex => write!(f, "index expression must evaluate to an integer"),
+            Self::Overflow => write!(f, "integer overflow"),
         }
     }
 }

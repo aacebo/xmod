@@ -1,7 +1,8 @@
+use crate::Scope;
 use crate::ast::IfBlock;
-use crate::eval::{Context, Result, eval_expr, is_truthy};
+use crate::eval::{Result, eval_expr, is_truthy};
 
-pub fn render_if(if_block: &IfBlock, ctx: &mut Context, output: &mut String) -> Result<()> {
+pub fn render_if(if_block: &IfBlock, ctx: &Scope, output: &mut String) -> Result<()> {
     for branch in &if_block.branches {
         let cond = eval_expr(&branch.condition, ctx)?;
         if is_truthy(&cond) {

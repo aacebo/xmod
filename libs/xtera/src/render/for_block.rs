@@ -1,8 +1,9 @@
+use crate::Scope;
 use crate::ast::ForBlock;
-use crate::eval::{Context, EvalError, EvalErrorKind, Result, eval_expr};
+use crate::eval::{EvalError, EvalErrorKind, Result, eval_expr};
 
-pub fn render_for(for_block: &ForBlock, ctx: &mut Context, output: &mut String) -> Result<()> {
-    let iterable = eval_expr(&for_block.iterable, ctx)?;
+pub fn render_for(for_block: &ForBlock, scope: &Scope, output: &mut String) -> Result<()> {
+    let iterable = eval_expr(&for_block.iterable, scope)?;
     if !iterable.is_array() {
         return Err(EvalError::new(
             EvalErrorKind::NotIterable,
@@ -11,14 +12,12 @@ pub fn render_for(for_block: &ForBlock, ctx: &mut Context, output: &mut String) 
     }
 
     let arr = iterable.as_array();
-    let saved = ctx.child_scope();
 
     for item in arr.items() {
-        let val = item.as_value();
-        ctx.set(for_block.binding.clone(), val);
-        super::render_nodes_into(&for_block.body, ctx, output)?;
+        let mut inner = scope.clone();
+        inner.set_var(&for_block.binding, item.as_value());
+        super::render_nodes_into(&for_block.body, &inner, output)?;
     }
 
-    ctx.with_vars(saved);
     Ok(())
 }

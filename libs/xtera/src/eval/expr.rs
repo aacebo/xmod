@@ -2,19 +2,19 @@ use std::collections::HashMap;
 
 use crate::ast::{BinaryOp, Expr, ExprKind, Literal, Span, UnaryOp};
 
-use super::context::Context;
 use super::error::{EvalError, EvalErrorKind, Result};
+use crate::Scope;
 
-pub fn eval_expr(expr: &Expr, ctx: &Context) -> Result<xval::Value> {
+pub fn eval_expr(expr: &Expr, ctx: &Scope) -> Result<xval::Value> {
     match &expr.kind {
         ExprKind::Literal(lit) => eval_literal(lit),
-        ExprKind::Ident(name) => ctx.get(name).cloned().ok_or_else(|| {
+        ExprKind::Ident(name) => ctx.var(name).cloned().ok_or_else(|| {
             EvalError::new(EvalErrorKind::UndefinedVariable(name.clone()), expr.span)
         }),
 
         ExprKind::Member { object, field } => eval_member(object, field, expr.span, ctx),
         ExprKind::Index { object, index } => eval_index(object, index, expr.span, ctx),
-        ExprKind::Call { .. } => Err(EvalError::new(EvalErrorKind::NotCallable, expr.span)),
+        ExprKind::Call { callee, args } => eval_call(callee, args, expr.span, ctx),
         ExprKind::Pipe { value, name, args } => eval_pipe(value, name, args, expr.span, ctx),
         ExprKind::Binary { left, op, right } => eval_binary(left, *op, right, expr.span, ctx),
         ExprKind::Unary { op, operand } => eval_unary(*op, operand, expr.span, ctx),
@@ -48,7 +48,7 @@ fn eval_literal(lit: &Literal) -> Result<xval::Value> {
     })
 }
 
-fn eval_member(object: &Expr, field: &str, span: Span, ctx: &Context) -> Result<xval::Value> {
+fn eval_member(object: &Expr, field: &str, span: Span, ctx: &Scope) -> Result<xval::Value> {
     let obj = eval_expr(object, ctx)?;
     if !obj.is_struct() {
         return Err(EvalError::new(
@@ -66,7 +66,7 @@ fn eval_member(object: &Expr, field: &str, span: Span, ctx: &Context) -> Result<
         .ok_or_else(|| EvalError::new(EvalErrorKind::UndefinedField(field.to_string()), span))
 }
 
-fn eval_index(object: &Expr, index: &Expr, span: Span, ctx: &Context) -> Result<xval::Value> {
+fn eval_index(object: &Expr, index: &Expr, span: Span, ctx: &Scope) -> Result<xval::Value> {
     let obj = eval_expr(object, ctx)?;
     let idx = eval_expr(index, ctx)?;
 
@@ -98,7 +98,7 @@ fn eval_pipe(
     name: &str,
     args: &[Expr],
     span: Span,
-    ctx: &Context,
+    ctx: &Scope,
 ) -> Result<xval::Value> {
     let val = eval_expr(value, ctx)?;
     let evaluated_args: Vec<xval::Value> = args
@@ -106,11 +106,29 @@ fn eval_pipe(
         .map(|a| eval_expr(a, ctx))
         .collect::<Result<_>>()?;
 
-    let pipe_fn = ctx
-        .get_pipe(name)
+    let pipe = ctx
+        .pipe(name)
         .ok_or_else(|| EvalError::new(EvalErrorKind::UndefinedPipe(name.to_string()), span))?;
 
-    pipe_fn(&val, &evaluated_args)
+    pipe.invoke(&val, &evaluated_args)
+}
+
+fn eval_call(callee: &Expr, args: &[Expr], span: Span, ctx: &Scope) -> Result<xval::Value> {
+    let name = match &callee.kind {
+        ExprKind::Ident(name) => name.as_str(),
+        _ => return Err(EvalError::new(EvalErrorKind::NotCallable, span)),
+    };
+
+    let func = ctx
+        .func(name)
+        .ok_or_else(|| EvalError::new(EvalErrorKind::NotCallable, span))?;
+
+    let evaluated_args: Vec<xval::Value> = args
+        .iter()
+        .map(|a| eval_expr(a, ctx))
+        .collect::<Result<_>>()?;
+
+    func.invoke(&evaluated_args)
 }
 
 fn eval_binary(
@@ -118,7 +136,7 @@ fn eval_binary(
     op: BinaryOp,
     right: &Expr,
     span: Span,
-    ctx: &Context,
+    ctx: &Scope,
 ) -> Result<xval::Value> {
     // Short-circuit for logical ops.
     match op {
@@ -201,7 +219,7 @@ fn eval_comparison(
     }
 }
 
-fn eval_unary(op: UnaryOp, operand: &Expr, span: Span, ctx: &Context) -> Result<xval::Value> {
+fn eval_unary(op: UnaryOp, operand: &Expr, span: Span, ctx: &Scope) -> Result<xval::Value> {
     let val = eval_expr(operand, ctx)?;
     match op {
         UnaryOp::Not => Ok(xval::Value::from_bool(!is_truthy(&val))),
@@ -271,7 +289,8 @@ fn value_to_numeric(val: &xval::Value, span: Span) -> Result<Numeric> {
                         UInt::U8(v) => *v as i64,
                         UInt::U16(v) => *v as i64,
                         UInt::U32(v) => *v as i64,
-                        UInt::U64(v) => *v as i64,
+                        UInt::U64(v) => i64::try_from(*v)
+                            .map_err(|_| EvalError::new(EvalErrorKind::Overflow, span))?,
                     };
                     Ok(Numeric::Int(v))
                 }
@@ -344,21 +363,33 @@ fn eval_arithmetic(l: Numeric, op: BinaryOp, r: Numeric, span: Span) -> Result<x
         unreachable!()
     };
 
+    let overflow = || EvalError::new(EvalErrorKind::Overflow, span);
+
     match op {
-        BinaryOp::Add => Ok(xval::Value::from_i64(li + ri)),
-        BinaryOp::Sub => Ok(xval::Value::from_i64(li - ri)),
-        BinaryOp::Mul => Ok(xval::Value::from_i64(li * ri)),
+        BinaryOp::Add => Ok(xval::Value::from_i64(
+            li.checked_add(ri).ok_or_else(overflow)?,
+        )),
+        BinaryOp::Sub => Ok(xval::Value::from_i64(
+            li.checked_sub(ri).ok_or_else(overflow)?,
+        )),
+        BinaryOp::Mul => Ok(xval::Value::from_i64(
+            li.checked_mul(ri).ok_or_else(overflow)?,
+        )),
         BinaryOp::Div => {
             if ri == 0 {
                 return Err(EvalError::new(EvalErrorKind::DivisionByZero, span));
             }
-            Ok(xval::Value::from_i64(li / ri))
+            Ok(xval::Value::from_i64(
+                li.checked_div(ri).ok_or_else(overflow)?,
+            ))
         }
         BinaryOp::Mod => {
             if ri == 0 {
                 return Err(EvalError::new(EvalErrorKind::DivisionByZero, span));
             }
-            Ok(xval::Value::from_i64(li % ri))
+            Ok(xval::Value::from_i64(
+                li.checked_rem(ri).ok_or_else(overflow)?,
+            ))
         }
         _ => unreachable!(),
     }
@@ -404,57 +435,57 @@ mod tests {
 
     #[test]
     fn eval_literal_null() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let result = eval_expr(&lit_expr(Literal::Null), &ctx).unwrap();
         assert!(result.is_null());
     }
 
     #[test]
     fn eval_literal_bool() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let result = eval_expr(&lit_expr(Literal::Bool(true)), &ctx).unwrap();
         assert_eq!(result, true);
     }
 
     #[test]
     fn eval_literal_int() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let result = eval_expr(&lit_expr(Literal::Int(42)), &ctx).unwrap();
         assert_eq!(result, 42i64);
     }
 
     #[test]
     fn eval_literal_float() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let result = eval_expr(&lit_expr(Literal::Float(3.14)), &ctx).unwrap();
         assert_eq!(result, 3.14f64);
     }
 
     #[test]
     fn eval_literal_string() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let result = eval_expr(&lit_expr(Literal::String("hello".into())), &ctx).unwrap();
         assert_eq!(result, "hello");
     }
 
     #[test]
     fn eval_ident_found() {
-        let mut ctx = Context::new();
-        ctx.set("x", xval::Value::from_i64(10));
+        let mut ctx = Scope::new();
+        ctx.set_var("x", xval::Value::from_i64(10));
         let result = eval_expr(&ident_expr("x"), &ctx).unwrap();
         assert_eq!(result, 10i64);
     }
 
     #[test]
     fn eval_ident_undefined() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let err = eval_expr(&ident_expr("x"), &ctx).unwrap_err();
         assert_eq!(err.kind, EvalErrorKind::UndefinedVariable("x".into()));
     }
 
     #[test]
     fn eval_add_ints() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::Int(2)),
             BinaryOp::Add,
@@ -466,7 +497,7 @@ mod tests {
 
     #[test]
     fn eval_float_promotion() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::Int(1)),
             BinaryOp::Add,
@@ -478,7 +509,7 @@ mod tests {
 
     #[test]
     fn eval_division_by_zero() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::Int(10)),
             BinaryOp::Div,
@@ -490,7 +521,7 @@ mod tests {
 
     #[test]
     fn eval_string_concat() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::String("hello".into())),
             BinaryOp::Add,
@@ -502,7 +533,7 @@ mod tests {
 
     #[test]
     fn eval_comparison() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::Int(1)),
             BinaryOp::Lt,
@@ -514,7 +545,7 @@ mod tests {
 
     #[test]
     fn eval_equality() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = binary_expr(
             lit_expr(Literal::String("a".into())),
             BinaryOp::Eq,
@@ -526,7 +557,7 @@ mod tests {
 
     #[test]
     fn eval_logical_and_short_circuit() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         // false && (undefined var) should not error
         let expr = binary_expr(
             lit_expr(Literal::Bool(false)),
@@ -539,7 +570,7 @@ mod tests {
 
     #[test]
     fn eval_logical_or_short_circuit() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         // true || (undefined var) should not error
         let expr = binary_expr(
             lit_expr(Literal::Bool(true)),
@@ -552,7 +583,7 @@ mod tests {
 
     #[test]
     fn eval_unary_not() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = Expr::new(
             ExprKind::Unary {
                 op: UnaryOp::Not,
@@ -566,7 +597,7 @@ mod tests {
 
     #[test]
     fn eval_unary_neg() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = Expr::new(
             ExprKind::Unary {
                 op: UnaryOp::Neg,
@@ -578,10 +609,9 @@ mod tests {
         assert_eq!(result, -5i64);
     }
 
-    #[test]
-    fn eval_pipe() {
-        let mut ctx = Context::new();
-        ctx.set_pipe("double", |val, _args| {
+    struct DoublePipe;
+    impl crate::Pipe for DoublePipe {
+        fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> Result<xval::Value> {
             let n = match val {
                 xval::Value::Number(_) => val.to_i64(),
                 _ => {
@@ -595,7 +625,13 @@ mod tests {
                 }
             };
             Ok(xval::Value::from_i64(n * 2))
-        });
+        }
+    }
+
+    #[test]
+    fn eval_pipe() {
+        let mut ctx = Scope::new();
+        ctx.set_pipe("double", DoublePipe);
         let expr = Expr::new(
             ExprKind::Pipe {
                 value: Box::new(lit_expr(Literal::Int(5))),
@@ -610,7 +646,7 @@ mod tests {
 
     #[test]
     fn eval_undefined_pipe() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = Expr::new(
             ExprKind::Pipe {
                 value: Box::new(lit_expr(Literal::Int(5))),
@@ -625,7 +661,7 @@ mod tests {
 
     #[test]
     fn eval_array_literal() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = Expr::new(
             ExprKind::Array(vec![lit_expr(Literal::Int(1)), lit_expr(Literal::Int(2))]),
             span(),
@@ -637,7 +673,7 @@ mod tests {
 
     #[test]
     fn eval_object_literal() {
-        let ctx = Context::new();
+        let ctx = Scope::new();
         let expr = Expr::new(
             ExprKind::Object(vec![
                 ("a".into(), lit_expr(Literal::Int(1))),

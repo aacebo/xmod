@@ -1,10 +1,10 @@
-use crate::{ast, eval, parse, render};
+use crate::{Scope, ast, eval, parse, render};
 
 /// A parsed template — a sequence of nodes.
 #[derive(Debug, Clone, PartialEq)]
 pub struct Template {
-    pub(crate) nodes: Vec<ast::Node>,
-    pub(crate) span: ast::Span,
+    nodes: Vec<ast::Node>,
+    span: ast::Span,
 }
 
 impl Template {
@@ -12,11 +12,19 @@ impl Template {
         Self { nodes, span }
     }
 
+    pub fn nodes(&self) -> &[ast::Node] {
+        &self.nodes
+    }
+
+    pub fn span(&self) -> &ast::Span {
+        &self.span
+    }
+
     pub fn parse(src: &str) -> parse::Result<Self> {
         parse::parse(src)
     }
 
-    pub fn render(&self, ctx: &mut eval::Context) -> eval::Result<String> {
-        render::render(&self.nodes, ctx)
+    pub fn render(&self, scope: &Scope) -> eval::Result<String> {
+        render::render(&self.nodes, scope)
     }
 }

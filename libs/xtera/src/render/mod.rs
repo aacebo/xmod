@@ -3,10 +3,11 @@ pub mod if_block;
 pub mod interp;
 pub mod switch_block;
 
+use crate::Scope;
 use crate::ast::{Node, NodeKind};
-use crate::eval::{Context, Result};
+use crate::eval::Result;
 
-pub fn render(nodes: &[Node], ctx: &mut Context) -> Result<String> {
+pub fn render(nodes: &[Node], ctx: &Scope) -> Result<String> {
     let mut output = String::new();
     for node in nodes {
         render_node(node, ctx, &mut output)?;
@@ -14,7 +15,7 @@ pub fn render(nodes: &[Node], ctx: &mut Context) -> Result<String> {
     Ok(output)
 }
 
-pub fn render_node(node: &Node, ctx: &mut Context, output: &mut String) -> Result<()> {
+pub fn render_node(node: &Node, ctx: &Scope, output: &mut String) -> Result<()> {
     match &node.kind {
         NodeKind::Text(s) => output.push_str(s),
         NodeKind::Interp(expr) => interp::render_interp(expr, ctx, output)?,
@@ -25,7 +26,7 @@ pub fn render_node(node: &Node, ctx: &mut Context, output: &mut String) -> Resul
     Ok(())
 }
 
-pub fn render_nodes_into(nodes: &[Node], ctx: &mut Context, output: &mut String) -> Result<()> {
+pub fn render_nodes_into(nodes: &[Node], ctx: &Scope, output: &mut String) -> Result<()> {
     for node in nodes {
         render_node(node, ctx, output)?;
     }
@@ -37,66 +38,63 @@ mod tests {
     use super::*;
     use crate::parse;
 
-    fn render(src: &str, ctx: &mut Context) -> String {
+    fn render(src: &str, ctx: &Scope) -> String {
         let template = parse::parse(src).unwrap();
-        super::render(&template.nodes, ctx).unwrap()
+        template.render(ctx).unwrap()
     }
 
     #[test]
     fn plain_text() {
-        let mut ctx = Context::new();
-        assert_eq!(render("hello world", &mut ctx), "hello world");
+        let ctx = Scope::new();
+        assert_eq!(render("hello world", &ctx), "hello world");
     }
 
     #[test]
     fn interp() {
-        let mut ctx = Context::new();
-        ctx.set("name", xval::Value::from_str("Alice"));
-        assert_eq!(render("Hello {{ name }}!", &mut ctx), "Hello Alice!");
+        let mut ctx = Scope::new();
+        ctx.set_var("name", xval::Value::from_str("Alice"));
+        assert_eq!(render("Hello {{ name }}!", &ctx), "Hello Alice!");
     }
 
     #[test]
     fn interp_expr() {
-        let mut ctx = Context::new();
-        assert_eq!(render("{{ 1 + 2 }}", &mut ctx), "3");
+        let ctx = Scope::new();
+        assert_eq!(render("{{ 1 + 2 }}", &ctx), "3");
     }
 
     #[test]
     fn if_truthy() {
-        let mut ctx = Context::new();
-        ctx.set("show", xval::Value::from_bool(true));
-        assert_eq!(render("@if (show) {yes}", &mut ctx), "yes");
+        let mut ctx = Scope::new();
+        ctx.set_var("show", xval::Value::from_bool(true));
+        assert_eq!(render("@if (show) {yes}", &ctx), "yes");
     }
 
     #[test]
     fn if_falsy() {
-        let mut ctx = Context::new();
-        ctx.set("show", xval::Value::from_bool(false));
-        assert_eq!(render("@if (show) {yes}", &mut ctx), "");
+        let mut ctx = Scope::new();
+        ctx.set_var("show", xval::Value::from_bool(false));
+        assert_eq!(render("@if (show) {yes}", &ctx), "");
     }
 
     #[test]
     fn if_else() {
-        let mut ctx = Context::new();
-        ctx.set("show", xval::Value::from_bool(false));
-        assert_eq!(render("@if (show) {yes} @else {no}", &mut ctx), "no");
+        let mut ctx = Scope::new();
+        ctx.set_var("show", xval::Value::from_bool(false));
+        assert_eq!(render("@if (show) {yes} @else {no}", &ctx), "no");
     }
 
     #[test]
     fn if_else_if() {
-        let mut ctx = Context::new();
-        ctx.set("a", xval::Value::from_bool(false));
-        ctx.set("b", xval::Value::from_bool(true));
-        assert_eq!(
-            render("@if (a) {A} @else @if (b) {B} @else {C}", &mut ctx),
-            "B"
-        );
+        let mut ctx = Scope::new();
+        ctx.set_var("a", xval::Value::from_bool(false));
+        ctx.set_var("b", xval::Value::from_bool(true));
+        assert_eq!(render("@if (a) {A} @else @if (b) {B} @else {C}", &ctx), "B");
     }
 
     #[test]
     fn for_loop() {
-        let mut ctx = Context::new();
-        ctx.set(
+        let mut ctx = Scope::new();
+        ctx.set_var(
             "items",
             xval::Value::from_array(vec![
                 xval::Value::from_i64(1),
@@ -104,32 +102,29 @@ mod tests {
                 xval::Value::from_i64(3),
             ]),
         );
-        assert_eq!(
-            render("@for (x of items; track x) {{{ x }}}", &mut ctx),
-            "123"
-        );
+        assert_eq!(render("@for (x of items; track x) {{{ x }}}", &ctx), "123");
     }
 
     #[test]
     fn for_loop_binding_does_not_leak() {
-        let mut ctx = Context::new();
-        ctx.set(
+        let mut ctx = Scope::new();
+        ctx.set_var(
             "items",
             xval::Value::from_array(vec![xval::Value::from_i64(1)]),
         );
         let template = parse::parse("@for (x of items; track x) {{{ x }}}").unwrap();
-        super::render(&template.nodes, &mut ctx).unwrap();
-        assert!(ctx.get("x").is_none());
+        template.render(&ctx).unwrap();
+        assert!(ctx.var("x").is_none());
     }
 
     #[test]
     fn switch_case() {
-        let mut ctx = Context::new();
-        ctx.set("color", xval::Value::from_str("red"));
+        let mut ctx = Scope::new();
+        ctx.set_var("color", xval::Value::from_str("red"));
         assert_eq!(
             render(
                 "@switch (color) { @case ('red') {RED} @case ('blue') {BLUE} @default {OTHER}}",
-                &mut ctx
+                &ctx
             ),
             "RED"
         );
@@ -137,31 +132,40 @@ mod tests {
 
     #[test]
     fn switch_default() {
-        let mut ctx = Context::new();
-        ctx.set("color", xval::Value::from_str("green"));
+        let mut ctx = Scope::new();
+        ctx.set_var("color", xval::Value::from_str("green"));
         assert_eq!(
             render(
                 "@switch (color) { @case ('red') {RED} @default {OTHER}}",
-                &mut ctx
+                &ctx
             ),
             "OTHER"
         );
     }
 
+    struct UppercasePipe;
+    impl crate::Pipe for UppercasePipe {
+        fn invoke(
+            &self,
+            val: &xval::Value,
+            _args: &[xval::Value],
+        ) -> crate::eval::Result<xval::Value> {
+            Ok(xval::Value::from_string(val.as_str().to_uppercase()))
+        }
+    }
+
     #[test]
     fn pipe() {
-        let mut ctx = Context::new();
-        ctx.set("name", xval::Value::from_str("hello"));
-        ctx.set_pipe("uppercase", |val, _args| {
-            Ok(xval::Value::from_string(val.as_str().to_uppercase()))
-        });
-        assert_eq!(render("{{ name | uppercase }}", &mut ctx), "HELLO");
+        let mut ctx = Scope::new();
+        ctx.set_var("name", xval::Value::from_str("hello"));
+        ctx.set_pipe("uppercase", UppercasePipe);
+        assert_eq!(render("{{ name | uppercase }}", &ctx), "HELLO");
     }
 
     #[test]
     fn nested_for_if() {
-        let mut ctx = Context::new();
-        ctx.set(
+        let mut ctx = Scope::new();
+        ctx.set_var(
             "items",
             xval::Value::from_array(vec![
                 xval::Value::from_i64(1),
@@ -170,10 +174,7 @@ mod tests {
             ]),
         );
         assert_eq!(
-            render(
-                "@for (x of items; track x) {@if (x == 2) {found}}",
-                &mut ctx
-            ),
+            render("@for (x of items; track x) {@if (x == 2) {found}}", &ctx),
             "found"
         );
     }
