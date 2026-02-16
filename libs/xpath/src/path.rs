@@ -33,6 +33,10 @@ impl Path {
     pub fn last(&self) -> Option<&Segment> {
         self.0.last()
     }
+
+    pub fn iter(&self) -> std::slice::Iter<'_, Segment> {
+        self.0.iter()
+    }
 }
 
 impl From<&str> for Path {
