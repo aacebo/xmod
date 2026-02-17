@@ -31,23 +31,22 @@ impl Validate for AnySchema {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::Context;
 
     #[test]
     fn required_passes_when_non_null() {
         let schema = AnySchema::new().required();
-        let result = schema
-            .0
-            .validate(&Context::from(xval::Value::from_str("hello")));
+        let result = schema.validate(&xval::Value::from_str("hello"));
         assert!(result.is_ok());
     }
 
     #[test]
     fn required_fails_when_null() {
         let schema = AnySchema::new().required();
-        let result = schema.0.validate(&Context::from(xval::Value::Null));
+        let result = schema.validate(&xval::Value::Null);
         let err = result.unwrap_err();
-        assert_eq!(err.rule, "required");
+        assert_eq!(err.rule, "type::any");
+        assert_eq!(err.errors.len(), 1);
+        assert_eq!(err.errors[0].rule, "required");
     }
 
     #[test]
@@ -58,9 +57,7 @@ mod tests {
             xval::Value::from_str("c"),
         ];
         let schema = AnySchema::new().options(&options);
-        let result = schema
-            .0
-            .validate(&Context::from(xval::Value::from_str("b")));
+        let result = schema.validate(&xval::Value::from_str("b"));
         assert!(result.is_ok());
     }
 
@@ -72,20 +69,18 @@ mod tests {
             xval::Value::from_str("c"),
         ];
         let schema = AnySchema::new().options(&options);
-        let result = schema
-            .0
-            .validate(&Context::from(xval::Value::from_str("d")));
+        let result = schema.validate(&xval::Value::from_str("d"));
         let err = result.unwrap_err();
-        assert_eq!(err.rule, "one-of");
+        assert_eq!(err.rule, "type::any");
+        assert_eq!(err.errors.len(), 1);
+        assert_eq!(err.errors[0].rule, "one-of");
     }
 
     #[test]
     fn required_and_one_of_passes() {
         let options = vec![xval::Value::from_str("a"), xval::Value::from_str("b")];
         let schema = AnySchema::new().required().options(&options);
-        let result = schema
-            .0
-            .validate(&Context::from(xval::Value::from_str("a")));
+        let result = schema.validate(&xval::Value::from_str("a"));
         assert!(result.is_ok());
     }
 
@@ -93,9 +88,12 @@ mod tests {
     fn required_and_one_of_fails_on_null() {
         let options = vec![xval::Value::from_str("a"), xval::Value::from_str("b")];
         let schema = AnySchema::new().required().options(&options);
-        let result = schema.0.validate(&Context::from(xval::Value::Null));
-        // BTreeMap iterates alphabetically: "one-of" runs before "required"
+        let result = schema.validate(&xval::Value::Null);
         let err = result.unwrap_err();
-        assert_eq!(err.rule, "one-of");
+        assert_eq!(err.rule, "type::any");
+        // BTreeMap iterates alphabetically: "one-of" before "required"
+        assert_eq!(err.errors.len(), 2);
+        assert_eq!(err.errors[0].rule, "one-of");
+        assert_eq!(err.errors[1].rule, "required");
     }
 }

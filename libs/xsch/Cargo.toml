@@ -10,7 +10,7 @@ repository.workspace = true
 
 [features]
 default = []
-serde = ["dep:serde"]
+serde = ["dep:serde", "xpath/serde", "xval/serde"]
 
 [dependencies]
 xok = { workspace = true }

@@ -1,6 +1,11 @@
 use crate::{AnySchema, Context, ValidError, Validate};
 
 #[derive(Debug, Default, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
 pub struct OneOf(Vec<xval::Value>);
 
 impl OneOf {
