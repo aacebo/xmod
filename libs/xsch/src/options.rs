@@ -1,5 +1,6 @@
 use crate::{Context, Rule, ValidError, Validate};
 
+#[repr(transparent)]
 #[derive(Debug, Clone)]
 #[cfg_attr(
     feature = "serde",
@@ -44,6 +45,7 @@ impl Validate for Options {
             .map(|v| v.to_string())
             .collect::<Vec<_>>()
             .join(", ");
+
         Err(ctx.error(&format!("must be one of [{}]", options)))
     }
 }

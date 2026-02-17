@@ -7,6 +7,40 @@ pub struct ValidError {
     pub errors: Vec<ValidError>,
 }
 
+impl std::fmt::Display for ValidError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Error")?;
+
+        if let Some(rule) = &self.rule {
+            write!(f, " [{}]", &rule)?;
+        }
+
+        writeln!(f, "@ {}", &self.path)?;
+
+        if let Some(message) = &self.message {
+            writeln!(f, "  {}", &message)?;
+        }
+
+        for err in &self.errors {
+            write!(f, "{}", err)?;
+        }
+
+        Ok(())
+    }
+}
+
+impl std::error::Error for ValidError {}
+
+impl xok::XError for ValidError {
+    fn name(&self) -> &'static str {
+        "ValidError"
+    }
+
+    fn module(&self) -> &'static str {
+        module_path!()
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidErrorBuilder {
     rule: Option<String>,
@@ -47,9 +81,70 @@ impl ValidErrorBuilder {
 
 #[cfg(test)]
 mod tests {
+    use crate::*;
+
+    mod display {
+        use super::*;
+
+        #[test]
+        fn with_rule_and_message() {
+            let err = ValidErrorBuilder::new(xpath::Path::parse("a/b").unwrap())
+                .rule("required")
+                .message("field is required")
+                .build();
+            let output = err.to_string();
+            assert!(output.contains("Error [required]"));
+            assert!(output.contains("@ a/b"));
+            assert!(output.contains("  field is required"));
+        }
+
+        #[test]
+        fn without_rule() {
+            let err = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+                .message("something went wrong")
+                .build();
+            let output = err.to_string();
+            assert!(output.contains("Error@ a"));
+            assert!(output.contains("  something went wrong"));
+            assert!(!output.contains("["));
+        }
+
+        #[test]
+        fn without_message() {
+            let err = ValidErrorBuilder::new(xpath::Path::parse("x").unwrap())
+                .rule("equals")
+                .build();
+            let output = err.to_string();
+            assert!(output.contains("Error [equals]"));
+            assert!(output.contains("@ x"));
+            assert_eq!(output.lines().count(), 1);
+        }
+
+        #[test]
+        fn nested_errors() {
+            let child1 = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+                .rule("required")
+                .message("required")
+                .build();
+            let child2 = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+                .rule("equals")
+                .message("not equal")
+                .build();
+            let mut parent = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap()).build();
+            parent.errors.push(child1);
+            parent.errors.push(child2);
+
+            let output = parent.to_string();
+            assert!(output.contains("Error [required]"));
+            assert!(output.contains("  required"));
+            assert!(output.contains("Error [equals]"));
+            assert!(output.contains("  not equal"));
+        }
+    }
+
     #[cfg(feature = "serde")]
     mod serde {
-        use crate::*;
+        use super::*;
 
         #[test]
         fn serialize() {
