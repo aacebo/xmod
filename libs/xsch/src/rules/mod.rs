@@ -59,10 +59,21 @@ impl std::fmt::Display for RuleRegistry {
 impl Validate for RuleRegistry {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let mut next = ctx.clone();
+        let mut error = ValidError::new(&ctx.rule, ctx.path.clone()).build();
 
         for (rule, value) in &self.0 {
             next.rule = rule.to_string();
-            next.value = value.validate(&next)?;
+            next.value = match value.validate(&next) {
+                Ok(v) => v,
+                Err(err) => {
+                    error.errors.push(err);
+                    continue;
+                }
+            };
+        }
+
+        if !error.errors.is_empty() {
+            return Err(error);
         }
 
         Ok(next.value)

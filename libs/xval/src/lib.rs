@@ -270,6 +270,12 @@ impl Value {
     }
 }
 
+impl Default for Value {
+    fn default() -> Self {
+        Self::Null
+    }
+}
+
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
