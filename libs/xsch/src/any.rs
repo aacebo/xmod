@@ -126,7 +126,7 @@ mod tests {
         let err = result.unwrap_err();
         assert_eq!(err.rule, "type::any");
         assert_eq!(err.errors.len(), 1);
-        assert_eq!(err.errors[0].rule, "one-of");
+        assert_eq!(err.errors[0].rule, "one_of");
     }
 
     #[test]
@@ -144,9 +144,9 @@ mod tests {
         let result = schema.validate(&xval::Value::Null);
         let err = result.unwrap_err();
         assert_eq!(err.rule, "type::any");
-        // BTreeMap iterates alphabetically: "one-of" before "required"
+        // Vec preserves insertion order: "required" before "one_of"
         assert_eq!(err.errors.len(), 2);
-        assert_eq!(err.errors[0].rule, "one-of");
-        assert_eq!(err.errors[1].rule, "required");
+        assert_eq!(err.errors[0].rule, "required");
+        assert_eq!(err.errors[1].rule, "one_of");
     }
 }
