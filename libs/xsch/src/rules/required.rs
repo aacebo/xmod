@@ -1,4 +1,4 @@
-use crate::{Validate, rules::RuleRegistry};
+use crate::{Context, ValidError, Validate, rules::RuleRegistry};
 
 #[derive(Debug, Default, Clone)]
 pub struct Required;
@@ -10,12 +10,12 @@ impl Required {
 }
 
 impl Validate for Required {
-    fn validate(&self, input: &xval::Value) -> Result<xval::Value, String> {
-        if input.is_null() {
-            return Err("required".to_string());
+    fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
+        if ctx.value.is_null() {
+            return Err(ctx.error("required"));
         }
 
-        Ok(input.clone())
+        Ok(ctx.value.clone())
     }
 }
 

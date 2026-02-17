@@ -1,13 +1,13 @@
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidError {
     pub rule: String,            // "min"
-    pub path: String,            // "test[1].name"
+    pub path: xpath::Path,       // "test[1].name"
     pub message: Option<String>, // "length must be at least 1"
     pub errors: Vec<ValidError>,
 }
 
 impl ValidError {
-    pub fn new(rule: &str, path: &str) -> ValidErrorBuilder {
+    pub fn new(rule: &str, path: xpath::Path) -> ValidErrorBuilder {
         ValidErrorBuilder::new(rule, path)
     }
 }
@@ -15,16 +15,16 @@ impl ValidError {
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidErrorBuilder {
     rule: String,
-    path: String,
+    path: xpath::Path,
     message: Option<String>,
     errors: Vec<ValidError>,
 }
 
 impl ValidErrorBuilder {
-    pub fn new(rule: &str, path: &str) -> Self {
+    pub fn new(rule: &str, path: xpath::Path) -> Self {
         Self {
             rule: rule.to_string(),
-            path: path.to_string(),
+            path,
             message: None,
             errors: vec![],
         }

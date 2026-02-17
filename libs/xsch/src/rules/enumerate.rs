@@ -1,4 +1,4 @@
-use crate::{Validate, rules::RuleRegistry};
+use crate::{Context, ValidError, Validate, rules::RuleRegistry};
 
 #[derive(Debug, Default, Clone)]
 pub struct Enumerate(Vec<xval::Value>);
@@ -10,14 +10,14 @@ impl Enumerate {
 }
 
 impl Validate for Enumerate {
-    fn validate(&self, input: &xval::Value) -> Result<xval::Value, String> {
+    fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         for option in &self.0 {
-            if input == option {
+            if ctx.value == *option {
                 break;
             }
         }
 
-        Ok(input.clone())
+        Ok(ctx.value.clone())
     }
 }
 

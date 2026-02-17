@@ -37,6 +37,15 @@ impl Path {
     pub fn iter(&self) -> std::slice::Iter<'_, Segment> {
         self.0.iter()
     }
+
+    pub fn push(&mut self, segment: Segment) -> &mut Self {
+        self.0.push(segment);
+        self
+    }
+
+    pub fn pop(&mut self) -> Option<Segment> {
+        self.0.pop()
+    }
 }
 
 impl From<&str> for Path {
