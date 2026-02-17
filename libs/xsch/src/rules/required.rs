@@ -1,4 +1,4 @@
-use crate::{Context, ValidError, Validate, rules::RuleRegistry};
+use crate::{AnySchema, Context, ValidError, Validate};
 
 #[derive(Debug, Default, Clone)]
 pub struct Required;
@@ -19,8 +19,8 @@ impl Validate for Required {
     }
 }
 
-impl RuleRegistry {
-    pub fn required(&mut self) -> &mut Self {
-        self.register("required", Required::new())
+impl AnySchema {
+    pub fn required(self) -> Self {
+        self.rule("required", Required::new())
     }
 }

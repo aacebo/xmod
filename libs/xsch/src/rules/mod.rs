@@ -1,7 +1,7 @@
-mod enumerate;
+mod one_of;
 mod required;
 
-pub use enumerate::*;
+pub use one_of::*;
 pub use required::*;
 
 use std::{collections::BTreeMap, sync::Arc};
@@ -35,6 +35,24 @@ impl RuleRegistry {
     pub fn register<Rule: Validate + 'static>(&mut self, name: &str, rule: Rule) -> &mut Self {
         self.0.insert(name.to_string(), Arc::new(rule));
         self
+    }
+}
+
+impl std::fmt::Debug for RuleRegistry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let mut list = f.debug_list();
+
+        for (key, _) in &self.0 {
+            list.entry(key);
+        }
+
+        list.finish()
+    }
+}
+
+impl std::fmt::Display for RuleRegistry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self)
     }
 }
 
