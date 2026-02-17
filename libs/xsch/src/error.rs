@@ -1,4 +1,5 @@
 #[derive(Debug, Clone, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ValidError {
     pub rule: Option<String>,    // "min"
     pub path: xpath::Path,       // "test[1].name"
@@ -40,6 +41,38 @@ impl ValidErrorBuilder {
             path: self.path,
             message: self.message,
             errors: self.errors,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(feature = "serde")]
+    mod serde {
+        use crate::*;
+
+        #[test]
+        fn serialize() {
+            let err = ValidErrorBuilder::new(xpath::Path::parse("a/b").unwrap())
+                .rule("required")
+                .message("field is required")
+                .build();
+            let json = serde_json::to_string(&err).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["rule"], "required");
+            assert_eq!(v["path"], "a/b");
+            assert_eq!(v["message"], "field is required");
+        }
+
+        #[test]
+        fn roundtrip() {
+            let err = ValidErrorBuilder::new(xpath::Path::parse("x/0").unwrap())
+                .rule("equals")
+                .message("values differ")
+                .build();
+            let json = serde_json::to_string(&err).unwrap();
+            let restored: ValidError = serde_json::from_str(&json).unwrap();
+            assert_eq!(err, restored);
         }
     }
 }

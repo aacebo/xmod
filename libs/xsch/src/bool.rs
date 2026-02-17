@@ -3,6 +3,11 @@ use xval::AsValue;
 use crate::{Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
 
 #[derive(Debug, Default, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
 pub struct BoolSchema(RuleSet);
 
 impl BoolSchema {
@@ -39,5 +44,65 @@ impl Validate for BoolSchema {
         }
 
         Ok(value)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn validate_bool() {
+        let schema = BoolSchema::default();
+        assert!(schema.validate(&true.as_value().into()).is_ok());
+        assert!(schema.validate(&false.as_value().into()).is_ok());
+    }
+
+    #[test]
+    fn validate_rejects_non_bool() {
+        let schema = BoolSchema::default();
+        let err = schema.validate(&42i32.as_value().into()).unwrap_err();
+        assert_eq!(err.message.as_deref(), Some("expected bool"));
+    }
+
+    #[test]
+    fn validate_rejects_string() {
+        let schema = BoolSchema::default();
+        assert!(schema.validate(&"true".as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_null_passes_without_required() {
+        let schema = BoolSchema::default();
+        assert!(schema.validate(&xval::Value::Null.into()).is_err());
+    }
+
+    #[test]
+    fn validate_required_rejects_null() {
+        let schema = BoolSchema::default().required();
+        let err = schema.validate(&xval::Value::Null.into()).unwrap_err();
+        assert_eq!(err.errors[0].message.as_deref(), Some("required"));
+    }
+
+    #[test]
+    fn validate_equals() {
+        let schema = BoolSchema::default().equals(true);
+        assert!(schema.validate(&true.as_value().into()).is_ok());
+        assert!(schema.validate(&false.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_options() {
+        let schema = BoolSchema::default().options(&[true]);
+        assert!(schema.validate(&true.as_value().into()).is_ok());
+        assert!(schema.validate(&false.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_required_and_equals() {
+        let schema = BoolSchema::default().required().equals(false);
+        assert!(schema.validate(&false.as_value().into()).is_ok());
+        assert!(schema.validate(&true.as_value().into()).is_err());
+        assert!(schema.validate(&xval::Value::Null.into()).is_err());
     }
 }

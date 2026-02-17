@@ -2,9 +2,16 @@ use crate::{Context, Rule, ValidError, Validate};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
 pub struct Required(bool);
 
 impl Required {
+    pub const KEY: &str = "required";
+
     pub fn new(is_required: bool) -> Self {
         Self(is_required)
     }

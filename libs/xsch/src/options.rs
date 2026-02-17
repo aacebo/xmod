@@ -1,7 +1,16 @@
 use crate::{Context, Rule, ValidError, Validate};
 
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
 pub struct Options(Vec<xval::Value>);
+
+impl Options {
+    pub const KEY: &str = "options";
+}
 
 impl From<Vec<xval::Value>> for Options {
     fn from(value: Vec<xval::Value>) -> Self {

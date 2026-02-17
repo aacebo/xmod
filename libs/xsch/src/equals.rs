@@ -2,7 +2,16 @@ use crate::{Context, Rule, ValidError, Validate};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
 pub struct Equals(xval::Value);
+
+impl Equals {
+    pub const KEY: &str = "equals";
+}
 
 impl From<xval::Value> for Equals {
     fn from(value: xval::Value) -> Self {
