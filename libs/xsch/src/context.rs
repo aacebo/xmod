@@ -1,4 +1,4 @@
-use crate::{ValidError, ValidErrorBuilder};
+use crate::ValidError;
 
 #[derive(Debug, Default, Clone)]
 pub struct Context {
@@ -9,7 +9,7 @@ pub struct Context {
 
 impl Context {
     pub fn error(&self, message: &str) -> ValidError {
-        let mut builder = ValidErrorBuilder::new(self.path.clone()).message(message);
+        let mut builder = ValidError::new(self.path.clone()).message(message);
 
         if let Some(rule) = &self.rule {
             builder = builder.rule(&rule);

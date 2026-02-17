@@ -1,4 +1,4 @@
-use crate::{Context, Equals, Options, Required, ValidError, ValidErrorBuilder, Validate};
+use crate::{Context, Equals, Options, Required, ValidError, Validate};
 
 #[derive(Debug, Clone)]
 pub enum Rule {
@@ -83,7 +83,7 @@ impl std::fmt::Display for RuleSet {
 impl Validate for RuleSet {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let mut next = ctx.clone();
-        let mut error = ValidErrorBuilder::new(ctx.path.clone()).build();
+        let mut error = ValidError::new(ctx.path.clone()).build();
 
         for rule in &self.0 {
             next.rule = Some(rule.key().to_string());

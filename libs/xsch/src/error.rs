@@ -7,6 +7,12 @@ pub struct ValidError {
     pub errors: Vec<ValidError>,
 }
 
+impl ValidError {
+    pub fn new(path: xpath::Path) -> ValidErrorBuilder {
+        ValidErrorBuilder::new(path)
+    }
+}
+
 impl std::fmt::Display for ValidError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "Error")?;
@@ -88,7 +94,7 @@ mod tests {
 
         #[test]
         fn with_rule_and_message() {
-            let err = ValidErrorBuilder::new(xpath::Path::parse("a/b").unwrap())
+            let err = ValidError::new(xpath::Path::parse("a/b").unwrap())
                 .rule("required")
                 .message("field is required")
                 .build();
@@ -100,7 +106,7 @@ mod tests {
 
         #[test]
         fn without_rule() {
-            let err = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+            let err = ValidError::new(xpath::Path::parse("a").unwrap())
                 .message("something went wrong")
                 .build();
             let output = err.to_string();
@@ -111,7 +117,7 @@ mod tests {
 
         #[test]
         fn without_message() {
-            let err = ValidErrorBuilder::new(xpath::Path::parse("x").unwrap())
+            let err = ValidError::new(xpath::Path::parse("x").unwrap())
                 .rule("equals")
                 .build();
             let output = err.to_string();
@@ -122,15 +128,15 @@ mod tests {
 
         #[test]
         fn nested_errors() {
-            let child1 = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+            let child1 = ValidError::new(xpath::Path::parse("a").unwrap())
                 .rule("required")
                 .message("required")
                 .build();
-            let child2 = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap())
+            let child2 = ValidError::new(xpath::Path::parse("a").unwrap())
                 .rule("equals")
                 .message("not equal")
                 .build();
-            let mut parent = ValidErrorBuilder::new(xpath::Path::parse("a").unwrap()).build();
+            let mut parent = ValidError::new(xpath::Path::parse("a").unwrap()).build();
             parent.errors.push(child1);
             parent.errors.push(child2);
 
@@ -148,7 +154,7 @@ mod tests {
 
         #[test]
         fn serialize() {
-            let err = ValidErrorBuilder::new(xpath::Path::parse("a/b").unwrap())
+            let err = ValidError::new(xpath::Path::parse("a/b").unwrap())
                 .rule("required")
                 .message("field is required")
                 .build();
@@ -161,7 +167,7 @@ mod tests {
 
         #[test]
         fn roundtrip() {
-            let err = ValidErrorBuilder::new(xpath::Path::parse("x/0").unwrap())
+            let err = ValidError::new(xpath::Path::parse("x/0").unwrap())
                 .rule("equals")
                 .message("values differ")
                 .build();
