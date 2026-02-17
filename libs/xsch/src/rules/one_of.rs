@@ -1,5 +1,6 @@
-use crate::{AnySchema, Context, ValidError, Validate};
+use crate::{AnySchema, Context, ValidError, Validate, rules::Rule};
 
+#[repr(transparent)]
 #[derive(Debug, Default, Clone)]
 #[cfg_attr(
     feature = "serde",
@@ -11,6 +12,12 @@ pub struct OneOf(Vec<xval::Value>);
 impl OneOf {
     pub fn new(items: &[xval::Value]) -> Self {
         Self(items.to_vec())
+    }
+}
+
+impl From<OneOf> for Rule {
+    fn from(value: OneOf) -> Self {
+        Self::OneOf(value)
     }
 }
 
@@ -34,6 +41,6 @@ impl Validate for OneOf {
 
 impl AnySchema {
     pub fn options(self, items: &[xval::Value]) -> Self {
-        self.rule("one-of", OneOf::new(items))
+        self.rule(OneOf::new(items).into())
     }
 }

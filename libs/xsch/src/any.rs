@@ -1,30 +1,83 @@
-use crate::{Context, ValidError, Validate, rules::RuleRegistry};
+use crate::{Context, ValidError, Validate, rules::Rule};
 
 #[derive(Debug, Default, Clone)]
-pub struct AnySchema(RuleRegistry);
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
+pub struct AnySchema(Vec<Rule>);
 
 impl AnySchema {
     pub fn new() -> Self {
         Self::default()
     }
 
-    pub fn rule<Rule: Validate + 'static>(mut self, name: &str, rule: Rule) -> Self {
-        self.0.register(name, rule);
+    pub fn len(&self) -> usize {
+        self.0.len()
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.0.is_empty()
+    }
+
+    pub fn exists(&self, name: &str) -> bool {
+        self.0.iter().find(|r| r.name() == name).is_some()
+    }
+
+    pub fn get(&self, name: &str) -> Option<&Rule> {
+        self.0.iter().find(|r| r.name() == name)
+    }
+
+    pub fn register(&mut self, rule: Rule) -> &mut Self {
+        self.0.push(rule);
+        self
+    }
+
+    pub fn rule(mut self, rule: Rule) -> Self {
+        self.register(rule);
         self
     }
 
     pub fn validate(&self, value: &xval::Value) -> Result<xval::Value, ValidError> {
-        self.0.validate(&Context {
-            rule: "type::any".to_string(),
-            path: xpath::Path::default(),
-            value: value.clone(),
-        })
+        Validate::validate(
+            self,
+            &Context {
+                rule: "type::any".to_string(),
+                path: xpath::Path::default(),
+                value: value.clone(),
+            },
+        )
+    }
+}
+
+impl std::fmt::Display for AnySchema {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:#?}", self)
     }
 }
 
 impl Validate for AnySchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        self.0.validate(ctx)
+        let mut next = ctx.clone();
+        let mut error = ValidError::new(&ctx.rule, ctx.path.clone()).build();
+
+        for rule in &self.0 {
+            next.rule = rule.name().to_string();
+            next.value = match rule.validate(&next) {
+                Ok(v) => v,
+                Err(err) => {
+                    error.errors.push(err);
+                    continue;
+                }
+            };
+        }
+
+        if !error.errors.is_empty() {
+            return Err(error);
+        }
+
+        Ok(next.value)
     }
 }
 

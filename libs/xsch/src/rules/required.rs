@@ -1,12 +1,23 @@
-use crate::{AnySchema, Context, ValidError, Validate};
+use crate::{AnySchema, Context, ValidError, Validate, rules::Rule};
 
+#[repr(transparent)]
 #[derive(Debug, Default, Clone)]
-#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
-pub struct Required;
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(transparent)
+)]
+pub struct Required(bool);
 
 impl Required {
     pub fn new() -> Self {
-        Self
+        Self(true)
+    }
+}
+
+impl From<Required> for Rule {
+    fn from(value: Required) -> Self {
+        Self::Required(value)
     }
 }
 
@@ -22,6 +33,6 @@ impl Validate for Required {
 
 impl AnySchema {
     pub fn required(self) -> Self {
-        self.rule("required", Required::new())
+        self.rule(Required::new().into())
     }
 }

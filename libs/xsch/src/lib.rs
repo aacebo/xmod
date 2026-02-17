@@ -12,6 +12,11 @@ pub trait Validate {
 }
 
 #[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(tag = "type")
+)]
 pub enum Schema {
     Any(AnySchema),
 }
