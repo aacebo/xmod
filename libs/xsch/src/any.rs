@@ -1,5 +1,9 @@
 use crate::{Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
 
+pub fn any() -> AnySchema {
+    AnySchema::default()
+}
+
 #[derive(Debug, Default, Clone)]
 #[cfg_attr(
     feature = "serde",
@@ -45,21 +49,21 @@ mod tests {
 
     #[test]
     fn validate_any_value() {
-        let schema = AnySchema::default();
+        let schema = any();
         let result = schema.validate(&true.as_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_null() {
-        let schema = AnySchema::default();
+        let schema = any();
         let result = schema.validate(&xval::Value::Null.into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_required_rejects_null() {
-        let schema = AnySchema::default().required();
+        let schema = any().required();
         let result = schema.validate(&xval::Value::Null.into());
         assert!(result.is_err());
         assert_eq!(
@@ -70,43 +74,42 @@ mod tests {
 
     #[test]
     fn validate_required_accepts_value() {
-        let schema = AnySchema::default().required();
+        let schema = any().required();
         let result = schema.validate(&42i32.as_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_equals_match() {
-        let schema = AnySchema::default().equals("hello".as_value());
+        let schema = any().equals("hello".as_value());
         let result = schema.validate(&"hello".as_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_equals_mismatch() {
-        let schema = AnySchema::default().equals("hello".as_value());
+        let schema = any().equals("hello".as_value());
         let result = schema.validate(&"world".as_value().into());
         assert!(result.is_err());
     }
 
     #[test]
     fn validate_options_match() {
-        let schema =
-            AnySchema::default().options(&[1i32.as_value(), "test".as_value(), true.as_value()]);
+        let schema = any().options(&[1i32.as_value(), "test".as_value(), true.as_value()]);
         let result = schema.validate(&"test".as_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_options_mismatch() {
-        let schema = AnySchema::default().options(&[1i32.as_value(), 2i32.as_value()]);
+        let schema = any().options(&[1i32.as_value(), 2i32.as_value()]);
         let result = schema.validate(&3i32.as_value().into());
         assert!(result.is_err());
     }
 
     #[test]
     fn validate_required_and_options() {
-        let schema = AnySchema::default()
+        let schema = any()
             .required()
             .options(&[true.as_value(), false.as_value()]);
 
@@ -118,7 +121,7 @@ mod tests {
 
     #[test]
     fn validate_collects_multiple_errors() {
-        let schema = AnySchema::default().required().equals(true.as_value());
+        let schema = any().required().equals(true.as_value());
         let err = schema.validate(&xval::Value::Null.into()).unwrap_err();
         assert_eq!(err.errors.len(), 2);
     }

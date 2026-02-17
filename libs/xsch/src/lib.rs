@@ -51,20 +51,20 @@ mod tests {
 
         #[test]
         fn any_dispatches() {
-            let schema = Schema::Any(AnySchema::default());
+            let schema = Schema::Any(any());
             assert!(schema.validate(&"anything".as_value().into()).is_ok());
         }
 
         #[test]
         fn bool_dispatches() {
-            let schema = Schema::Bool(BoolSchema::default());
+            let schema = Schema::Bool(bool());
             assert!(schema.validate(&true.as_value().into()).is_ok());
             assert!(schema.validate(&42i32.as_value().into()).is_err());
         }
 
         #[test]
         fn bool_with_rules_dispatches() {
-            let schema = Schema::Bool(BoolSchema::default().required().equals(true));
+            let schema = Schema::Bool(bool().required().equals(true));
             assert!(schema.validate(&true.as_value().into()).is_ok());
             assert!(schema.validate(&false.as_value().into()).is_err());
             assert!(schema.validate(&xval::Value::Null.into()).is_err());
@@ -79,21 +79,21 @@ mod tests {
 
         #[test]
         fn serialize_any_empty() {
-            let schema = Schema::Any(AnySchema::default());
+            let schema = Schema::Any(any());
             let json = serde_json::to_string(&schema).unwrap();
             assert_eq!(json, r#"{"type":"any"}"#);
         }
 
         #[test]
         fn serialize_bool_empty() {
-            let schema = Schema::Bool(BoolSchema::default());
+            let schema = Schema::Bool(bool());
             let json = serde_json::to_string(&schema).unwrap();
             assert_eq!(json, r#"{"type":"bool"}"#);
         }
 
         #[test]
         fn serialize_any_with_rules() {
-            let schema = Schema::Any(AnySchema::default().required().options(&[
+            let schema = Schema::Any(any().required().options(&[
                 1i32.as_value(),
                 "test".as_value(),
                 true.as_value(),
