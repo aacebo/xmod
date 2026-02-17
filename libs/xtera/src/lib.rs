@@ -6,6 +6,9 @@ mod template;
 pub use scope::*;
 pub use template::*;
 
+#[cfg(feature = "derive")]
+pub use xtera_derive::*;
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -7,7 +7,7 @@ pub struct Template {
 }
 
 impl Template {
-    pub(crate) fn new(block: ast::BlockNode) -> Self {
+    pub fn new(block: ast::BlockNode) -> Self {
         Self { block }
     }
 

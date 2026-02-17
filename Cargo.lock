@@ -246,6 +246,18 @@ name = "xtera"
 version = "0.0.0"
 dependencies = [
  "logos",
+ "xtera-derive",
+ "xval",
+]
+
+[[package]]
+name = "xtera-derive"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "xtera",
  "xval",
 ]
 
