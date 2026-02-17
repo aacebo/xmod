@@ -250,6 +250,26 @@ impl Value {
     }
 }
 
+impl Value {
+    pub fn get(&self, path: &xpath::Path) -> Option<Self> {
+        let mut value = self.clone();
+
+        for segment in path.iter() {
+            let next = match segment {
+                xpath::Segment::Key(v) => value.as_object().as_struct().field(v.as_str().into()),
+                xpath::Segment::Index(v) => value.as_object().as_array().index(*v),
+            };
+
+            value = match next {
+                None => return None,
+                Some(v) => v.as_value(),
+            };
+        }
+
+        Some(value)
+    }
+}
+
 impl std::fmt::Debug for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -478,6 +498,104 @@ mod tests {
             Value::from_str("hello").type_id(),
             std::any::TypeId::of::<String>()
         );
+    }
+
+    mod get {
+        use std::collections::HashMap;
+
+        use super::*;
+
+        #[test]
+        fn struct_field() {
+            let mut map = HashMap::new();
+            map.insert(Ident::key("a"), Value::from_i32(1));
+            map.insert(Ident::key("b"), Value::from_str("hello"));
+            let v = Value::from_struct(map);
+
+            let path = xpath::Path::parse("a").unwrap();
+            let result = v.get(&path).unwrap();
+            assert_eq!(result.to_i32(), 1);
+
+            let path = xpath::Path::parse("b").unwrap();
+            let result = v.get(&path).unwrap();
+            assert_eq!(result.as_str(), "hello");
+        }
+
+        #[test]
+        fn array_index() {
+            let arr = vec![
+                Value::from_i32(10),
+                Value::from_bool(true),
+                Value::from_str("world"),
+            ];
+            let v = Value::from_array(arr);
+
+            let path = xpath::Path::parse("0").unwrap();
+            assert_eq!(v.get(&path).unwrap().to_i32(), 10);
+
+            let path = xpath::Path::parse("1").unwrap();
+            assert_eq!(v.get(&path).unwrap().to_bool(), true);
+
+            let path = xpath::Path::parse("2").unwrap();
+            assert_eq!(v.get(&path).unwrap().as_str(), "world");
+        }
+
+        #[test]
+        fn nested_struct_to_array() {
+            let arr = vec![Value::from_i32(42), Value::from_i32(99)];
+            let mut map = HashMap::new();
+            map.insert(Ident::key("items"), Value::from_array(arr));
+            let v = Value::from_struct(map);
+
+            let path = xpath::Path::parse("items/0").unwrap();
+            assert_eq!(v.get(&path).unwrap().to_i32(), 42);
+
+            let path = xpath::Path::parse("items/1").unwrap();
+            assert_eq!(v.get(&path).unwrap().to_i32(), 99);
+        }
+
+        #[test]
+        fn nested_array_to_struct() {
+            let mut m1 = HashMap::new();
+            m1.insert(Ident::key("name"), Value::from_str("alice"));
+            let mut m2 = HashMap::new();
+            m2.insert(Ident::key("name"), Value::from_str("bob"));
+            let arr = vec![Value::from_struct(m1), Value::from_struct(m2)];
+            let v = Value::from_array(arr);
+
+            let path = xpath::Path::parse("0/name").unwrap();
+            assert_eq!(v.get(&path).unwrap().as_str(), "alice");
+
+            let path = xpath::Path::parse("1/name").unwrap();
+            assert_eq!(v.get(&path).unwrap().as_str(), "bob");
+        }
+
+        #[test]
+        fn missing_key() {
+            let mut map = HashMap::new();
+            map.insert(Ident::key("a"), Value::from_i32(1));
+            let v = Value::from_struct(map);
+
+            let path = xpath::Path::parse("z").unwrap();
+            assert!(v.get(&path).is_none());
+        }
+
+        #[test]
+        fn missing_index() {
+            let arr = vec![Value::from_i32(1)];
+            let v = Value::from_array(arr);
+
+            let path = xpath::Path::parse("5").unwrap();
+            assert!(v.get(&path).is_none());
+        }
+
+        #[test]
+        fn empty_path() {
+            let v = Value::from_i32(42);
+            let path = xpath::Path::parse("").unwrap();
+            let result = v.get(&path).unwrap();
+            assert_eq!(result.to_i32(), 42);
+        }
     }
 
     #[cfg(feature = "serde")]

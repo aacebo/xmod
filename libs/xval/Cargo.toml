@@ -11,9 +11,10 @@ repository.workspace = true
 [features]
 default = []
 derive = ["xval-derive"]
-serde = ["dep:serde"]
+serde = ["dep:serde", "xpath/serde"]
 
 [dependencies]
+xpath = { workspace = true }
 xval-derive = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 
