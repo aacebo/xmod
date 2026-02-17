@@ -4,6 +4,12 @@ use crate::{Context, Rule, ValidError, Validate};
 #[derive(Debug, Clone)]
 pub struct Required(bool);
 
+impl Required {
+    pub fn new(is_required: bool) -> Self {
+        Self(is_required)
+    }
+}
+
 impl From<Required> for Rule {
     fn from(value: Required) -> Self {
         Self::Required(value)
