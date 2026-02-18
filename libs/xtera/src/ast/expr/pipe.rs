@@ -23,7 +23,7 @@ impl PipeExpr {
         let pipe = scope.pipe(&self.name).ok_or_else(|| {
             EvalError::UndefinedPipe(UndefinedPipeError {
                 name: self.name.clone(),
-                span: self.span,
+                span: self.span.clone(),
             })
         })?;
 

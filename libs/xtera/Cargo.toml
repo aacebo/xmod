@@ -9,10 +9,16 @@ homepage.workspace = true
 repository.workspace = true
 
 [features]
+default = []
 derive = ["xtera-derive"]
+serde = ["dep:serde", "xval/serde"]
 
 [dependencies]
 logos = { version = "0.16" }
-xtera-derive = { workspace = true, optional = true }
+serde = { workspace = true, optional = true }
 
+xtera-derive = { workspace = true, optional = true }
 xval = { workspace = true }
+
+[dev-dependencies]
+serde_json = "1"

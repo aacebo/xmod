@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use logos::Logos;
 
 use crate::ast::Span;
@@ -50,6 +52,7 @@ const AT_KEYWORDS: &[(&str, LexToken)] = &[
 
 pub struct Lexer<'src> {
     source: &'src str,
+    src: Arc<str>,
     pos: usize,
     peeked_expr: Option<Spanned>,
     brace_depth: usize,
@@ -57,9 +60,10 @@ pub struct Lexer<'src> {
 }
 
 impl<'src> Lexer<'src> {
-    pub fn new(source: &'src str) -> Self {
+    pub fn new(source: &'src str, src: Arc<str>) -> Self {
         Self {
             source,
+            src,
             pos: 0,
             peeked_expr: None,
             brace_depth: 0,
@@ -104,8 +108,12 @@ impl<'src> Lexer<'src> {
         &self.source[self.pos..]
     }
 
+    fn span(&self, start: usize, end: usize) -> Span {
+        Span::new(start, end, self.src.clone())
+    }
+
     fn here(&self) -> Span {
-        Span::new(self.pos, self.pos)
+        self.span(self.pos, self.pos)
     }
 
     /// Scan the next token in text mode. Stops at `{{`, `@keyword`,
@@ -131,7 +139,7 @@ impl<'src> Lexer<'src> {
                     self.pos = text_end;
                     return Ok(Spanned {
                         token: LexToken::Text(self.source[start..text_end].to_string()),
-                        span: Span::new(start, text_end),
+                        span: self.span(start, text_end),
                     });
                 }
 
@@ -139,7 +147,7 @@ impl<'src> Lexer<'src> {
                 self.interp_depth += 1;
                 return Ok(Spanned {
                     token: LexToken::InterpStart,
-                    span: Span::new(text_end, text_end + 2),
+                    span: self.span(text_end, text_end + 2),
                 });
             }
 
@@ -149,14 +157,14 @@ impl<'src> Lexer<'src> {
                     self.pos = text_end;
                     return Ok(Spanned {
                         token: LexToken::Text(self.source[start..text_end].to_string()),
-                        span: Span::new(start, text_end),
+                        span: self.span(start, text_end),
                     });
                 }
 
                 self.pos = text_end + 1;
                 return Ok(Spanned {
                     token: LexToken::CloseBrace,
-                    span: Span::new(text_end, text_end + 1),
+                    span: self.span(text_end, text_end + 1),
                 });
             }
 
@@ -167,11 +175,11 @@ impl<'src> Lexer<'src> {
                         self.pos = text_end;
                         return Ok(Spanned {
                             token: LexToken::Text(self.source[start..text_end].to_string()),
-                            span: Span::new(start, text_end),
+                            span: self.span(start, text_end),
                         });
                     }
 
-                    let span = Span::new(text_end, text_end + kw_len);
+                    let span = self.span(text_end, text_end + kw_len);
                     self.pos = text_end + kw_len;
                     return Ok(Spanned {
                         token: kw_token,
@@ -188,7 +196,7 @@ impl<'src> Lexer<'src> {
             self.pos = text_end;
             return Ok(Spanned {
                 token: LexToken::Text(self.source[start..text_end].to_string()),
-                span: Span::new(start, text_end),
+                span: self.span(start, text_end),
             });
         }
 
@@ -243,7 +251,7 @@ impl<'src> Lexer<'src> {
 
         // Check for `}}` — only treat as InterpEnd when inside an interpolation
         if rem.starts_with("}}") && self.interp_depth > 0 {
-            let span = Span::new(self.pos, self.pos + 2);
+            let span = self.span(self.pos, self.pos + 2);
             self.pos += 2;
             self.interp_depth -= 1;
             return Ok(Spanned {
@@ -258,7 +266,7 @@ impl<'src> Lexer<'src> {
             if after.is_empty()
                 || !after.as_bytes()[0].is_ascii_alphanumeric() && after.as_bytes()[0] != b'_'
             {
-                let span = Span::new(self.pos, self.pos + 6);
+                let span = self.span(self.pos, self.pos + 6);
                 self.pos += 6;
                 return Ok(Spanned {
                     token: LexToken::AtMatch,
@@ -271,7 +279,7 @@ impl<'src> Lexer<'src> {
         match lex.next() {
             Some(Ok(tok)) => {
                 let logo_span = lex.span();
-                let span = Span::new(self.pos + logo_span.start, self.pos + logo_span.end);
+                let span = self.span(self.pos + logo_span.start, self.pos + logo_span.end);
                 self.pos += logo_span.end;
                 Ok(Spanned {
                     token: LexToken::Expr(tok),
@@ -280,7 +288,7 @@ impl<'src> Lexer<'src> {
             }
             Some(Err(())) => Err(ParseError::new(
                 "unexpected character",
-                Span::new(self.pos, self.pos + 1),
+                self.span(self.pos, self.pos + 1),
             )),
             None => Ok(Spanned {
                 token: LexToken::Eof,
@@ -316,88 +324,93 @@ impl<'src> Lexer<'src> {
 mod tests {
     use super::*;
 
+    fn lex(source: &str) -> Lexer<'_> {
+        let src: Arc<str> = Arc::from(source);
+        Lexer::new(source, src)
+    }
+
     #[test]
     fn text_only() {
-        let mut lex = Lexer::new("hello world");
-        let sp = lex.next_text().unwrap();
+        let mut l = lex("hello world");
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Text("hello world".to_string()));
-        let sp = lex.next_text().unwrap();
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Eof);
     }
 
     #[test]
     fn interp() {
-        let mut lex = Lexer::new("hello {{ name }}");
-        let sp = lex.next_text().unwrap();
+        let mut l = lex("hello {{ name }}");
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Text("hello ".to_string()));
 
-        let sp = lex.next_text().unwrap();
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::InterpStart);
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::Ident("name".to_string())));
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::InterpEnd);
     }
 
     #[test]
     fn at_keyword() {
-        let mut lex = Lexer::new("@if (x) { hi }");
-        let sp = lex.next_text().unwrap();
+        let mut l = lex("@if (x) { hi }");
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::AtIf);
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::LParen));
     }
 
     #[test]
     fn at_not_keyword() {
-        let mut lex = Lexer::new("email@test.com");
-        let sp = lex.next_text().unwrap();
+        let mut l = lex("email@test.com");
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Text("email@test.com".to_string()));
     }
 
     #[test]
     fn brace_depth() {
-        let mut lex = Lexer::new("@if (x) { hello }");
+        let mut l = lex("@if (x) { hello }");
 
-        let sp = lex.next_text().unwrap();
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::AtIf);
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::LParen));
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::Ident("x".to_string())));
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::RParen));
 
-        let sp = lex.next_expr().unwrap();
+        let sp = l.next_expr().unwrap();
         assert_eq!(sp.token, LexToken::Expr(Token::LBrace));
 
-        lex.open_brace();
+        l.open_brace();
 
-        let sp = lex.next_text().unwrap();
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::Text(" hello ".to_string()));
 
-        let sp = lex.next_text().unwrap();
+        let sp = l.next_text().unwrap();
         assert_eq!(sp.token, LexToken::CloseBrace);
 
-        lex.close_brace();
+        l.close_brace();
     }
 
     #[test]
     fn peek_expr() {
-        let mut lex = Lexer::new("{{ a }}");
+        let mut l = lex("{{ a }}");
 
-        let _ = lex.next_text().unwrap(); // InterpStart
+        let _ = l.next_text().unwrap(); // InterpStart
 
-        let peeked = lex.peek_expr().unwrap().clone();
+        let peeked = l.peek_expr().unwrap().clone();
         assert_eq!(peeked.token, LexToken::Expr(Token::Ident("a".to_string())));
 
-        let next = lex.next_expr().unwrap();
+        let next = l.next_expr().unwrap();
         assert_eq!(next.token, peeked.token);
     }
 }

@@ -43,17 +43,17 @@ pub enum Expr {
 impl Expr {
     pub fn span(&self) -> Span {
         match self {
-            Self::Value(e) => e.span,
-            Self::Ident(e) => e.span,
-            Self::Member(e) => e.span,
-            Self::Index(e) => e.span,
-            Self::Call(e) => e.span,
-            Self::Pipe(e) => e.span,
-            Self::Binary(e) => e.span,
-            Self::Unary(e) => e.span,
-            Self::Array(e) => e.span,
-            Self::Object(e) => e.span,
-            Self::Match(e) => e.span,
+            Self::Value(e) => e.span.clone(),
+            Self::Ident(e) => e.span.clone(),
+            Self::Member(e) => e.span.clone(),
+            Self::Index(e) => e.span.clone(),
+            Self::Call(e) => e.span.clone(),
+            Self::Pipe(e) => e.span.clone(),
+            Self::Binary(e) => e.span.clone(),
+            Self::Unary(e) => e.span.clone(),
+            Self::Array(e) => e.span.clone(),
+            Self::Object(e) => e.span.clone(),
+            Self::Match(e) => e.span.clone(),
         }
     }
 

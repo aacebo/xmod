@@ -21,17 +21,17 @@ impl IndexExpr {
             return Err(EvalError::TypeError(TypeError {
                 expected: "array",
                 got: value_type_name(&obj),
-                span: self.span,
+                span: self.span.clone(),
             }));
         }
 
-        let i = value_to_usize(&idx, self.span)?;
+        let i = value_to_usize(&idx, self.span.clone())?;
         let arr = obj.as_array();
         arr.index(i).map(|v| v.as_value()).ok_or_else(|| {
             EvalError::IndexOutOfBounds(IndexOutOfBoundsError {
                 index: i,
                 len: arr.len(),
-                span: self.span,
+                span: self.span.clone(),
             })
         })
     }

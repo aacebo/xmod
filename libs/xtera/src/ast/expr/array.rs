@@ -26,31 +26,3 @@ impl std::fmt::Display for ArrayExpr {
         write!(f, "{}", &self.span)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::ValueExpr;
-
-    #[test]
-    fn eval_array_literal() {
-        let ctx = Scope::new();
-        let expr = ArrayExpr {
-            elements: vec![
-                Expr::Value(ValueExpr {
-                    value: xval::valueof!(1_i64),
-                    span: Span::new(0, 1),
-                }),
-                Expr::Value(ValueExpr {
-                    value: xval::valueof!(2_i64),
-                    span: Span::new(0, 1),
-                }),
-            ],
-            span: Span::new(0, 1),
-        };
-
-        let result = expr.eval(&ctx).unwrap();
-        assert!(result.is_array());
-        assert_eq!(result.as_array().len(), 2);
-    }
-}

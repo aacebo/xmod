@@ -54,21 +54,29 @@ impl BinOp {
 }
 
 /// Shorthand for the zero span used in generated code.
+/// Relies on `src` being in scope in the generated code block.
 fn s() -> TokenStream {
-    quote! { ::xtera::ast::Span::new(0, 0) }
+    quote! { ::xtera::ast::Span::new(0, 0, src.clone()) }
 }
 
 /// Parse the macro input and produce a `TokenStream` that constructs
 /// an `xtera::Template`.
 pub fn parse(input: TokenStream) -> syn::Result<TokenStream> {
+    let source_str = input.to_string();
     let nodes = syn::parse2::<Nodes>(input)?;
     let node_tokens = nodes.0;
     let span = s();
     Ok(quote! {
-        ::xtera::Template::new(::xtera::ast::BlockNode {
-            nodes: vec![#(#node_tokens),*],
-            span: #span,
-        })
+        {
+            let src: ::std::sync::Arc<str> = ::std::sync::Arc::from(#source_str);
+            ::xtera::Template::new(
+                src.clone(),
+                ::xtera::ast::BlockNode {
+                    nodes: vec![#(#node_tokens),*],
+                    span: #span,
+                },
+            )
+        }
     })
 }
 

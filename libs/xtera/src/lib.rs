@@ -144,4 +144,230 @@ mod tests {
             "<h1>MY PAGE</h1><body class='dark'><b>alice</b><span>bob</span></body>"
         );
     }
+
+    #[cfg(feature = "serde")]
+    #[test]
+    fn serde_round_trip() {
+        let src = "Hello {{ name | upper }}!";
+        let tpl = Template::parse(src).unwrap();
+        let json = serde_json::to_string(&tpl).unwrap();
+        assert_eq!(json, format!("\"{src}\""));
+        let tpl2: Template = serde_json::from_str(&json).unwrap();
+        assert_eq!(tpl, tpl2);
+    }
+
+    /// Parse + render with an empty scope.
+    fn render(src: &str) -> String {
+        let tpl = Template::parse(src).unwrap();
+        tpl.render(&Scope::new()).unwrap()
+    }
+
+    /// Parse + render, expecting an eval error.
+    fn render_err(src: &str, scope: &Scope) -> ast::EvalError {
+        let tpl = Template::parse(src).unwrap();
+        tpl.render(scope).unwrap_err()
+    }
+
+    // ── Literals ────────────────────────────────────────────────────
+
+    #[test]
+    fn literal_null() {
+        assert_eq!(render("{{ null }}"), "<null>");
+    }
+
+    #[test]
+    fn literal_bool() {
+        assert_eq!(render("{{ true }}"), "true");
+        assert_eq!(render("{{ false }}"), "false");
+    }
+
+    #[test]
+    fn literal_int() {
+        assert_eq!(render("{{ 42 }}"), "42");
+    }
+
+    #[test]
+    fn literal_float() {
+        assert_eq!(render("{{ 3.14 }}"), "3.14");
+    }
+
+    #[test]
+    fn literal_string() {
+        assert_eq!(render("{{ 'hello' }}"), "hello");
+    }
+
+    // ── Arithmetic & operators ──────────────────────────────────────
+
+    #[test]
+    fn add_ints() {
+        assert_eq!(render("{{ 2 + 3 }}"), "5");
+    }
+
+    #[test]
+    fn float_promotion() {
+        assert_eq!(render("{{ 1 + 2.5 }}"), "3.5");
+    }
+
+    #[test]
+    fn string_concat() {
+        assert_eq!(render("{{ 'a' + 'b' }}"), "ab");
+    }
+
+    #[test]
+    fn division_by_zero() {
+        let err = render_err("{{ 10 / 0 }}", &Scope::new());
+        assert!(matches!(err, ast::EvalError::DivisionByZero(_)));
+    }
+
+    #[test]
+    fn comparison() {
+        assert_eq!(render("{{ 1 < 2 }}"), "true");
+    }
+
+    #[test]
+    fn equality() {
+        assert_eq!(render("{{ 'a' == 'a' }}"), "true");
+    }
+
+    // ── Unary operators ─────────────────────────────────────────────
+
+    #[test]
+    fn unary_not() {
+        assert_eq!(render("{{ !true }}"), "false");
+    }
+
+    #[test]
+    fn unary_neg() {
+        assert_eq!(render("{{ -5 }}"), "-5");
+    }
+
+    // ── Short-circuit logic ─────────────────────────────────────────
+
+    #[test]
+    fn and_short_circuit() {
+        // `missing` is undefined — but short-circuit prevents the error.
+        assert_eq!(render("{{ false && missing }}"), "false");
+    }
+
+    #[test]
+    fn or_short_circuit() {
+        assert_eq!(render("{{ true || missing }}"), "true");
+    }
+
+    // ── Error cases ─────────────────────────────────────────────────
+
+    #[test]
+    fn undefined_variable() {
+        let err = render_err("{{ x }}", &Scope::new());
+        assert!(matches!(err, ast::EvalError::UndefinedVariable(_)));
+    }
+
+    #[test]
+    fn undefined_pipe() {
+        let mut s = Scope::new();
+        s.set_var("x", xval::valueof!("hi"));
+        let err = render_err("{{ x | missing }}", &s);
+        assert!(matches!(err, ast::EvalError::UndefinedPipe(_)));
+    }
+
+    #[test]
+    fn for_not_iterable() {
+        let mut s = Scope::new();
+        s.set_var("items", xval::valueof!(42_i64));
+        let err = render_err("@for (n of items; track n) {x}", &s);
+        assert!(matches!(err, ast::EvalError::NotIterable(_)));
+    }
+
+    #[test]
+    fn include_missing_template() {
+        let err = render_err("@include('missing')", &Scope::new());
+        assert!(matches!(err, ast::EvalError::UndefinedTemplate(_)));
+    }
+
+    #[test]
+    fn include_non_string_name() {
+        let mut s = Scope::new();
+        s.set_var("name", xval::valueof!(42_i64));
+        let err = render_err("@include(name)", &s);
+        assert!(matches!(err, ast::EvalError::TypeError(_)));
+    }
+
+    // ── Simple control flow ─────────────────────────────────────────
+
+    #[test]
+    fn if_true() {
+        assert_eq!(render("@if (true) {yes}"), "yes");
+    }
+
+    #[test]
+    fn if_false() {
+        assert_eq!(render("@if (false) {yes}"), "");
+    }
+
+    #[test]
+    fn if_else() {
+        assert_eq!(render("@if (false) {a}@else{b}"), "b");
+    }
+
+    #[test]
+    fn for_loop() {
+        let mut s = scope();
+        s.set_var(
+            "items",
+            xval::valueof!((vec![xval::valueof!(1_i64), xval::valueof!(2_i64)])),
+        );
+        let tpl = Template::parse("@for (n of items; track n) {[{{ n }}]}").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "[1][2]");
+    }
+
+    #[test]
+    fn for_empty() {
+        let mut s = scope();
+        s.set_var("items", xval::valueof!((vec![] as Vec<xval::Value>)));
+        let tpl = Template::parse("@for (n of items; track n) {x}").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "");
+    }
+
+    #[test]
+    fn match_default() {
+        let mut s = Scope::new();
+        s.set_var("x", xval::valueof!("b"));
+        let tpl = Template::parse("@match (x) { 'a' => {A}, _ => {?} }").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "?");
+    }
+
+    #[test]
+    fn match_arm() {
+        let mut s = Scope::new();
+        s.set_var("x", xval::valueof!("a"));
+        let tpl = Template::parse("@match (x) { 'a' => {A}, 'b' => {B} }").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "A");
+    }
+
+    #[test]
+    fn match_no_match() {
+        let mut s = Scope::new();
+        s.set_var("x", xval::valueof!("c"));
+        let tpl = Template::parse("@match (x) { 'a' => {A} }").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "");
+    }
+
+    #[test]
+    fn plain_text() {
+        assert_eq!(render("hello world"), "hello world");
+    }
+
+    #[test]
+    fn interpolation_with_variable() {
+        let mut s = Scope::new();
+        s.set_var("x", xval::valueof!(10_i64));
+        let tpl = Template::parse("{{ x }}").unwrap();
+        s.set_template("main", tpl);
+        assert_eq!(s.render("main").unwrap(), "10");
+    }
 }

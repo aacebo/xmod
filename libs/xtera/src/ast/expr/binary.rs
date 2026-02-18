@@ -47,9 +47,9 @@ impl BinaryExpr {
                 Ok(xval::valueof!((format!("{}{}", left_val, right_val))))
             }
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Mod => {
-                let l = expect_number(&left_val, self.span)?;
-                let r = expect_number(&right_val, self.span)?;
-                Self::eval_arithmetic(l, self.op, r, self.span)
+                let l = expect_number(&left_val, self.span.clone())?;
+                let r = expect_number(&right_val, self.span.clone())?;
+                Self::eval_arithmetic(l, self.op, r, self.span.clone())
             }
             BinaryOp::And | BinaryOp::Or => unreachable!(),
         }
@@ -142,117 +142,5 @@ impl BinaryExpr {
 impl std::fmt::Display for BinaryExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.span)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::ValueExpr;
-
-    fn val(v: xval::Value) -> Box<Expr> {
-        Box::new(Expr::Value(ValueExpr {
-            value: v,
-            span: Span::new(0, 1),
-        }))
-    }
-
-    fn ident(name: &str) -> Box<Expr> {
-        Box::new(Expr::Ident(crate::ast::IdentExpr {
-            name: name.to_string(),
-            span: Span::new(0, 1),
-        }))
-    }
-
-    fn binary(left: Box<Expr>, op: BinaryOp, right: Box<Expr>) -> BinaryExpr {
-        BinaryExpr {
-            left,
-            op,
-            right,
-            span: Span::new(0, 1),
-        }
-    }
-
-    #[test]
-    fn add_ints() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!(2_i64)),
-            BinaryOp::Add,
-            val(xval::valueof!(3_i64)),
-        );
-        assert_eq!(expr.eval(&ctx).unwrap(), 5i64);
-    }
-
-    #[test]
-    fn float_promotion() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!(1_i64)),
-            BinaryOp::Add,
-            val(xval::valueof!(2.5_f64)),
-        );
-        assert_eq!(expr.eval(&ctx).unwrap(), 3.5f64);
-    }
-
-    #[test]
-    fn division_by_zero() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!(10_i64)),
-            BinaryOp::Div,
-            val(xval::valueof!(0_i64)),
-        );
-        assert!(matches!(
-            expr.eval(&ctx).unwrap_err(),
-            EvalError::DivisionByZero(_)
-        ));
-    }
-
-    #[test]
-    fn string_concat() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!("hello")),
-            BinaryOp::Add,
-            val(xval::valueof!(" world")),
-        );
-        assert_eq!(expr.eval(&ctx).unwrap(), "hello world");
-    }
-
-    #[test]
-    fn comparison() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!(1_i64)),
-            BinaryOp::Lt,
-            val(xval::valueof!(2_i64)),
-        );
-        assert_eq!(expr.eval(&ctx).unwrap(), true);
-    }
-
-    #[test]
-    fn equality() {
-        let ctx = Scope::new();
-        let expr = binary(
-            val(xval::valueof!("a")),
-            BinaryOp::Eq,
-            val(xval::valueof!("a")),
-        );
-        assert_eq!(expr.eval(&ctx).unwrap(), true);
-    }
-
-    #[test]
-    fn logical_and_short_circuit() {
-        let ctx = Scope::new();
-        let expr = binary(val(xval::valueof!(false)), BinaryOp::And, ident("missing"));
-        assert_eq!(expr.eval(&ctx).unwrap(), false);
-    }
-
-    #[test]
-    fn logical_or_short_circuit() {
-        let ctx = Scope::new();
-        let expr = binary(val(xval::valueof!(true)), BinaryOp::Or, ident("missing"));
-        assert_eq!(expr.eval(&ctx).unwrap(), true);
     }
 }

@@ -17,7 +17,7 @@ impl MemberExpr {
             return Err(EvalError::TypeError(TypeError {
                 expected: "struct",
                 got: value_type_name(&obj),
-                span: self.span,
+                span: self.span.clone(),
             }));
         }
 
@@ -27,7 +27,7 @@ impl MemberExpr {
             .ok_or_else(|| {
                 EvalError::UndefinedField(UndefinedFieldError {
                     name: self.field.clone(),
-                    span: self.span,
+                    span: self.span.clone(),
                 })
             })
     }

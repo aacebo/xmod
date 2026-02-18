@@ -41,16 +41,16 @@ pub enum EvalError {
 impl EvalError {
     pub fn span(&self) -> Span {
         match self {
-            Self::UndefinedVariable(e) => e.span,
-            Self::UndefinedPipe(e) => e.span,
-            Self::UndefinedField(e) => e.span,
-            Self::UndefinedTemplate(e) => e.span,
-            Self::IndexOutOfBounds(e) => e.span,
-            Self::TypeError(e) => e.span,
-            Self::DivisionByZero(e) => e.span,
-            Self::NotCallable(e) => e.span,
-            Self::NotIterable(e) => e.span,
-            Self::InvalidIndex(e) => e.span,
+            Self::UndefinedVariable(e) => e.span.clone(),
+            Self::UndefinedPipe(e) => e.span.clone(),
+            Self::UndefinedField(e) => e.span.clone(),
+            Self::UndefinedTemplate(e) => e.span.clone(),
+            Self::IndexOutOfBounds(e) => e.span.clone(),
+            Self::TypeError(e) => e.span.clone(),
+            Self::DivisionByZero(e) => e.span.clone(),
+            Self::NotCallable(e) => e.span.clone(),
+            Self::NotIterable(e) => e.span.clone(),
+            Self::InvalidIndex(e) => e.span.clone(),
         }
     }
 }
@@ -100,7 +100,7 @@ pub(crate) fn expect_number<'a>(val: &'a xval::Value, span: Span) -> Result<&'a 
 }
 
 pub(crate) fn value_to_usize(val: &xval::Value, span: Span) -> Result<usize> {
-    let n = expect_number(val, span)?;
+    let n = expect_number(val, span.clone())?;
     let v = n.to_i64();
     if v >= 0 {
         Ok(v as usize)
@@ -122,64 +122,6 @@ pub(crate) fn value_type_name(val: &xval::Value) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn display_undefined_variable() {
-        let err = EvalError::UndefinedVariable(UndefinedVariableError {
-            name: "x".into(),
-            span: Span::new(0, 1),
-        });
-        assert_eq!(
-            err.to_string(),
-            "eval error at 0..1: undefined variable 'x'"
-        );
-    }
-
-    #[test]
-    fn display_type_error() {
-        let err = EvalError::TypeError(TypeError {
-            expected: "number",
-            got: "string".into(),
-            span: Span::new(5, 10),
-        });
-        assert_eq!(
-            err.to_string(),
-            "eval error at 5..10: expected number, got string"
-        );
-    }
-
-    #[test]
-    fn display_division_by_zero() {
-        let err = EvalError::DivisionByZero(DivisionByZeroError {
-            span: Span::new(3, 8),
-        });
-        assert_eq!(err.to_string(), "eval error at 3..8: division by zero");
-    }
-
-    #[test]
-    fn display_index_out_of_bounds() {
-        let err = EvalError::IndexOutOfBounds(IndexOutOfBoundsError {
-            index: 5,
-            len: 3,
-            span: Span::new(0, 4),
-        });
-        assert_eq!(
-            err.to_string(),
-            "eval error at 0..4: index 5 out of bounds (len 3)"
-        );
-    }
-
-    #[test]
-    fn display_undefined_template() {
-        let err = EvalError::UndefinedTemplate(UndefinedTemplateError {
-            name: "header".into(),
-            span: Span::new(0, 10),
-        });
-        assert_eq!(
-            err.to_string(),
-            "eval error at 0..10: undefined template 'header'"
-        );
-    }
 
     #[test]
     fn truthiness() {

@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use crate::{Template, ast::*};
 
 use super::error::{ParseError, Result};
@@ -6,31 +8,37 @@ use super::token::Token;
 
 pub struct Parser<'src> {
     lexer: Lexer<'src>,
+    src: Arc<str>,
     source_len: usize,
 }
 
 impl<'src> Parser<'src> {
-    pub fn new(source: &'src str) -> Self {
+    pub fn new(source: &'src str, src: Arc<str>) -> Self {
         Self {
-            lexer: Lexer::new(source),
+            lexer: Lexer::new(source, src.clone()),
+            src,
             source_len: source.len(),
         }
+    }
+
+    fn span(&self, start: usize, end: usize) -> Span {
+        Span::new(start, end, self.src.clone())
     }
 
     /// Parse the entire template.
     pub fn parse(&mut self) -> Result<Template> {
         let nodes = self.parse_nodes()?;
         let span = if nodes.is_empty() {
-            Span::new(0, 0)
+            self.span(0, 0)
         } else {
             nodes
                 .first()
                 .unwrap()
                 .span()
-                .merge(nodes.last().unwrap().span())
+                .merge(&nodes.last().unwrap().span())
         };
 
-        Ok(Template::new(BlockNode { nodes, span }))
+        Ok(Template::new(self.src.clone(), BlockNode { nodes, span }))
     }
 
     // ── Template-level parsing ──────────────────────────────────────
@@ -59,12 +67,12 @@ impl<'src> Parser<'src> {
             LexToken::InterpStart => {
                 let expr = self.parse_expr()?;
                 let end = self.expect_interp_end()?;
-                let span = sp.span.merge(end.span);
+                let span = sp.span.merge(&end.span);
                 Ok(Some(Node::Interp(InterpNode { expr, span })))
             }
             LexToken::AtIf => {
-                let (branches, else_body) = self.parse_if(sp.span)?;
-                let span = sp.span.merge(self.last_span());
+                let (branches, else_body) = self.parse_if(&sp.span)?;
+                let span = sp.span.merge(&self.last_span());
                 Ok(Some(Node::If(IfNode {
                     branches,
                     else_body,
@@ -73,16 +81,16 @@ impl<'src> Parser<'src> {
             }
             LexToken::AtFor => {
                 let for_node = self.parse_for()?;
-                let span = sp.span.merge(self.last_span());
+                let span = sp.span.merge(&self.last_span());
                 Ok(Some(Node::For(ForNode { span, ..for_node })))
             }
             LexToken::AtMatch => {
                 let match_node = self.parse_match()?;
-                let span = sp.span.merge(self.last_span());
+                let span = sp.span.merge(&self.last_span());
                 Ok(Some(Node::Match(MatchNode { span, ..match_node })))
             }
             LexToken::AtInclude => {
-                let include_node = self.parse_include(sp.span)?;
+                let include_node = self.parse_include(&sp.span)?;
                 Ok(Some(Node::Include(include_node)))
             }
             LexToken::CloseBrace | LexToken::Eof => Ok(None),
@@ -93,7 +101,7 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn parse_if(&mut self, start_span: Span) -> Result<(Vec<IfBranch>, Option<BlockNode>)> {
+    fn parse_if(&mut self, start_span: &Span) -> Result<(Vec<IfBranch>, Option<BlockNode>)> {
         let mut branches = Vec::new();
 
         // First branch
@@ -104,7 +112,7 @@ impl<'src> Parser<'src> {
         branches.push(IfBranch {
             condition,
             body,
-            span: start_span.merge(self.last_span()),
+            span: start_span.merge(&self.last_span()),
         });
 
         let mut else_body: Option<BlockNode> = None;
@@ -134,7 +142,7 @@ impl<'src> Parser<'src> {
                 branches.push(IfBranch {
                     condition,
                     body,
-                    span: sp.span.merge(self.last_span()),
+                    span: sp.span.merge(&self.last_span()),
                 });
 
                 continue;
@@ -192,7 +200,7 @@ impl<'src> Parser<'src> {
             iterable,
             track,
             body,
-            span: Span::new(0, 0), // will be overwritten by caller
+            span: self.span(0, 0), // will be overwritten by caller
         })
     }
 
@@ -215,7 +223,7 @@ impl<'src> Parser<'src> {
             if peeked.token == LexToken::Eof {
                 return Err(ParseError::new(
                     "unexpected end of input in @match block",
-                    peeked.span,
+                    peeked.span.clone(),
                 ));
             }
 
@@ -231,7 +239,7 @@ impl<'src> Parser<'src> {
             } else {
                 let pattern = Self::spanned_to_expr(pattern_sp)?;
                 let body = self.parse_block_body()?;
-                let span = pattern.span().merge(body.span);
+                let span = pattern.span().merge(&body.span);
                 arms.push(MatchNodeArm {
                     pattern,
                     body,
@@ -250,7 +258,7 @@ impl<'src> Parser<'src> {
             expr,
             arms,
             default,
-            span: Span::new(0, 0), // will be overwritten by caller
+            span: self.span(0, 0), // will be overwritten by caller
         })
     }
 
@@ -267,7 +275,7 @@ impl<'src> Parser<'src> {
             let peeked = self.lexer.peek_expr()?;
             if peeked.token == LexToken::Expr(Token::RBrace) {
                 let end = self.lexer.next_expr()?;
-                let span = start_span.merge(end.span);
+                let span = start_span.merge(&end.span);
                 return Ok(Expr::Match(MatchExpr {
                     expr: Box::new(expr),
                     arms,
@@ -279,7 +287,7 @@ impl<'src> Parser<'src> {
             if peeked.token == LexToken::Eof {
                 return Err(ParseError::new(
                     "unexpected end of input in @match expression",
-                    peeked.span,
+                    peeked.span.clone(),
                 ));
             }
 
@@ -295,7 +303,7 @@ impl<'src> Parser<'src> {
                 default = Some(Box::new(value));
             } else {
                 let pattern = Self::spanned_to_expr(pattern_sp)?;
-                let span = pattern.span().merge(value.span());
+                let span = pattern.span().merge(&value.span());
                 arms.push(MatchArm {
                     pattern,
                     value,
@@ -349,11 +357,11 @@ impl<'src> Parser<'src> {
         }
     }
 
-    fn parse_include(&mut self, start_span: Span) -> Result<IncludeNode> {
+    fn parse_include(&mut self, start_span: &Span) -> Result<IncludeNode> {
         self.expect_expr_token(&Token::LParen)?;
         let name = self.parse_expr()?;
         let end = self.expect_expr_token(&Token::RParen)?;
-        let span = start_span.merge(end.span);
+        let span = start_span.merge(&end.span);
         Ok(IncludeNode { name, span })
     }
 
@@ -368,7 +376,7 @@ impl<'src> Parser<'src> {
         let span = if nodes.is_empty() {
             start.span
         } else {
-            start.span.merge(nodes.last().unwrap().span())
+            start.span.merge(&nodes.last().unwrap().span())
         };
 
         Ok(BlockNode { nodes, span })
@@ -413,7 +421,7 @@ impl<'src> Parser<'src> {
                 args.push(self.parse_binary(0)?);
             }
 
-            let span = expr.span().merge(name_sp.span);
+            let span = expr.span().merge(&name_sp.span);
             expr = Expr::Pipe(PipeExpr {
                 value: Box::new(expr),
                 name,
@@ -448,7 +456,7 @@ impl<'src> Parser<'src> {
             self.lexer.next_expr()?;
 
             let right = self.parse_binary(r_bp)?;
-            let span = left.span().merge(right.span());
+            let span = left.span().merge(&right.span());
             left = Expr::Binary(BinaryExpr {
                 left: Box::new(left),
                 op,
@@ -467,7 +475,7 @@ impl<'src> Parser<'src> {
             LexToken::Expr(Token::Bang) => {
                 let sp = self.lexer.next_expr()?;
                 let operand = self.parse_unary()?;
-                let span = sp.span.merge(operand.span());
+                let span = sp.span.merge(&operand.span());
                 Ok(Expr::Unary(UnaryExpr {
                     op: UnaryOp::Not,
                     operand: Box::new(operand),
@@ -477,7 +485,7 @@ impl<'src> Parser<'src> {
             LexToken::Expr(Token::Minus) => {
                 let sp = self.lexer.next_expr()?;
                 let operand = self.parse_unary()?;
-                let span = sp.span.merge(operand.span());
+                let span = sp.span.merge(&operand.span());
                 Ok(Expr::Unary(UnaryExpr {
                     op: UnaryOp::Neg,
                     operand: Box::new(operand),
@@ -510,7 +518,7 @@ impl<'src> Parser<'src> {
                         }
                     };
 
-                    let span = expr.span().merge(field_sp.span);
+                    let span = expr.span().merge(&field_sp.span);
                     expr = Expr::Member(MemberExpr {
                         object: Box::new(expr),
                         field,
@@ -521,7 +529,7 @@ impl<'src> Parser<'src> {
                     self.lexer.next_expr()?;
                     let index = self.parse_expr()?;
                     let end = self.expect_expr_token(&Token::RBracket)?;
-                    let span = expr.span().merge(end.span);
+                    let span = expr.span().merge(&end.span);
                     expr = Expr::Index(IndexExpr {
                         object: Box::new(expr),
                         index: Box::new(index),
@@ -532,7 +540,7 @@ impl<'src> Parser<'src> {
                     self.lexer.next_expr()?;
                     let args = self.parse_args()?;
                     let end = self.expect_expr_token(&Token::RParen)?;
-                    let span = expr.span().merge(end.span);
+                    let span = expr.span().merge(&end.span);
                     expr = Expr::Call(CallExpr {
                         callee: Box::new(expr),
                         args,
@@ -589,7 +597,7 @@ impl<'src> Parser<'src> {
             LexToken::Expr(Token::LParen) => {
                 let inner = self.parse_expr()?;
                 let end = self.expect_expr_token(&Token::RParen)?;
-                let span = sp.span.merge(end.span);
+                let span = sp.span.merge(&end.span);
                 // Re-wrap with the parenthesized span
                 Ok(Self::with_span(inner, span))
             }
@@ -609,7 +617,7 @@ impl<'src> Parser<'src> {
                 }
 
                 let end = self.expect_expr_token(&Token::RBracket)?;
-                let span = sp.span.merge(end.span);
+                let span = sp.span.merge(&end.span);
                 Ok(Expr::Array(ArrayExpr { elements, span }))
             }
             LexToken::Expr(Token::LBrace) => {
@@ -628,7 +636,7 @@ impl<'src> Parser<'src> {
                 }
 
                 let end = self.expect_expr_token(&Token::RBrace)?;
-                let span = sp.span.merge(end.span);
+                let span = sp.span.merge(&end.span);
                 Ok(Expr::Object(ObjectExpr { entries, span }))
             }
             LexToken::AtMatch => self.parse_match_expr(sp.span),
@@ -709,7 +717,7 @@ impl<'src> Parser<'src> {
     }
 
     fn last_span(&self) -> Span {
-        Span::new(self.source_len, self.source_len)
+        self.span(self.source_len, self.source_len)
     }
 
     /// Re-create an Expr with a new span (for parenthesized expressions).

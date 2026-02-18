@@ -26,36 +26,3 @@ impl std::fmt::Display for ObjectExpr {
         write!(f, "{}", &self.span)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::ValueExpr;
-
-    #[test]
-    fn eval_object_literal() {
-        let ctx = Scope::new();
-        let expr = ObjectExpr {
-            entries: vec![
-                (
-                    "a".into(),
-                    Expr::Value(ValueExpr {
-                        value: xval::valueof!(1_i64),
-                        span: Span::new(0, 1),
-                    }),
-                ),
-                (
-                    "b".into(),
-                    Expr::Value(ValueExpr {
-                        value: xval::valueof!("two"),
-                        span: Span::new(0, 1),
-                    }),
-                ),
-            ],
-            span: Span::new(0, 1),
-        };
-        let result = expr.eval(&ctx).unwrap();
-        assert!(result.is_struct());
-        assert_eq!(result.as_struct().len(), 2);
-    }
-}

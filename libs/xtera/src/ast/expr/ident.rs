@@ -12,7 +12,7 @@ impl IdentExpr {
         scope.var(&self.name).cloned().ok_or_else(|| {
             EvalError::UndefinedVariable(UndefinedVariableError {
                 name: self.name.clone(),
-                span: self.span,
+                span: self.span.clone(),
             })
         })
     }
@@ -21,32 +21,5 @@ impl IdentExpr {
 impl std::fmt::Display for IdentExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.span)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn eval_found() {
-        let mut ctx = Scope::new();
-        ctx.set_var("x", xval::valueof!(10_i64));
-        let expr = IdentExpr {
-            name: "x".to_string(),
-            span: Span::new(0, 1),
-        };
-        assert_eq!(expr.eval(&ctx).unwrap(), 10i64);
-    }
-
-    #[test]
-    fn eval_undefined() {
-        let ctx = Scope::new();
-        let expr = IdentExpr {
-            name: "x".to_string(),
-            span: Span::new(0, 1),
-        };
-        let err = expr.eval(&ctx).unwrap_err();
-        assert!(matches!(err, EvalError::UndefinedVariable(_)));
     }
 }

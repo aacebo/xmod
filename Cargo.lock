@@ -275,6 +275,7 @@ version = "0.0.0"
 dependencies = [
  "logos",
  "serde",
+ "serde_json",
  "xtera-derive",
  "xval",
 ]

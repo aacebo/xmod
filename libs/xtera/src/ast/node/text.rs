@@ -18,18 +18,3 @@ impl std::fmt::Display for TextNode {
         write!(f, "{}", &self.span)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn render_text() {
-        let scope = Scope::new();
-        let node = TextNode {
-            text: "hello world".into(),
-            span: Span::new(0, 11),
-        };
-        assert_eq!(node.render(&scope).unwrap(), "hello world");
-    }
-}

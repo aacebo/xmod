@@ -16,7 +16,7 @@ impl UnaryExpr {
         match self.op {
             UnaryOp::Not => Ok(xval::valueof!((!is_truthy(&val)))),
             UnaryOp::Neg => {
-                let n = expect_number(&val, self.span)?;
+                let n = expect_number(&val, self.span.clone())?;
                 if n.is_float() {
                     Ok(xval::valueof!((-n.to_f64())))
                 } else {
@@ -30,40 +30,5 @@ impl UnaryExpr {
 impl std::fmt::Display for UnaryExpr {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", &self.span)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::ValueExpr;
-
-    fn val(v: xval::Value) -> Box<Expr> {
-        Box::new(Expr::Value(ValueExpr {
-            value: v,
-            span: Span::new(0, 1),
-        }))
-    }
-
-    #[test]
-    fn not() {
-        let ctx = Scope::new();
-        let expr = UnaryExpr {
-            op: UnaryOp::Not,
-            operand: val(xval::valueof!(true)),
-            span: Span::new(0, 1),
-        };
-        assert_eq!(expr.eval(&ctx).unwrap(), false);
-    }
-
-    #[test]
-    fn neg() {
-        let ctx = Scope::new();
-        let expr = UnaryExpr {
-            op: UnaryOp::Neg,
-            operand: val(xval::valueof!(5_i64)),
-            span: Span::new(0, 1),
-        };
-        assert_eq!(expr.eval(&ctx).unwrap(), -5i64);
     }
 }

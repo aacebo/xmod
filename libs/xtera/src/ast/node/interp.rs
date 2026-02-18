@@ -19,37 +19,3 @@ impl std::fmt::Display for InterpNode {
         write!(f, "{}", &self.span)
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::ast::ValueExpr;
-
-    fn interp(v: xval::Value) -> InterpNode {
-        InterpNode {
-            expr: Expr::Value(ValueExpr {
-                value: v,
-                span: Span::new(0, 1),
-            }),
-            span: Span::new(0, 1),
-        }
-    }
-
-    #[test]
-    fn render_int() {
-        let scope = Scope::new();
-        assert_eq!(interp(xval::valueof!(42_i64)).render(&scope).unwrap(), "42");
-    }
-
-    #[test]
-    fn render_string() {
-        let scope = Scope::new();
-        assert_eq!(interp(xval::valueof!("hi")).render(&scope).unwrap(), "hi");
-    }
-
-    #[test]
-    fn render_bool() {
-        let scope = Scope::new();
-        assert_eq!(interp(xval::valueof!(true)).render(&scope).unwrap(), "true");
-    }
-}

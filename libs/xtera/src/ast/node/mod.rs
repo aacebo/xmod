@@ -31,13 +31,13 @@ pub enum Node {
 impl Node {
     pub fn span(&self) -> Span {
         match self {
-            Self::Text(n) => n.span,
-            Self::Interp(n) => n.span,
-            Self::If(n) => n.span,
-            Self::For(n) => n.span,
-            Self::Match(n) => n.span,
-            Self::Include(n) => n.span,
-            Self::Block(n) => n.span,
+            Self::Text(n) => n.span.clone(),
+            Self::Interp(n) => n.span.clone(),
+            Self::If(n) => n.span.clone(),
+            Self::For(n) => n.span.clone(),
+            Self::Match(n) => n.span.clone(),
+            Self::Include(n) => n.span.clone(),
+            Self::Block(n) => n.span.clone(),
         }
     }
 
