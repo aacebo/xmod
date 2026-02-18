@@ -9,8 +9,10 @@ pub use method::*;
     serde(rename_all = "snake_case")
 )]
 pub struct HttpActionSpec {
-    pub method: HttpMethod,
-    pub url: String, // xtera::Template,
+    pub name: HttpMethod,
+    pub version: semver::Version,
+    pub url: xtera::Template,
+    pub description: Option<String>,
     pub input: Option<xsch::Schema>,
     pub output: Option<xsch::Schema>,
 }

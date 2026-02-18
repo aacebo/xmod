@@ -2,7 +2,7 @@ use std::{fmt, str::FromStr};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
-#[cfg_attr(feature = "serde", serde(rename_all = "lowercase"))]
+#[cfg_attr(feature = "serde", serde(rename_all = "snake_case"))]
 pub enum HttpMethod {
     Get,
     Post,
@@ -55,55 +55,51 @@ impl HttpMethod {
     pub const fn is_get(&self) -> bool {
         matches!(self, Self::Get)
     }
+
     #[inline]
     pub const fn is_post(&self) -> bool {
         matches!(self, Self::Post)
     }
+
     #[inline]
     pub const fn is_put(&self) -> bool {
         matches!(self, Self::Put)
     }
+
     #[inline]
     pub const fn is_patch(&self) -> bool {
         matches!(self, Self::Patch)
     }
+
     #[inline]
     pub const fn is_delete(&self) -> bool {
         matches!(self, Self::Delete)
     }
+
     #[inline]
     pub const fn is_head(&self) -> bool {
         matches!(self, Self::Head)
     }
+
     #[inline]
     pub const fn is_options(&self) -> bool {
         matches!(self, Self::Options)
     }
+
     #[inline]
     pub const fn is_connect(&self) -> bool {
         matches!(self, Self::Connect)
     }
+
     #[inline]
     pub const fn is_trace(&self) -> bool {
         matches!(self, Self::Trace)
-    }
-
-    /// Whether this method is considered "safe" per RFC 7231.
-    pub const fn is_safe(&self) -> bool {
-        matches!(self, Self::Get | Self::Head | Self::Options | Self::Trace)
-    }
-
-    pub const fn is_idempotent(&self) -> bool {
-        matches!(
-            self,
-            Self::Get | Self::Head | Self::Put | Self::Delete | Self::Options | Self::Trace
-        )
     }
 }
 
 impl fmt::Display for HttpMethod {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(self.as_str())
+        write!(f, "{}", self.as_str())
     }
 }
 
