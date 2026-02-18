@@ -137,6 +137,7 @@ mod tests {
         assert!(schema.validate(&"hello".as_value().into()).is_err());
     }
 
+    #[cfg(feature = "regex")]
     #[test]
     fn validate_pattern() {
         let schema = string().pattern("Homer (.)\\. Simpson");
