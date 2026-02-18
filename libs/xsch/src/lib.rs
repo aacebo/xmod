@@ -1,20 +1,24 @@
 mod any;
+mod array;
 mod bool;
 mod context;
 mod error;
 mod float;
 mod int;
 mod number;
+mod phase;
 pub mod rule;
 mod string;
 
 pub use any::*;
+pub use array::*;
 pub use bool::*;
 pub use context::*;
 pub use error::*;
 pub use float::*;
 pub use int::*;
 pub use number::*;
+pub use phase::*;
 pub use rule::*;
 pub use string::*;
 
@@ -35,6 +39,7 @@ pub enum Schema {
     Number(NumberSchema),
     Int(IntSchema),
     Float(FloatSchema),
+    Array(ArraySchema),
 }
 
 impl Validate for Schema {
@@ -46,7 +51,14 @@ impl Validate for Schema {
             Self::Number(v) => v.validate(ctx),
             Self::Int(v) => v.validate(ctx),
             Self::Float(v) => v.validate(ctx),
+            Self::Array(v) => v.validate(ctx),
         }
+    }
+}
+
+impl Default for Schema {
+    fn default() -> Self {
+        Self::Any(AnySchema::default())
     }
 }
 
@@ -78,6 +90,91 @@ mod tests {
             assert!(schema.validate(&true.as_value().into()).is_ok());
             assert!(schema.validate(&false.as_value().into()).is_err());
             assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        }
+
+        #[test]
+        fn array_dispatches() {
+            let schema = Schema::Array(array());
+            assert!(schema.validate(&vec![1i32, 2, 3].as_value().into()).is_ok());
+            assert!(schema.validate(&42i32.as_value().into()).is_err());
+        }
+
+        #[test]
+        fn array_allows_null() {
+            let schema = Schema::Array(array());
+            assert!(schema.validate(&xval::Value::Null.into()).is_ok());
+        }
+
+        #[test]
+        fn array_required_rejects_null() {
+            let schema = Schema::Array(array().required());
+            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        }
+
+        #[test]
+        fn array_min() {
+            let schema = Schema::Array(array().min(2));
+            assert!(schema.validate(&vec![1i32, 2, 3].as_value().into()).is_ok());
+            assert!(schema.validate(&vec![1i32].as_value().into()).is_err());
+        }
+
+        #[test]
+        fn array_max() {
+            let schema = Schema::Array(array().max(2));
+            assert!(schema.validate(&vec![1i32].as_value().into()).is_ok());
+            assert!(
+                schema
+                    .validate(&vec![1i32, 2, 3].as_value().into())
+                    .is_err()
+            );
+        }
+
+        #[test]
+        fn array_items_valid() {
+            let schema = Schema::Array(array().items(string().into()));
+            let value = vec!["a".to_string(), "b".to_string()].as_value();
+            assert!(schema.validate(&value.into()).is_ok());
+        }
+
+        #[test]
+        fn array_items_invalid() {
+            let schema = Schema::Array(array().items(string().into()));
+            let value = vec![1i32, 2].as_value();
+            assert!(schema.validate(&value.into()).is_err());
+        }
+
+        #[test]
+        fn array_items_with_inner_rules() {
+            let schema = Schema::Array(array().items(int().required().into()));
+            let value = vec![1i32, 2, 3].as_value();
+            assert!(schema.validate(&value.into()).is_ok());
+        }
+
+        #[test]
+        fn array_combined_rules() {
+            let schema = Schema::Array(array().required().min(1).max(3).items(int().into()));
+            assert!(schema.validate(&vec![1i32, 2].as_value().into()).is_ok());
+            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(
+                schema
+                    .validate(&Vec::<i32>::new().as_value().into())
+                    .is_err()
+            );
+            assert!(
+                schema
+                    .validate(&vec![1i32, 2, 3, 4].as_value().into())
+                    .is_err()
+            );
+        }
+
+        #[test]
+        fn array_empty_allowed() {
+            let schema = Schema::Array(array());
+            assert!(
+                schema
+                    .validate(&Vec::<i32>::new().as_value().into())
+                    .is_ok()
+            );
         }
     }
 
@@ -272,6 +369,42 @@ mod tests {
             let json = r#"{"type":"float","required":true,"options":[1.0,2.5,3.14]}"#;
             let schema: Schema = serde_json::from_str(json).unwrap();
             assert!(matches!(schema, Schema::Float(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
+        fn serialize_array_empty() {
+            let schema = Schema::Array(array());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"array"}"#);
+        }
+
+        #[test]
+        fn serialize_array_with_rules() {
+            let schema = Schema::Array(array().required().min(1).max(10));
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "array");
+            assert_eq!(v["required"], true);
+            assert_eq!(v["min"], 1);
+            assert_eq!(v["max"], 10);
+        }
+
+        #[test]
+        fn deserialize_array() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "array"}"#).unwrap();
+            assert!(matches!(schema, Schema::Array(_)));
+        }
+
+        #[test]
+        fn roundtrip_array_with_rules() {
+            let json = r#"{"type":"array","required":true,"min":1,"max":10}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::Array(_)));
 
             let reserialized = serde_json::to_string(&schema).unwrap();
             let v1: serde_json::Value = serde_json::from_str(json).unwrap();

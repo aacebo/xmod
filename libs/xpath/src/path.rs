@@ -46,6 +46,19 @@ impl Path {
     pub fn pop(&mut self) -> Option<Segment> {
         self.0.pop()
     }
+
+    pub fn child(&self, segment: Segment) -> Self {
+        let mut path = self.clone();
+        path.0.push(segment);
+        path
+    }
+
+    pub fn peer(&self, segment: Segment) -> Self {
+        let mut path = self.clone();
+        path.0.pop();
+        path.0.push(segment);
+        path
+    }
 }
 
 impl From<&str> for Path {
