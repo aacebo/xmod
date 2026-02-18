@@ -30,3 +30,9 @@ impl PipeExpr {
         pipe.invoke(&val, &evaluated_args)
     }
 }
+
+impl std::fmt::Display for PipeExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.span)
+    }
+}

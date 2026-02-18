@@ -20,3 +20,9 @@ impl BlockNode {
         Ok(output)
     }
 }
+
+impl std::fmt::Display for BlockNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.span)
+    }
+}

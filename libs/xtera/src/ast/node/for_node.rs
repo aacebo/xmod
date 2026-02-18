@@ -35,6 +35,12 @@ impl ForNode {
     }
 }
 
+impl std::fmt::Display for ForNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.span)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

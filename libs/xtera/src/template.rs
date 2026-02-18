@@ -11,16 +11,16 @@ impl Template {
         Self { block }
     }
 
+    pub fn parse(src: &str) -> parse::Result<Self> {
+        parse::parse(src)
+    }
+
     pub fn nodes(&self) -> &[ast::Node] {
         &self.block.nodes
     }
 
     pub fn span(&self) -> &ast::Span {
         &self.block.span
-    }
-
-    pub fn parse(src: &str) -> parse::Result<Self> {
-        parse::parse(src)
     }
 
     pub fn render(&self, scope: &Scope) -> ast::Result<String> {

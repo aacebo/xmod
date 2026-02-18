@@ -28,6 +28,12 @@ impl IfNode {
     }
 }
 
+impl std::fmt::Display for IfNode {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.span)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct IfBranch {
     pub condition: Expr,

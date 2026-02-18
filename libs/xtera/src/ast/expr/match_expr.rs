@@ -29,6 +29,12 @@ impl MatchExpr {
     }
 }
 
+impl std::fmt::Display for MatchExpr {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.span)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq)]
 pub struct MatchArm {
     pub pattern: Expr,
