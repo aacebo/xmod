@@ -33,12 +33,12 @@ impl StringSchema {
     }
 
     pub fn min(mut self, min: usize) -> Self {
-        self.0 = self.0.add(Min::from(xval::UInt::from_usize(min)).into());
+        self.0 = self.0.add(Min::from(xval::Number::from_usize(min)).into());
         self
     }
 
     pub fn max(mut self, max: usize) -> Self {
-        self.0 = self.0.add(Max::from(xval::UInt::from_usize(max)).into());
+        self.0 = self.0.add(Max::from(xval::Number::from_usize(max)).into());
         self
     }
 }

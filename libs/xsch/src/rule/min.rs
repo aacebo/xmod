@@ -7,14 +7,14 @@ use crate::{Context, Rule, ValidError, Validate};
     derive(serde::Deserialize, serde::Serialize),
     serde(transparent)
 )]
-pub struct Min(xval::UInt);
+pub struct Min(xval::Number);
 
 impl Min {
     pub const KEY: &str = "min";
 }
 
-impl From<xval::UInt> for Min {
-    fn from(value: xval::UInt) -> Self {
+impl From<xval::Number> for Min {
+    fn from(value: xval::Number) -> Self {
         Self(value)
     }
 }
@@ -27,11 +27,20 @@ impl From<Min> for Rule {
 
 impl Validate for Min {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        if ctx.value.len() < self.0.to_u64() as usize {
+        if ctx.value.len() < self.0.to_usize() {
             return Err(ctx.error(&format!(
                 "expected min of {}, received {}",
                 &self.0, &ctx.value
             )));
+        }
+
+        if ctx.value.is_number() {
+            if ctx.value.as_number() < &self.0 {
+                return Err(ctx.error(&format!(
+                    "expected min of {}, received {}",
+                    &self.0, &ctx.value
+                )));
+            }
         }
 
         Ok(ctx.value.clone())
