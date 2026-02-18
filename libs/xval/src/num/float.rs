@@ -71,6 +71,20 @@ impl Float {
         }
     }
 
+    pub fn to_i128(&self) -> i128 {
+        match self {
+            Self::F32(v) => *v as i128,
+            Self::F64(v) => *v as i128,
+        }
+    }
+
+    pub fn to_isize(&self) -> isize {
+        match self {
+            Self::F32(v) => *v as isize,
+            Self::F64(v) => *v as isize,
+        }
+    }
+
     pub fn to_u8(&self) -> u8 {
         match self {
             Self::F32(v) => *v as u8,
@@ -96,6 +110,20 @@ impl Float {
         match self {
             Self::F32(v) => *v as u64,
             Self::F64(v) => *v as u64,
+        }
+    }
+
+    pub fn to_u128(&self) -> u128 {
+        match self {
+            Self::F32(v) => *v as u128,
+            Self::F64(v) => *v as u128,
+        }
+    }
+
+    pub fn to_usize(&self) -> usize {
+        match self {
+            Self::F32(v) => *v as usize,
+            Self::F64(v) => *v as usize,
         }
     }
 
@@ -288,8 +316,28 @@ mod tests {
     }
 
     #[test]
+    fn to_i128_from_float() {
+        assert_eq!(Float::from_f64(42.7).to_i128(), 42);
+    }
+
+    #[test]
     fn to_u64_from_float() {
         assert_eq!(Float::from_f64(42.7).to_u64(), 42);
+    }
+
+    #[test]
+    fn to_u128_from_float() {
+        assert_eq!(Float::from_f64(42.7).to_u128(), 42);
+    }
+
+    #[test]
+    fn to_isize_from_float() {
+        assert_eq!(Float::from_f64(42.7).to_isize(), 42);
+    }
+
+    #[test]
+    fn to_usize_from_float() {
+        assert_eq!(Float::from_f64(42.7).to_usize(), 42);
     }
 
     #[test]

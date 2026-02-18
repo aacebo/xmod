@@ -1,6 +1,6 @@
 use crate::{AsValue, Value, num::Number};
 
-/// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], or [`u64`].
+/// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], [`u64`], or [`u128`].
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
@@ -12,6 +12,7 @@ pub enum UInt {
     U16(u16),
     U32(u32),
     U64(u64),
+    U128(u128),
 }
 
 impl UInt {
@@ -31,6 +32,14 @@ impl UInt {
         Self::U64(value)
     }
 
+    pub fn from_u128(value: u128) -> Self {
+        Self::U128(value)
+    }
+
+    pub fn from_usize(value: usize) -> Self {
+        Self::U64(value as u64)
+    }
+
     pub fn is_u8(&self) -> bool {
         matches!(self, Self::U8(_))
     }
@@ -47,12 +56,17 @@ impl UInt {
         matches!(self, Self::U64(_))
     }
 
+    pub fn is_u128(&self) -> bool {
+        matches!(self, Self::U128(_))
+    }
+
     pub fn to_u8(&self) -> u8 {
         match self {
             Self::U8(v) => *v,
             Self::U16(v) => *v as u8,
             Self::U32(v) => *v as u8,
             Self::U64(v) => *v as u8,
+            Self::U128(v) => *v as u8,
         }
     }
 
@@ -62,6 +76,7 @@ impl UInt {
             Self::U16(v) => *v,
             Self::U32(v) => *v as u16,
             Self::U64(v) => *v as u16,
+            Self::U128(v) => *v as u16,
         }
     }
 
@@ -71,6 +86,7 @@ impl UInt {
             Self::U16(v) => *v as u32,
             Self::U32(v) => *v,
             Self::U64(v) => *v as u32,
+            Self::U128(v) => *v as u32,
         }
     }
 
@@ -80,6 +96,27 @@ impl UInt {
             Self::U16(v) => *v as u64,
             Self::U32(v) => *v as u64,
             Self::U64(v) => *v,
+            Self::U128(v) => *v as u64,
+        }
+    }
+
+    pub fn to_u128(&self) -> u128 {
+        match self {
+            Self::U8(v) => *v as u128,
+            Self::U16(v) => *v as u128,
+            Self::U32(v) => *v as u128,
+            Self::U64(v) => *v as u128,
+            Self::U128(v) => *v,
+        }
+    }
+
+    pub fn to_usize(&self) -> usize {
+        match self {
+            Self::U8(v) => *v as usize,
+            Self::U16(v) => *v as usize,
+            Self::U32(v) => *v as usize,
+            Self::U64(v) => *v as usize,
+            Self::U128(v) => *v as usize,
         }
     }
 
@@ -89,6 +126,7 @@ impl UInt {
             Self::U16(v) => *v as i8,
             Self::U32(v) => *v as i8,
             Self::U64(v) => *v as i8,
+            Self::U128(v) => *v as i8,
         }
     }
 
@@ -98,6 +136,7 @@ impl UInt {
             Self::U16(v) => *v as i16,
             Self::U32(v) => *v as i16,
             Self::U64(v) => *v as i16,
+            Self::U128(v) => *v as i16,
         }
     }
 
@@ -107,6 +146,7 @@ impl UInt {
             Self::U16(v) => *v as i32,
             Self::U32(v) => *v as i32,
             Self::U64(v) => *v as i32,
+            Self::U128(v) => *v as i32,
         }
     }
 
@@ -116,6 +156,27 @@ impl UInt {
             Self::U16(v) => *v as i64,
             Self::U32(v) => *v as i64,
             Self::U64(v) => *v as i64,
+            Self::U128(v) => *v as i64,
+        }
+    }
+
+    pub fn to_i128(&self) -> i128 {
+        match self {
+            Self::U8(v) => *v as i128,
+            Self::U16(v) => *v as i128,
+            Self::U32(v) => *v as i128,
+            Self::U64(v) => *v as i128,
+            Self::U128(v) => *v as i128,
+        }
+    }
+
+    pub fn to_isize(&self) -> isize {
+        match self {
+            Self::U8(v) => *v as isize,
+            Self::U16(v) => *v as isize,
+            Self::U32(v) => *v as isize,
+            Self::U64(v) => *v as isize,
+            Self::U128(v) => *v as isize,
         }
     }
 
@@ -125,6 +186,7 @@ impl UInt {
             Self::U16(v) => *v as f32,
             Self::U32(v) => *v as f32,
             Self::U64(v) => *v as f32,
+            Self::U128(v) => *v as f32,
         }
     }
 
@@ -134,6 +196,7 @@ impl UInt {
             Self::U16(v) => *v as f64,
             Self::U32(v) => *v as f64,
             Self::U64(v) => *v as f64,
+            Self::U128(v) => *v as f64,
         }
     }
 
@@ -143,6 +206,7 @@ impl UInt {
             Self::U16(_) => std::any::TypeId::of::<u16>(),
             Self::U32(_) => std::any::TypeId::of::<u32>(),
             Self::U64(_) => std::any::TypeId::of::<u64>(),
+            Self::U128(_) => std::any::TypeId::of::<u128>(),
         }
     }
 }
@@ -171,6 +235,12 @@ impl PartialEq<u64> for UInt {
     }
 }
 
+impl PartialEq<u128> for UInt {
+    fn eq(&self, other: &u128) -> bool {
+        matches!(self, Self::U128(v) if v == other)
+    }
+}
+
 impl PartialEq<u8> for Number {
     fn eq(&self, other: &u8) -> bool {
         matches!(self, Self::UInt(v) if v == other)
@@ -195,6 +265,12 @@ impl PartialEq<u64> for Number {
     }
 }
 
+impl PartialEq<u128> for Number {
+    fn eq(&self, other: &u128) -> bool {
+        matches!(self, Self::UInt(v) if v == other)
+    }
+}
+
 impl PartialEq<u8> for Value {
     fn eq(&self, other: &u8) -> bool {
         matches!(self, Self::Number(v) if v == other)
@@ -215,6 +291,12 @@ impl PartialEq<u32> for Value {
 
 impl PartialEq<u64> for Value {
     fn eq(&self, other: &u64) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+
+impl PartialEq<u128> for Value {
+    fn eq(&self, other: &u128) -> bool {
         matches!(self, Self::Number(v) if v == other)
     }
 }
@@ -249,6 +331,18 @@ impl From<u64> for UInt {
     }
 }
 
+impl From<u128> for UInt {
+    fn from(value: u128) -> Self {
+        Self::from_u128(value)
+    }
+}
+
+impl From<usize> for UInt {
+    fn from(value: usize) -> Self {
+        Self::from_usize(value)
+    }
+}
+
 impl From<UInt> for Value {
     fn from(value: UInt) -> Self {
         Number::from(value).into()
@@ -279,6 +373,18 @@ impl From<u64> for Number {
     }
 }
 
+impl From<u128> for Number {
+    fn from(value: u128) -> Self {
+        Self::from_u128(value)
+    }
+}
+
+impl From<usize> for Number {
+    fn from(value: usize) -> Self {
+        Self::from_usize(value)
+    }
+}
+
 impl From<u8> for Value {
     fn from(value: u8) -> Self {
         Self::from_u8(value)
@@ -303,6 +409,18 @@ impl From<u64> for Value {
     }
 }
 
+impl From<u128> for Value {
+    fn from(value: u128) -> Self {
+        Self::from_u128(value)
+    }
+}
+
+impl From<usize> for Value {
+    fn from(value: usize) -> Self {
+        Self::from_usize(value)
+    }
+}
+
 impl Number {
     pub fn from_u8(value: u8) -> Self {
         Self::UInt(UInt::from_u8(value))
@@ -318,6 +436,14 @@ impl Number {
 
     pub fn from_u64(value: u64) -> Self {
         Self::UInt(UInt::from_u64(value))
+    }
+
+    pub fn from_u128(value: u128) -> Self {
+        Self::UInt(UInt::from_u128(value))
+    }
+
+    pub fn from_usize(value: usize) -> Self {
+        Self::UInt(UInt::from_usize(value))
     }
 }
 
@@ -337,6 +463,14 @@ impl Value {
     pub fn from_u64(value: u64) -> Self {
         Self::Number(Number::from_u64(value))
     }
+
+    pub fn from_u128(value: u128) -> Self {
+        Self::Number(Number::from_u128(value))
+    }
+
+    pub fn from_usize(value: usize) -> Self {
+        Self::Number(Number::from_usize(value))
+    }
 }
 
 impl std::fmt::Debug for UInt {
@@ -346,6 +480,7 @@ impl std::fmt::Debug for UInt {
             Self::U16(v) => write!(f, "{:#?}", v),
             Self::U32(v) => write!(f, "{:#?}", v),
             Self::U64(v) => write!(f, "{:#?}", v),
+            Self::U128(v) => write!(f, "{:#?}", v),
         }
     }
 }
@@ -357,6 +492,7 @@ impl std::fmt::Display for UInt {
             Self::U16(v) => write!(f, "{}", v),
             Self::U32(v) => write!(f, "{}", v),
             Self::U64(v) => write!(f, "{}", v),
+            Self::U128(v) => write!(f, "{}", v),
         }
     }
 }
@@ -391,6 +527,18 @@ impl AsValue for u64 {
     }
 }
 
+impl AsValue for u128 {
+    fn as_value(&self) -> Value {
+        Value::from_u128(*self)
+    }
+}
+
+impl AsValue for usize {
+    fn as_value(&self) -> Value {
+        Value::from_usize(*self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -402,10 +550,12 @@ mod tests {
         assert!(!v.is_u16());
         assert!(!v.is_u32());
         assert!(!v.is_u64());
+        assert!(!v.is_u128());
 
         assert!(UInt::from_u16(1).is_u16());
         assert!(UInt::from_u32(1).is_u32());
         assert!(UInt::from_u64(1).is_u64());
+        assert!(UInt::from_u128(1).is_u128());
     }
 
     #[test]
@@ -429,10 +579,21 @@ mod tests {
     }
 
     #[test]
+    fn to_u128() {
+        assert_eq!(UInt::from_u128(42).to_u128(), 42);
+    }
+
+    #[test]
     fn to_u64_cross_variant() {
         assert_eq!(UInt::from_u8(5).to_u64(), 5);
         assert_eq!(UInt::from_u16(300).to_u64(), 300);
         assert_eq!(UInt::from_u32(100_000).to_u64(), 100_000);
+    }
+
+    #[test]
+    fn to_u128_cross_variant() {
+        assert_eq!(UInt::from_u8(5).to_u128(), 5);
+        assert_eq!(UInt::from_u64(100_000).to_u128(), 100_000);
     }
 
     #[test]
@@ -451,11 +612,22 @@ mod tests {
     }
 
     #[test]
+    fn to_usize() {
+        assert_eq!(UInt::from_u32(42).to_usize(), 42);
+    }
+
+    #[test]
+    fn to_isize() {
+        assert_eq!(UInt::from_u32(42).to_isize(), 42);
+    }
+
+    #[test]
     fn from_primitives() {
         assert_eq!(UInt::from_u8(1), UInt::from_u8(1));
         assert_eq!(UInt::from_u16(1), UInt::from_u16(1));
         assert_eq!(UInt::from_u32(1), UInt::from_u32(1));
         assert_eq!(UInt::from_u64(1), UInt::from_u64(1));
+        assert_eq!(UInt::from_u128(1), UInt::from_u128(1));
     }
 
     #[test]
@@ -471,6 +643,10 @@ mod tests {
         assert_eq!(UInt::from_u16(1000).to_string(), "1000");
         assert_eq!(UInt::from_u32(100_000).to_string(), "100000");
         assert_eq!(UInt::from_u64(999).to_string(), "999");
+        assert_eq!(
+            UInt::from_u128(340282366920938463463374607431768211455u128).to_string(),
+            "340282366920938463463374607431768211455"
+        );
     }
 
     #[test]
@@ -479,6 +655,7 @@ mod tests {
         assert_eq!(UInt::from_u16(1).type_id(), std::any::TypeId::of::<u16>());
         assert_eq!(UInt::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
         assert_eq!(UInt::from_u64(1).type_id(), std::any::TypeId::of::<u64>());
+        assert_eq!(UInt::from_u128(1).type_id(), std::any::TypeId::of::<u128>());
     }
 
     #[cfg(feature = "serde")]

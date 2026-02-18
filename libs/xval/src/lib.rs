@@ -199,6 +199,10 @@ impl Value {
         matches!(self, Self::Number(v) if v.is_i64())
     }
 
+    pub fn is_i128(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_i128())
+    }
+
     pub fn to_i8(&self) -> i8 {
         self.as_number().to_i8()
     }
@@ -213,6 +217,14 @@ impl Value {
 
     pub fn to_i64(&self) -> i64 {
         self.as_number().to_i64()
+    }
+
+    pub fn to_i128(&self) -> i128 {
+        self.as_number().to_i128()
+    }
+
+    pub fn to_isize(&self) -> isize {
+        self.as_number().to_isize()
     }
 }
 
@@ -233,6 +245,10 @@ impl Value {
         matches!(self, Self::Number(v) if v.is_u64())
     }
 
+    pub fn is_u128(&self) -> bool {
+        matches!(self, Self::Number(v) if v.is_u128())
+    }
+
     pub fn to_u8(&self) -> u8 {
         self.as_number().to_u8()
     }
@@ -247,6 +263,14 @@ impl Value {
 
     pub fn to_u64(&self) -> u64 {
         self.as_number().to_u64()
+    }
+
+    pub fn to_u128(&self) -> u128 {
+        self.as_number().to_u128()
+    }
+
+    pub fn to_usize(&self) -> usize {
+        self.as_number().to_usize()
     }
 }
 

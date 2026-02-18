@@ -1,6 +1,6 @@
 use crate::{AsValue, Value, num::Number};
 
-/// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], or [`i64`].
+/// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], [`i64`], or [`i128`].
 #[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 #[cfg_attr(
     feature = "serde",
@@ -12,6 +12,7 @@ pub enum Int {
     I16(i16),
     I32(i32),
     I64(i64),
+    I128(i128),
 }
 
 impl Int {
@@ -31,6 +32,14 @@ impl Int {
         Self::I64(value)
     }
 
+    pub fn from_i128(value: i128) -> Self {
+        Self::I128(value)
+    }
+
+    pub fn from_isize(value: isize) -> Self {
+        Self::I64(value as i64)
+    }
+
     pub fn is_i8(&self) -> bool {
         matches!(self, Self::I8(_))
     }
@@ -47,12 +56,17 @@ impl Int {
         matches!(self, Self::I64(_))
     }
 
+    pub fn is_i128(&self) -> bool {
+        matches!(self, Self::I128(_))
+    }
+
     pub fn to_i8(&self) -> i8 {
         match self {
             Self::I8(v) => *v,
             Self::I16(v) => *v as i8,
             Self::I32(v) => *v as i8,
             Self::I64(v) => *v as i8,
+            Self::I128(v) => *v as i8,
         }
     }
 
@@ -62,6 +76,7 @@ impl Int {
             Self::I16(v) => *v,
             Self::I32(v) => *v as i16,
             Self::I64(v) => *v as i16,
+            Self::I128(v) => *v as i16,
         }
     }
 
@@ -71,6 +86,7 @@ impl Int {
             Self::I16(v) => *v as i32,
             Self::I32(v) => *v,
             Self::I64(v) => *v as i32,
+            Self::I128(v) => *v as i32,
         }
     }
 
@@ -80,6 +96,27 @@ impl Int {
             Self::I16(v) => *v as i64,
             Self::I32(v) => *v as i64,
             Self::I64(v) => *v,
+            Self::I128(v) => *v as i64,
+        }
+    }
+
+    pub fn to_i128(&self) -> i128 {
+        match self {
+            Self::I8(v) => *v as i128,
+            Self::I16(v) => *v as i128,
+            Self::I32(v) => *v as i128,
+            Self::I64(v) => *v as i128,
+            Self::I128(v) => *v,
+        }
+    }
+
+    pub fn to_isize(&self) -> isize {
+        match self {
+            Self::I8(v) => *v as isize,
+            Self::I16(v) => *v as isize,
+            Self::I32(v) => *v as isize,
+            Self::I64(v) => *v as isize,
+            Self::I128(v) => *v as isize,
         }
     }
 
@@ -89,6 +126,7 @@ impl Int {
             Self::I16(v) => *v as u8,
             Self::I32(v) => *v as u8,
             Self::I64(v) => *v as u8,
+            Self::I128(v) => *v as u8,
         }
     }
 
@@ -98,6 +136,7 @@ impl Int {
             Self::I16(v) => *v as u16,
             Self::I32(v) => *v as u16,
             Self::I64(v) => *v as u16,
+            Self::I128(v) => *v as u16,
         }
     }
 
@@ -107,6 +146,7 @@ impl Int {
             Self::I16(v) => *v as u32,
             Self::I32(v) => *v as u32,
             Self::I64(v) => *v as u32,
+            Self::I128(v) => *v as u32,
         }
     }
 
@@ -116,6 +156,27 @@ impl Int {
             Self::I16(v) => *v as u64,
             Self::I32(v) => *v as u64,
             Self::I64(v) => *v as u64,
+            Self::I128(v) => *v as u64,
+        }
+    }
+
+    pub fn to_u128(&self) -> u128 {
+        match self {
+            Self::I8(v) => *v as u128,
+            Self::I16(v) => *v as u128,
+            Self::I32(v) => *v as u128,
+            Self::I64(v) => *v as u128,
+            Self::I128(v) => *v as u128,
+        }
+    }
+
+    pub fn to_usize(&self) -> usize {
+        match self {
+            Self::I8(v) => *v as usize,
+            Self::I16(v) => *v as usize,
+            Self::I32(v) => *v as usize,
+            Self::I64(v) => *v as usize,
+            Self::I128(v) => *v as usize,
         }
     }
 
@@ -125,6 +186,7 @@ impl Int {
             Self::I16(v) => *v as f32,
             Self::I32(v) => *v as f32,
             Self::I64(v) => *v as f32,
+            Self::I128(v) => *v as f32,
         }
     }
 
@@ -134,6 +196,7 @@ impl Int {
             Self::I16(v) => *v as f64,
             Self::I32(v) => *v as f64,
             Self::I64(v) => *v as f64,
+            Self::I128(v) => *v as f64,
         }
     }
 
@@ -143,6 +206,7 @@ impl Int {
             Self::I16(_) => std::any::TypeId::of::<i16>(),
             Self::I32(_) => std::any::TypeId::of::<i32>(),
             Self::I64(_) => std::any::TypeId::of::<i64>(),
+            Self::I128(_) => std::any::TypeId::of::<i128>(),
         }
     }
 }
@@ -171,6 +235,12 @@ impl PartialEq<i64> for Int {
     }
 }
 
+impl PartialEq<i128> for Int {
+    fn eq(&self, other: &i128) -> bool {
+        matches!(self, Self::I128(v) if v == other)
+    }
+}
+
 impl PartialEq<i8> for Number {
     fn eq(&self, other: &i8) -> bool {
         matches!(self, Self::Int(v) if v == other)
@@ -195,6 +265,12 @@ impl PartialEq<i64> for Number {
     }
 }
 
+impl PartialEq<i128> for Number {
+    fn eq(&self, other: &i128) -> bool {
+        matches!(self, Self::Int(v) if v == other)
+    }
+}
+
 impl PartialEq<i8> for Value {
     fn eq(&self, other: &i8) -> bool {
         matches!(self, Self::Number(v) if v == other)
@@ -215,6 +291,12 @@ impl PartialEq<i32> for Value {
 
 impl PartialEq<i64> for Value {
     fn eq(&self, other: &i64) -> bool {
+        matches!(self, Self::Number(v) if v == other)
+    }
+}
+
+impl PartialEq<i128> for Value {
+    fn eq(&self, other: &i128) -> bool {
         matches!(self, Self::Number(v) if v == other)
     }
 }
@@ -249,6 +331,18 @@ impl From<i64> for Int {
     }
 }
 
+impl From<i128> for Int {
+    fn from(value: i128) -> Self {
+        Self::from_i128(value)
+    }
+}
+
+impl From<isize> for Int {
+    fn from(value: isize) -> Self {
+        Self::from_isize(value)
+    }
+}
+
 impl From<Int> for Value {
     fn from(value: Int) -> Self {
         Number::from(value).into()
@@ -279,6 +373,18 @@ impl From<i64> for Number {
     }
 }
 
+impl From<i128> for Number {
+    fn from(value: i128) -> Self {
+        Self::from_i128(value)
+    }
+}
+
+impl From<isize> for Number {
+    fn from(value: isize) -> Self {
+        Self::from_isize(value)
+    }
+}
+
 impl From<i8> for Value {
     fn from(value: i8) -> Self {
         Self::from_i8(value)
@@ -303,6 +409,18 @@ impl From<i64> for Value {
     }
 }
 
+impl From<i128> for Value {
+    fn from(value: i128) -> Self {
+        Self::from_i128(value)
+    }
+}
+
+impl From<isize> for Value {
+    fn from(value: isize) -> Self {
+        Self::from_isize(value)
+    }
+}
+
 impl Number {
     pub fn from_i8(value: i8) -> Self {
         Self::Int(Int::from_i8(value))
@@ -318,6 +436,14 @@ impl Number {
 
     pub fn from_i64(value: i64) -> Self {
         Self::Int(Int::from_i64(value))
+    }
+
+    pub fn from_i128(value: i128) -> Self {
+        Self::Int(Int::from_i128(value))
+    }
+
+    pub fn from_isize(value: isize) -> Self {
+        Self::Int(Int::from_isize(value))
     }
 }
 
@@ -337,6 +463,14 @@ impl Value {
     pub fn from_i64(value: i64) -> Self {
         Self::Number(Number::from_i64(value))
     }
+
+    pub fn from_i128(value: i128) -> Self {
+        Self::Number(Number::from_i128(value))
+    }
+
+    pub fn from_isize(value: isize) -> Self {
+        Self::Number(Number::from_isize(value))
+    }
 }
 
 impl std::fmt::Debug for Int {
@@ -346,6 +480,7 @@ impl std::fmt::Debug for Int {
             Self::I16(v) => write!(f, "{:#?}", v),
             Self::I32(v) => write!(f, "{:#?}", v),
             Self::I64(v) => write!(f, "{:#?}", v),
+            Self::I128(v) => write!(f, "{:#?}", v),
         }
     }
 }
@@ -357,6 +492,7 @@ impl std::fmt::Display for Int {
             Self::I16(v) => write!(f, "{}", v),
             Self::I32(v) => write!(f, "{}", v),
             Self::I64(v) => write!(f, "{}", v),
+            Self::I128(v) => write!(f, "{}", v),
         }
     }
 }
@@ -391,6 +527,18 @@ impl AsValue for i64 {
     }
 }
 
+impl AsValue for i128 {
+    fn as_value(&self) -> Value {
+        Value::from_i128(*self)
+    }
+}
+
+impl AsValue for isize {
+    fn as_value(&self) -> Value {
+        Value::from_isize(*self)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -402,10 +550,12 @@ mod tests {
         assert!(!v.is_i16());
         assert!(!v.is_i32());
         assert!(!v.is_i64());
+        assert!(!v.is_i128());
 
         assert!(Int::from_i16(1).is_i16());
         assert!(Int::from_i32(1).is_i32());
         assert!(Int::from_i64(1).is_i64());
+        assert!(Int::from_i128(1).is_i128());
     }
 
     #[test]
@@ -429,10 +579,21 @@ mod tests {
     }
 
     #[test]
+    fn to_i128() {
+        assert_eq!(Int::from_i128(42).to_i128(), 42);
+    }
+
+    #[test]
     fn to_i64_cross_variant() {
         assert_eq!(Int::from_i8(5).to_i64(), 5);
         assert_eq!(Int::from_i16(300).to_i64(), 300);
         assert_eq!(Int::from_i32(100_000).to_i64(), 100_000);
+    }
+
+    #[test]
+    fn to_i128_cross_variant() {
+        assert_eq!(Int::from_i8(5).to_i128(), 5);
+        assert_eq!(Int::from_i64(100_000).to_i128(), 100_000);
     }
 
     #[test]
@@ -451,11 +612,22 @@ mod tests {
     }
 
     #[test]
+    fn to_isize() {
+        assert_eq!(Int::from_i32(42).to_isize(), 42);
+    }
+
+    #[test]
+    fn to_usize() {
+        assert_eq!(Int::from_i32(42).to_usize(), 42);
+    }
+
+    #[test]
     fn from_primitives() {
         assert_eq!(Int::from_i8(1), Int::from_i8(1));
         assert_eq!(Int::from_i16(1), Int::from_i16(1));
         assert_eq!(Int::from_i32(1), Int::from_i32(1));
         assert_eq!(Int::from_i64(1), Int::from_i64(1));
+        assert_eq!(Int::from_i128(1), Int::from_i128(1));
     }
 
     #[test]
@@ -471,6 +643,10 @@ mod tests {
         assert_eq!(Int::from_i16(200).to_string(), "200");
         assert_eq!(Int::from_i32(100_000).to_string(), "100000");
         assert_eq!(Int::from_i64(-999).to_string(), "-999");
+        assert_eq!(
+            Int::from_i128(170141183460469231731687303715884105727).to_string(),
+            "170141183460469231731687303715884105727"
+        );
     }
 
     #[test]
@@ -479,6 +655,7 @@ mod tests {
         assert_eq!(Int::from_i16(1).type_id(), std::any::TypeId::of::<i16>());
         assert_eq!(Int::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
         assert_eq!(Int::from_i64(1).type_id(), std::any::TypeId::of::<i64>());
+        assert_eq!(Int::from_i128(1).type_id(), std::any::TypeId::of::<i128>());
     }
 
     #[cfg(feature = "serde")]

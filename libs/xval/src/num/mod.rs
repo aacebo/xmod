@@ -107,6 +107,10 @@ impl Number {
         matches!(self, Self::Int(v) if v.is_i64())
     }
 
+    pub fn is_i128(&self) -> bool {
+        matches!(self, Self::Int(v) if v.is_i128())
+    }
+
     pub fn to_i8(&self) -> i8 {
         match self {
             Self::Int(v) => v.to_i8(),
@@ -138,6 +142,22 @@ impl Number {
             Self::Float(v) => v.to_i64(),
         }
     }
+
+    pub fn to_i128(&self) -> i128 {
+        match self {
+            Self::Int(v) => v.to_i128(),
+            Self::UInt(v) => v.to_i128(),
+            Self::Float(v) => v.to_i128(),
+        }
+    }
+
+    pub fn to_isize(&self) -> isize {
+        match self {
+            Self::Int(v) => v.to_isize(),
+            Self::UInt(v) => v.to_isize(),
+            Self::Float(v) => v.to_isize(),
+        }
+    }
 }
 
 impl Number {
@@ -155,6 +175,10 @@ impl Number {
 
     pub fn is_u64(&self) -> bool {
         matches!(self, Self::UInt(v) if v.is_u64())
+    }
+
+    pub fn is_u128(&self) -> bool {
+        matches!(self, Self::UInt(v) if v.is_u128())
     }
 
     pub fn to_u8(&self) -> u8 {
@@ -186,6 +210,22 @@ impl Number {
             Self::Int(v) => v.to_u64(),
             Self::UInt(v) => v.to_u64(),
             Self::Float(v) => v.to_u64(),
+        }
+    }
+
+    pub fn to_u128(&self) -> u128 {
+        match self {
+            Self::Int(v) => v.to_u128(),
+            Self::UInt(v) => v.to_u128(),
+            Self::Float(v) => v.to_u128(),
+        }
+    }
+
+    pub fn to_usize(&self) -> usize {
+        match self {
+            Self::Int(v) => v.to_usize(),
+            Self::UInt(v) => v.to_usize(),
+            Self::Float(v) => v.to_usize(),
         }
     }
 }

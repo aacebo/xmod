@@ -1,6 +1,6 @@
-use xval::AsValue;
+use xval::{AsValue, UInt};
 
-use crate::{Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validate};
 
 pub fn string() -> StringSchema {
     StringSchema::default()
@@ -32,10 +32,15 @@ impl StringSchema {
         self
     }
 
-    // pub fn min(mut self, min: usize) -> Self {
-    //     self.0 = self.0.add(Min::from(UInt::from_u64(min as usize)).into());
-    //     self
-    // }
+    pub fn min(mut self, min: usize) -> Self {
+        self.0 = self.0.add(Min::from(UInt::from_usize(min)).into());
+        self
+    }
+
+    pub fn max(mut self, max: usize) -> Self {
+        self.0 = self.0.add(Max::from(UInt::from_usize(max)).into());
+        self
+    }
 }
 
 impl From<StringSchema> for Schema {
