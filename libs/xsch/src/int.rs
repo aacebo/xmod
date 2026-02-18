@@ -1,7 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, NumberSchema, Options, Required, RuleSet, Schema, ValidError, Validate,
+    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ValidError,
+    Validate,
 };
 
 pub fn int() -> IntSchema {
@@ -31,6 +32,16 @@ impl IntSchema {
 
     pub fn required(mut self) -> Self {
         self.0 = self.0.add(Required::new(true).into());
+        self
+    }
+
+    pub fn min(mut self, min: isize) -> Self {
+        self.0 = self.0.add(Min::from(xval::Number::from_isize(min)).into());
+        self
+    }
+
+    pub fn max(mut self, max: isize) -> Self {
+        self.0 = self.0.add(Max::from(xval::Number::from_isize(max)).into());
         self
     }
 }
@@ -120,6 +131,40 @@ mod tests {
         assert!(schema.validate(&10i32.as_value().into()).is_ok());
         assert!(schema.validate(&11i32.as_value().into()).is_err());
         assert!(schema.validate(&xval::Value::Null.into()).is_err());
+    }
+
+    #[test]
+    fn validate_min() {
+        let schema = int().min(5);
+        assert!(schema.validate(&3i32.as_value().into()).is_err());
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+    }
+
+    #[test]
+    fn validate_max() {
+        let schema = int().max(10);
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+        assert!(schema.validate(&15i32.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_min_and_max() {
+        let schema = int().min(1).max(10);
+        assert!(schema.validate(&0i32.as_value().into()).is_err());
+        assert!(schema.validate(&1i32.as_value().into()).is_ok());
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+        assert!(schema.validate(&11i32.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_min_negative() {
+        let schema = int().min(-5);
+        assert!(schema.validate(&(-10i32).as_value().into()).is_err());
+        assert!(schema.validate(&(-5i32).as_value().into()).is_ok());
+        assert!(schema.validate(&0i32.as_value().into()).is_ok());
     }
 
     #[test]

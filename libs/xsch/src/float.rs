@@ -1,7 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, NumberSchema, Options, Required, RuleSet, Schema, ValidError, Validate,
+    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ValidError,
+    Validate,
 };
 
 pub fn float() -> FloatSchema {
@@ -31,6 +32,16 @@ impl FloatSchema {
 
     pub fn required(mut self) -> Self {
         self.0 = self.0.add(Required::new(true).into());
+        self
+    }
+
+    pub fn min(mut self, min: f64) -> Self {
+        self.0 = self.0.add(Min::from(xval::Number::from_f64(min)).into());
+        self
+    }
+
+    pub fn max(mut self, max: f64) -> Self {
+        self.0 = self.0.add(Max::from(xval::Number::from_f64(max)).into());
         self
     }
 }
@@ -120,6 +131,32 @@ mod tests {
         assert!(schema.validate(&1.5f64.as_value().into()).is_ok());
         assert!(schema.validate(&2.5f64.as_value().into()).is_err());
         assert!(schema.validate(&xval::Value::Null.into()).is_err());
+    }
+
+    #[test]
+    fn validate_min() {
+        let schema = float().min(1.5);
+        assert!(schema.validate(&1.0f64.as_value().into()).is_err());
+        assert!(schema.validate(&1.5f64.as_value().into()).is_ok());
+        assert!(schema.validate(&2.0f64.as_value().into()).is_ok());
+    }
+
+    #[test]
+    fn validate_max() {
+        let schema = float().max(9.9);
+        assert!(schema.validate(&9.0f64.as_value().into()).is_ok());
+        assert!(schema.validate(&9.9f64.as_value().into()).is_ok());
+        assert!(schema.validate(&10.0f64.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_min_and_max() {
+        let schema = float().min(0.0).max(1.0);
+        assert!(schema.validate(&(-0.1f64).as_value().into()).is_err());
+        assert!(schema.validate(&0.0f64.as_value().into()).is_ok());
+        assert!(schema.validate(&0.5f64.as_value().into()).is_ok());
+        assert!(schema.validate(&1.0f64.as_value().into()).is_ok());
+        assert!(schema.validate(&1.1f64.as_value().into()).is_err());
     }
 
     #[test]

@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], [`u64`], or [`u128`].
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -37,7 +37,15 @@ impl UInt {
     }
 
     pub fn from_usize(value: usize) -> Self {
-        Self::U64(value as u64)
+        if value <= u8::MAX as usize {
+            Self::U8(value as u8)
+        } else if value <= u16::MAX as usize {
+            Self::U16(value as u16)
+        } else if value <= u32::MAX as usize {
+            Self::U32(value as u32)
+        } else {
+            Self::U64(value as u64)
+        }
     }
 
     pub fn is_u8(&self) -> bool {
@@ -208,6 +216,18 @@ impl UInt {
             Self::U64(_) => std::any::TypeId::of::<u64>(),
             Self::U128(_) => std::any::TypeId::of::<u128>(),
         }
+    }
+}
+
+impl PartialOrd for UInt {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for UInt {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_u128().cmp(&other.to_u128())
     }
 }
 

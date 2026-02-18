@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], [`i64`], or [`i128`].
-#[derive(Copy, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Copy, Clone, PartialEq, Eq, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -37,7 +37,15 @@ impl Int {
     }
 
     pub fn from_isize(value: isize) -> Self {
-        Self::I64(value as i64)
+        if value >= i8::MIN as isize && value <= i8::MAX as isize {
+            Self::I8(value as i8)
+        } else if value >= i16::MIN as isize && value <= i16::MAX as isize {
+            Self::I16(value as i16)
+        } else if value >= i32::MIN as isize && value <= i32::MAX as isize {
+            Self::I32(value as i32)
+        } else {
+            Self::I64(value as i64)
+        }
     }
 
     pub fn is_i8(&self) -> bool {
@@ -208,6 +216,18 @@ impl Int {
             Self::I64(_) => std::any::TypeId::of::<i64>(),
             Self::I128(_) => std::any::TypeId::of::<i128>(),
         }
+    }
+}
+
+impl PartialOrd for Int {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        Some(self.cmp(other))
+    }
+}
+
+impl Ord for Int {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        self.to_i128().cmp(&other.to_i128())
     }
 }
 

@@ -27,11 +27,13 @@ impl From<Min> for Rule {
 
 impl Validate for Min {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        if ctx.value.len() < self.0.to_usize() {
-            return Err(ctx.error(&format!(
-                "expected min of {}, received {}",
-                &self.0, &ctx.value
-            )));
+        if ctx.value.is_array() || ctx.value.is_string() {
+            if ctx.value.len() < self.0.to_usize() {
+                return Err(ctx.error(&format!(
+                    "expected min of {}, received {}",
+                    &self.0, &ctx.value
+                )));
+            }
         }
 
         if ctx.value.is_number() {

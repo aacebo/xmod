@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -132,6 +132,12 @@ impl Float {
             Self::F64(_) => std::any::TypeId::of::<f64>(),
             Self::F32(_) => std::any::TypeId::of::<f32>(),
         }
+    }
+}
+
+impl PartialOrd for Float {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_f64().partial_cmp(&other.to_f64())
     }
 }
 

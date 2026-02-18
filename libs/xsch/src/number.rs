@@ -1,8 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, FloatSchema, IntSchema, Options, Required, RuleSet, Schema, ValidError,
-    Validate,
+    Context, Equals, FloatSchema, IntSchema, Max, Min, Options, Required, RuleSet, Schema,
+    ValidError, Validate,
 };
 
 pub fn number() -> NumberSchema {
@@ -32,6 +32,16 @@ impl NumberSchema {
 
     pub fn required(mut self) -> Self {
         self.0 = self.0.add(Required::new(true).into());
+        self
+    }
+
+    pub fn min(mut self, min: xval::Number) -> Self {
+        self.0 = self.0.add(Min::from(min).into());
+        self
+    }
+
+    pub fn max(mut self, max: xval::Number) -> Self {
+        self.0 = self.0.add(Max::from(max).into());
         self
     }
 
@@ -122,6 +132,50 @@ mod tests {
         assert!(schema.validate(&3.14f64.as_value().into()).is_ok());
         assert!(schema.validate(&2.0f64.as_value().into()).is_err());
         assert!(schema.validate(&xval::Value::Null.into()).is_err());
+    }
+
+    #[test]
+    fn validate_min() {
+        let schema = number().min(xval::Number::from_i32(5));
+        assert!(schema.validate(&3i32.as_value().into()).is_err());
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+    }
+
+    #[test]
+    fn validate_max() {
+        let schema = number().max(xval::Number::from_i32(10));
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+        assert!(schema.validate(&15i32.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_min_and_max() {
+        let schema = number()
+            .min(xval::Number::from_i32(1))
+            .max(xval::Number::from_i32(10));
+        assert!(schema.validate(&0i32.as_value().into()).is_err());
+        assert!(schema.validate(&1i32.as_value().into()).is_ok());
+        assert!(schema.validate(&5i32.as_value().into()).is_ok());
+        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+        assert!(schema.validate(&11i32.as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_min_float() {
+        let schema = number().min(xval::Number::from_f64(1.5));
+        assert!(schema.validate(&1.0f64.as_value().into()).is_err());
+        assert!(schema.validate(&1.5f64.as_value().into()).is_ok());
+        assert!(schema.validate(&2.0f64.as_value().into()).is_ok());
+    }
+
+    #[test]
+    fn validate_max_float() {
+        let schema = number().max(xval::Number::from_f64(9.9));
+        assert!(schema.validate(&9.0f64.as_value().into()).is_ok());
+        assert!(schema.validate(&9.9f64.as_value().into()).is_ok());
+        assert!(schema.validate(&10.0f64.as_value().into()).is_err());
     }
 
     #[test]

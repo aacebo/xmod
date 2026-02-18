@@ -9,7 +9,7 @@ pub use uint::*;
 use crate::{AsValue, Value};
 
 /// A numeric value that can hold a float, signed integer, or unsigned integer.
-#[derive(Copy, Clone, PartialEq, PartialOrd)]
+#[derive(Copy, Clone, PartialEq)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -227,6 +227,12 @@ impl Number {
             Self::UInt(v) => v.to_usize(),
             Self::Float(v) => v.to_usize(),
         }
+    }
+}
+
+impl PartialOrd for Number {
+    fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
+        self.to_f64().partial_cmp(&other.to_f64())
     }
 }
 
