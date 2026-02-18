@@ -1,8 +1,12 @@
 mod equals;
+mod max;
+mod min;
 mod options;
 mod required;
 
 pub use equals::*;
+pub use max::*;
+pub use min::*;
 pub use options::*;
 pub use required::*;
 
@@ -13,6 +17,8 @@ pub enum Rule {
     Equals(Equals),
     Required(Required),
     Options(Options),
+    Min(Min),
+    Max(Max),
 }
 
 impl Rule {
@@ -21,6 +27,8 @@ impl Rule {
             Self::Equals(_) => Equals::KEY,
             Self::Options(_) => Options::KEY,
             Self::Required(_) => Required::KEY,
+            Self::Min(_) => Min::KEY,
+            Self::Max(_) => Max::KEY,
         }
     }
 }
@@ -31,6 +39,8 @@ impl Validate for Rule {
             Self::Equals(v) => v.validate(ctx),
             Self::Options(v) => v.validate(ctx),
             Self::Required(v) => v.validate(ctx),
+            Self::Min(v) => v.validate(ctx),
+            Self::Max(v) => v.validate(ctx),
         }
     }
 }
@@ -45,6 +55,8 @@ impl Rule {
             Self::Equals(v) => map.serialize_entry(Equals::KEY, v),
             Self::Required(v) => map.serialize_entry(Required::KEY, v),
             Self::Options(v) => map.serialize_entry(Options::KEY, v),
+            Self::Min(v) => map.serialize_entry(Min::KEY, v),
+            Self::Max(v) => map.serialize_entry(Max::KEY, v),
         }
     }
 
@@ -56,6 +68,8 @@ impl Rule {
             Equals::KEY => Ok(Some(Self::Equals(map.next_value()?))),
             Required::KEY => Ok(Some(Self::Required(map.next_value()?))),
             Options::KEY => Ok(Some(Self::Options(map.next_value()?))),
+            Min::KEY => Ok(Some(Self::Min(map.next_value()?))),
+            Max::KEY => Ok(Some(Self::Max(map.next_value()?))),
             _ => {
                 let _ = map.next_value::<serde::de::IgnoredAny>()?;
                 Ok(None)

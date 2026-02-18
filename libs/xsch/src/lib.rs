@@ -3,12 +3,14 @@ mod bool;
 mod context;
 mod error;
 pub mod rule;
+mod string;
 
 pub use any::*;
 pub use bool::*;
 pub use context::*;
 pub use error::*;
 pub use rule::*;
+pub use string::*;
 
 pub trait Validate {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError>;
@@ -23,6 +25,7 @@ pub trait Validate {
 pub enum Schema {
     Any(AnySchema),
     Bool(BoolSchema),
+    String(StringSchema),
 }
 
 impl Validate for Schema {
@@ -30,6 +33,7 @@ impl Validate for Schema {
         match self {
             Self::Any(v) => v.validate(ctx),
             Self::Bool(v) => v.validate(ctx),
+            Self::String(v) => v.validate(ctx),
         }
     }
 }

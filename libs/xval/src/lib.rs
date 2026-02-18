@@ -251,6 +251,14 @@ impl Value {
 }
 
 impl Value {
+    pub fn len(&self) -> usize {
+        match self {
+            Self::String(v) => v.len(),
+            Self::Object(v) => v.len(),
+            _ => 0,
+        }
+    }
+
     pub fn get(&self, path: &xpath::Path) -> Option<Self> {
         let mut value = self.clone();
 
