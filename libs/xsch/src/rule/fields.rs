@@ -62,7 +62,7 @@ impl Validate for Fields {
                 next.value = input
                     .field(xval::Ident::key(name))
                     .map(|v| v.as_value())
-                    .unwrap_or(xval::Value::Null);
+                    .unwrap_or(xval::valueof!(null));
 
                 if let Err(err) = schema.validate(&next) {
                     error.errors.push(err);

@@ -57,14 +57,14 @@ mod tests {
     #[test]
     fn validate_null() {
         let schema = any();
-        let result = schema.validate(&xval::Value::Null.into());
+        let result = schema.validate(&xval::valueof!(null).into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_required_rejects_null() {
         let schema = any().required();
-        let result = schema.validate(&xval::Value::Null.into());
+        let result = schema.validate(&xval::valueof!(null).into());
         assert!(result.is_err());
         assert_eq!(
             result.unwrap_err().errors[0].message.as_deref(),
@@ -115,14 +115,14 @@ mod tests {
 
         assert!(schema.validate(&true.as_value().into()).is_ok());
         assert!(schema.validate(&false.as_value().into()).is_ok());
-        assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         assert!(schema.validate(&42i32.as_value().into()).is_err());
     }
 
     #[test]
     fn validate_collects_multiple_errors() {
         let schema = any().required().equals(true.as_value());
-        let err = schema.validate(&xval::Value::Null.into()).unwrap_err();
+        let err = schema.validate(&xval::valueof!(null).into()).unwrap_err();
         assert_eq!(err.errors.len(), 2);
     }
 }

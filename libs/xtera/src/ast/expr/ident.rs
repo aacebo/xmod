@@ -31,7 +31,7 @@ mod tests {
     #[test]
     fn eval_found() {
         let mut ctx = Scope::new();
-        ctx.set_var("x", xval::Value::from_i64(10));
+        ctx.set_var("x", xval::valueof!(10_i64));
         let expr = IdentExpr {
             name: "x".to_string(),
             span: Span::new(0, 1),

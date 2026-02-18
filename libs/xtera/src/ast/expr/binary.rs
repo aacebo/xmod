@@ -38,14 +38,14 @@ impl BinaryExpr {
         let right_val = self.right.eval(scope)?;
 
         match self.op {
-            BinaryOp::Eq => Ok(xval::Value::from_bool(left_val == right_val)),
-            BinaryOp::Ne => Ok(xval::Value::from_bool(left_val != right_val)),
+            BinaryOp::Eq => Ok(xval::valueof!((left_val == right_val))),
+            BinaryOp::Ne => Ok(xval::valueof!((left_val != right_val))),
             BinaryOp::Lt | BinaryOp::Le | BinaryOp::Gt | BinaryOp::Ge => {
                 Self::eval_comparison(&left_val, self.op, &right_val)
             }
-            BinaryOp::Add if left_val.is_string() || right_val.is_string() => Ok(
-                xval::Value::from_string(format!("{}{}", left_val, right_val)),
-            ),
+            BinaryOp::Add if left_val.is_string() || right_val.is_string() => {
+                Ok(xval::valueof!((format!("{}{}", left_val, right_val))))
+            }
             BinaryOp::Add | BinaryOp::Sub | BinaryOp::Mul | BinaryOp::Div | BinaryOp::Mod => {
                 let l = expect_number(&left_val, self.span)?;
                 let r = expect_number(&right_val, self.span)?;
@@ -70,7 +70,7 @@ impl BinaryExpr {
                 BinaryOp::Ge => lf >= rf,
                 _ => unreachable!(),
             };
-            Ok(xval::Value::from_bool(result))
+            Ok(xval::valueof!((result)))
         } else {
             let cmp = left.partial_cmp(right);
             let result = match (op, cmp) {
@@ -82,7 +82,7 @@ impl BinaryExpr {
                 }
                 _ => false,
             };
-            Ok(xval::Value::from_bool(result))
+            Ok(xval::valueof!((result)))
         }
     }
 
@@ -96,20 +96,20 @@ impl BinaryExpr {
             let lf = l.to_f64();
             let rf = r.to_f64();
             return match op {
-                BinaryOp::Add => Ok(xval::Value::from_f64(lf + rf)),
-                BinaryOp::Sub => Ok(xval::Value::from_f64(lf - rf)),
-                BinaryOp::Mul => Ok(xval::Value::from_f64(lf * rf)),
+                BinaryOp::Add => Ok(xval::valueof!((lf + rf))),
+                BinaryOp::Sub => Ok(xval::valueof!((lf - rf))),
+                BinaryOp::Mul => Ok(xval::valueof!((lf * rf))),
                 BinaryOp::Div => {
                     if rf == 0.0 {
                         return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
                     }
-                    Ok(xval::Value::from_f64(lf / rf))
+                    Ok(xval::valueof!((lf / rf)))
                 }
                 BinaryOp::Mod => {
                     if rf == 0.0 {
                         return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
                     }
-                    Ok(xval::Value::from_f64(lf % rf))
+                    Ok(xval::valueof!((lf % rf)))
                 }
                 _ => unreachable!(),
             };
@@ -119,20 +119,20 @@ impl BinaryExpr {
         let ri = r.to_i64();
 
         match op {
-            BinaryOp::Add => Ok(xval::Value::from_i64(li.wrapping_add(ri))),
-            BinaryOp::Sub => Ok(xval::Value::from_i64(li.wrapping_sub(ri))),
-            BinaryOp::Mul => Ok(xval::Value::from_i64(li.wrapping_mul(ri))),
+            BinaryOp::Add => Ok(xval::valueof!((li.wrapping_add(ri)))),
+            BinaryOp::Sub => Ok(xval::valueof!((li.wrapping_sub(ri)))),
+            BinaryOp::Mul => Ok(xval::valueof!((li.wrapping_mul(ri)))),
             BinaryOp::Div => {
                 if ri == 0 {
                     return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
                 }
-                Ok(xval::Value::from_i64(li.wrapping_div(ri)))
+                Ok(xval::valueof!((li.wrapping_div(ri))))
             }
             BinaryOp::Mod => {
                 if ri == 0 {
                     return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
                 }
-                Ok(xval::Value::from_i64(li.wrapping_rem(ri)))
+                Ok(xval::valueof!((li.wrapping_rem(ri))))
             }
             _ => unreachable!(),
         }
@@ -177,9 +177,9 @@ mod tests {
     fn add_ints() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_i64(2)),
+            val(xval::valueof!(2_i64)),
             BinaryOp::Add,
-            val(xval::Value::from_i64(3)),
+            val(xval::valueof!(3_i64)),
         );
         assert_eq!(expr.eval(&ctx).unwrap(), 5i64);
     }
@@ -188,9 +188,9 @@ mod tests {
     fn float_promotion() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_i64(1)),
+            val(xval::valueof!(1_i64)),
             BinaryOp::Add,
-            val(xval::Value::from_f64(2.5)),
+            val(xval::valueof!(2.5_f64)),
         );
         assert_eq!(expr.eval(&ctx).unwrap(), 3.5f64);
     }
@@ -199,9 +199,9 @@ mod tests {
     fn division_by_zero() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_i64(10)),
+            val(xval::valueof!(10_i64)),
             BinaryOp::Div,
-            val(xval::Value::from_i64(0)),
+            val(xval::valueof!(0_i64)),
         );
         assert!(matches!(
             expr.eval(&ctx).unwrap_err(),
@@ -213,9 +213,9 @@ mod tests {
     fn string_concat() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_str("hello")),
+            val(xval::valueof!("hello")),
             BinaryOp::Add,
-            val(xval::Value::from_str(" world")),
+            val(xval::valueof!(" world")),
         );
         assert_eq!(expr.eval(&ctx).unwrap(), "hello world");
     }
@@ -224,9 +224,9 @@ mod tests {
     fn comparison() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_i64(1)),
+            val(xval::valueof!(1_i64)),
             BinaryOp::Lt,
-            val(xval::Value::from_i64(2)),
+            val(xval::valueof!(2_i64)),
         );
         assert_eq!(expr.eval(&ctx).unwrap(), true);
     }
@@ -235,9 +235,9 @@ mod tests {
     fn equality() {
         let ctx = Scope::new();
         let expr = binary(
-            val(xval::Value::from_str("a")),
+            val(xval::valueof!("a")),
             BinaryOp::Eq,
-            val(xval::Value::from_str("a")),
+            val(xval::valueof!("a")),
         );
         assert_eq!(expr.eval(&ctx).unwrap(), true);
     }
@@ -245,22 +245,14 @@ mod tests {
     #[test]
     fn logical_and_short_circuit() {
         let ctx = Scope::new();
-        let expr = binary(
-            val(xval::Value::from_bool(false)),
-            BinaryOp::And,
-            ident("missing"),
-        );
+        let expr = binary(val(xval::valueof!(false)), BinaryOp::And, ident("missing"));
         assert_eq!(expr.eval(&ctx).unwrap(), false);
     }
 
     #[test]
     fn logical_or_short_circuit() {
         let ctx = Scope::new();
-        let expr = binary(
-            val(xval::Value::from_bool(true)),
-            BinaryOp::Or,
-            ident("missing"),
-        );
+        let expr = binary(val(xval::valueof!(true)), BinaryOp::Or, ident("missing"));
         assert_eq!(expr.eval(&ctx).unwrap(), true);
     }
 }

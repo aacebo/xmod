@@ -73,15 +73,15 @@ mod tests {
     fn render_matching_arm() {
         let scope = Scope::new();
         let node = MatchNode {
-            expr: val_expr(xval::Value::from_str("b")),
+            expr: val_expr(xval::valueof!("b")),
             arms: vec![
                 MatchNodeArm {
-                    pattern: val_expr(xval::Value::from_str("a")),
+                    pattern: val_expr(xval::valueof!("a")),
                     body: block(vec![text("A")]),
                     span: Span::new(0, 1),
                 },
                 MatchNodeArm {
-                    pattern: val_expr(xval::Value::from_str("b")),
+                    pattern: val_expr(xval::valueof!("b")),
                     body: block(vec![text("B")]),
                     span: Span::new(0, 1),
                 },
@@ -97,9 +97,9 @@ mod tests {
     fn render_default() {
         let scope = Scope::new();
         let node = MatchNode {
-            expr: val_expr(xval::Value::from_str("c")),
+            expr: val_expr(xval::valueof!("c")),
             arms: vec![MatchNodeArm {
-                pattern: val_expr(xval::Value::from_str("a")),
+                pattern: val_expr(xval::valueof!("a")),
                 body: block(vec![text("A")]),
                 span: Span::new(0, 1),
             }],
@@ -114,9 +114,9 @@ mod tests {
     fn render_no_match_no_default() {
         let scope = Scope::new();
         let node = MatchNode {
-            expr: val_expr(xval::Value::from_str("c")),
+            expr: val_expr(xval::valueof!("c")),
             arms: vec![MatchNodeArm {
-                pattern: val_expr(xval::Value::from_str("a")),
+                pattern: val_expr(xval::valueof!("a")),
                 body: block(vec![text("A")]),
                 span: Span::new(0, 1),
             }],

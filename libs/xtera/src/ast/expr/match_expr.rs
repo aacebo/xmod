@@ -25,7 +25,7 @@ impl MatchExpr {
             return default.eval(scope);
         }
 
-        Ok(xval::Value::Null)
+        Ok(xval::valueof!(null))
     }
 }
 

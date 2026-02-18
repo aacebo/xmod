@@ -17,7 +17,7 @@ impl ObjectExpr {
         for (key, val_expr) in &self.entries {
             map.insert(xval::Ident::key(key), val_expr.eval(scope)?);
         }
-        Ok(xval::Value::from_struct(map))
+        Ok(xval::valueof!((map)))
     }
 }
 
@@ -40,14 +40,14 @@ mod tests {
                 (
                     "a".into(),
                     Expr::Value(ValueExpr {
-                        value: xval::Value::from_i64(1),
+                        value: xval::valueof!(1_i64),
                         span: Span::new(0, 1),
                     }),
                 ),
                 (
                     "b".into(),
                     Expr::Value(ValueExpr {
-                        value: xval::Value::from_str("two"),
+                        value: xval::valueof!("two"),
                         span: Span::new(0, 1),
                     }),
                 ),

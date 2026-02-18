@@ -57,7 +57,7 @@ mod tests {
         scope.set_template("greeting", Template::parse("hello").unwrap());
 
         let node = IncludeNode {
-            name: val_expr(xval::Value::from_str("greeting")),
+            name: val_expr(xval::valueof!("greeting")),
             span: Span::new(0, 1),
         };
 
@@ -68,7 +68,7 @@ mod tests {
     fn render_missing_template() {
         let scope = Scope::new();
         let node = IncludeNode {
-            name: val_expr(xval::Value::from_str("missing")),
+            name: val_expr(xval::valueof!("missing")),
             span: Span::new(0, 1),
         };
 
@@ -80,7 +80,7 @@ mod tests {
     fn render_non_string_name() {
         let scope = Scope::new();
         let node = IncludeNode {
-            name: val_expr(xval::Value::from_i64(42)),
+            name: val_expr(xval::valueof!(42_i64)),
             span: Span::new(0, 1),
         };
 

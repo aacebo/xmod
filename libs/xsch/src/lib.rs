@@ -93,7 +93,7 @@ mod tests {
             let schema = Schema::Bool(bool().required().equals(true));
             assert!(schema.validate(&true.as_value().into()).is_ok());
             assert!(schema.validate(&false.as_value().into()).is_err());
-            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
 
         #[test]
@@ -106,13 +106,13 @@ mod tests {
         #[test]
         fn array_allows_null() {
             let schema = Schema::Array(array());
-            assert!(schema.validate(&xval::Value::Null.into()).is_ok());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_ok());
         }
 
         #[test]
         fn array_required_rejects_null() {
             let schema = Schema::Array(array().required());
-            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
 
         #[test]
@@ -158,7 +158,7 @@ mod tests {
         fn array_combined_rules() {
             let schema = Schema::Array(array().required().min(1).max(3).items(int().into()));
             assert!(schema.validate(&vec![1i32, 2].as_value().into()).is_ok());
-            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_err());
             assert!(
                 schema
                     .validate(&Vec::<i32>::new().as_value().into())
@@ -186,7 +186,7 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(object());
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("a"), xval::Value::from_i32(1));
+            map.insert(xval::Ident::key("a"), xval::valueof!(1_i32));
             assert!(schema.validate(&map.as_value().into()).is_ok());
         }
 
@@ -200,13 +200,13 @@ mod tests {
         #[test]
         fn object_allows_null() {
             let schema = Schema::Object(object());
-            assert!(schema.validate(&xval::Value::Null.into()).is_ok());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_ok());
         }
 
         #[test]
         fn object_required_rejects_null() {
             let schema = Schema::Object(object().required());
-            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
 
         #[test]
@@ -214,7 +214,7 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(object().field("name", string().into()));
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             assert!(schema.validate(&map.as_value().into()).is_ok());
         }
 
@@ -223,7 +223,7 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(object().field("name", string().into()));
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("name"), xval::Value::from_i32(42));
+            map.insert(xval::Ident::key("name"), xval::valueof!(42_i32));
             assert!(schema.validate(&map.as_value().into()).is_err());
         }
 
@@ -232,8 +232,8 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(object().field("name", string().into()));
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
-            map.insert(xval::Ident::key("extra"), xval::Value::from_i32(1));
+            map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
+            map.insert(xval::Ident::key("extra"), xval::valueof!(1_i32));
             assert!(schema.validate(&map.as_value().into()).is_err());
         }
 
@@ -246,7 +246,7 @@ mod tests {
                     .field("age", int().into()),
             );
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("age"), xval::Value::from_i32(30));
+            map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
             assert!(schema.validate(&map.as_value().into()).is_err());
         }
 
@@ -259,8 +259,8 @@ mod tests {
                     .field("age", int().into()),
             );
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
-            map.insert(xval::Ident::key("age"), xval::Value::from_i32(30));
+            map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
+            map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
             assert!(schema.validate(&map.as_value().into()).is_ok());
         }
 
@@ -270,10 +270,7 @@ mod tests {
             let inner_schema = object().field("street", string().into());
             let schema = Schema::Object(object().field("address", inner_schema.into()));
             let mut inner = HashMap::new();
-            inner.insert(
-                xval::Ident::key("street"),
-                xval::Value::from_str("123 Main"),
-            );
+            inner.insert(xval::Ident::key("street"), xval::valueof!("123 Main"));
             let mut outer = HashMap::new();
             outer.insert(xval::Ident::key("address"), inner.as_value());
             assert!(schema.validate(&outer.as_value().into()).is_ok());
@@ -289,10 +286,10 @@ mod tests {
             );
             // valid
             let mut map = HashMap::new();
-            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             assert!(schema.validate(&map.as_value().into()).is_ok());
             // null rejected
-            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+            assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
 
         #[test]

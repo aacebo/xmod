@@ -183,14 +183,14 @@ mod tests {
 
     #[test]
     fn truthiness() {
-        assert!(!is_truthy(&xval::Value::Null));
-        assert!(!is_truthy(&xval::Value::from_bool(false)));
-        assert!(is_truthy(&xval::Value::from_bool(true)));
-        assert!(!is_truthy(&xval::Value::from_i64(0)));
-        assert!(is_truthy(&xval::Value::from_i64(1)));
-        assert!(!is_truthy(&xval::Value::from_f64(0.0)));
-        assert!(is_truthy(&xval::Value::from_f64(0.1)));
-        assert!(!is_truthy(&xval::Value::from_str("")));
-        assert!(is_truthy(&xval::Value::from_str("x")));
+        assert!(!is_truthy(&xval::valueof!(null)));
+        assert!(!is_truthy(&xval::valueof!(false)));
+        assert!(is_truthy(&xval::valueof!(true)));
+        assert!(!is_truthy(&xval::valueof!(0_i64)));
+        assert!(is_truthy(&xval::valueof!(1_i64)));
+        assert!(!is_truthy(&xval::valueof!(0.0_f64)));
+        assert!(is_truthy(&xval::valueof!(0.1_f64)));
+        assert!(!is_truthy(&xval::valueof!("")));
+        assert!(is_truthy(&xval::valueof!("x")));
     }
 }

@@ -315,27 +315,27 @@ impl<'src> Parser<'src> {
     fn spanned_to_expr(sp: Spanned) -> Result<Expr> {
         match sp.token {
             LexToken::Expr(Token::Int(n)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_i64(n),
+                value: xval::valueof!((n)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Float(n)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_f64(n),
+                value: xval::valueof!((n)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::String(s)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_string(s),
+                value: xval::valueof!((s)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::True) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_bool(true),
+                value: xval::valueof!(true),
                 span: sp.span,
             })),
             LexToken::Expr(Token::False) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_bool(false),
+                value: xval::valueof!(false),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Null) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::Null,
+                value: xval::valueof!(null),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Ident(s)) => Ok(Expr::Ident(IdentExpr {
@@ -551,27 +551,27 @@ impl<'src> Parser<'src> {
 
         match sp.token {
             LexToken::Expr(Token::Int(n)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_i64(n),
+                value: xval::valueof!((n)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Float(n)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_f64(n),
+                value: xval::valueof!((n)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::String(s)) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_string(s),
+                value: xval::valueof!((s)),
                 span: sp.span,
             })),
             LexToken::Expr(Token::True) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_bool(true),
+                value: xval::valueof!(true),
                 span: sp.span,
             })),
             LexToken::Expr(Token::False) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::from_bool(false),
+                value: xval::valueof!(false),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Null) => Ok(Expr::Value(ValueExpr {
-                value: xval::Value::Null,
+                value: xval::valueof!(null),
                 span: sp.span,
             })),
             LexToken::Expr(Token::Ident(s)) => Ok(Expr::Ident(IdentExpr {

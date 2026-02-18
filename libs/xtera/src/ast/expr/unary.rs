@@ -14,13 +14,13 @@ impl UnaryExpr {
     pub fn eval(&self, scope: &Scope) -> Result<xval::Value> {
         let val = self.operand.eval(scope)?;
         match self.op {
-            UnaryOp::Not => Ok(xval::Value::from_bool(!is_truthy(&val))),
+            UnaryOp::Not => Ok(xval::valueof!((!is_truthy(&val)))),
             UnaryOp::Neg => {
                 let n = expect_number(&val, self.span)?;
                 if n.is_float() {
-                    Ok(xval::Value::from_f64(-n.to_f64()))
+                    Ok(xval::valueof!((-n.to_f64())))
                 } else {
-                    Ok(xval::Value::from_i64(n.to_i64().wrapping_neg()))
+                    Ok(xval::valueof!((n.to_i64().wrapping_neg())))
                 }
             }
         }
@@ -50,7 +50,7 @@ mod tests {
         let ctx = Scope::new();
         let expr = UnaryExpr {
             op: UnaryOp::Not,
-            operand: val(xval::Value::from_bool(true)),
+            operand: val(xval::valueof!(true)),
             span: Span::new(0, 1),
         };
         assert_eq!(expr.eval(&ctx).unwrap(), false);
@@ -61,7 +61,7 @@ mod tests {
         let ctx = Scope::new();
         let expr = UnaryExpr {
             op: UnaryOp::Neg,
-            operand: val(xval::Value::from_i64(5)),
+            operand: val(xval::valueof!(5_i64)),
             span: Span::new(0, 1),
         };
         assert_eq!(expr.eval(&ctx).unwrap(), -5i64);

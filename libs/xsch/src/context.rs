@@ -8,6 +8,21 @@ pub struct Context {
 }
 
 impl Context {
+    pub fn with_name(mut self, name: &str) -> Self {
+        self.name = name.to_string();
+        self
+    }
+
+    pub fn with_path(mut self, path: xpath::Path) -> Self {
+        self.path = path;
+        self
+    }
+
+    pub fn with_value(mut self, value: xval::Value) -> Self {
+        self.value = value;
+        self
+    }
+
     pub fn error(&self, message: &str) -> ValidError {
         ValidError::new(self.path.clone())
             .name(&self.name)

@@ -16,16 +16,14 @@ mod tests {
     struct UpperPipe;
     impl Pipe for UpperPipe {
         fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> ast::Result<xval::Value> {
-            Ok(xval::Value::from_string(
-                val.as_string().as_str().to_uppercase(),
-            ))
+            Ok(xval::valueof!((val.as_string().as_str().to_uppercase())))
         }
     }
 
     struct LenFunc;
     impl Func for LenFunc {
         fn invoke(&self, args: &[xval::Value]) -> ast::Result<xval::Value> {
-            Ok(xval::Value::from_i64(args[0].as_array().len() as i64))
+            Ok(xval::valueof!((args[0].as_array().len() as i64)))
         }
     }
 
@@ -41,12 +39,14 @@ mod tests {
         let mut s = scope();
         s.set_var(
             "items",
-            xval::Value::from_array(vec![
-                xval::Value::from_i64(1),
-                xval::Value::from_i64(2),
-                xval::Value::from_i64(3),
-                xval::Value::from_i64(4),
-            ]),
+            xval::valueof!(
+                (vec![
+                    xval::valueof!(1_i64),
+                    xval::valueof!(2_i64),
+                    xval::valueof!(3_i64),
+                    xval::valueof!(4_i64),
+                ])
+            ),
         );
 
         let tpl = Template::parse("@for (n of items; track n) {@if (n % 2 == 0) {even}@else{odd}}")
@@ -61,11 +61,13 @@ mod tests {
         let mut s = scope();
         s.set_var(
             "colors",
-            xval::Value::from_array(vec![
-                xval::Value::from_str("red"),
-                xval::Value::from_str("blue"),
-                xval::Value::from_str("green"),
-            ]),
+            xval::valueof!(
+                (vec![
+                    xval::valueof!("red"),
+                    xval::valueof!("blue"),
+                    xval::valueof!("green"),
+                ])
+            ),
         );
 
         let tpl = Template::parse(
@@ -80,8 +82,8 @@ mod tests {
     #[test]
     fn include_with_control_flow() {
         let mut s = scope();
-        s.set_var("show", xval::Value::from_bool(true));
-        s.set_var("name", xval::Value::from_str("world"));
+        s.set_var("show", xval::valueof!(true));
+        s.set_var("name", xval::valueof!("world"));
 
         s.set_template(
             "greeting",
@@ -98,9 +100,9 @@ mod tests {
     #[test]
     fn pipes_and_expressions_in_control_flow() {
         let mut s = scope();
-        s.set_var("x", xval::Value::from_i64(10));
-        s.set_var("y", xval::Value::from_i64(3));
-        s.set_var("label", xval::Value::from_str("result"));
+        s.set_var("x", xval::valueof!(10_i64));
+        s.set_var("y", xval::valueof!(3_i64));
+        s.set_var("label", xval::valueof!("result"));
 
         let tpl = Template::parse("@if (x > 5 && y < 10) {{{ label | upper }}: {{ x * y + 1 }}}")
             .unwrap();
@@ -112,15 +114,12 @@ mod tests {
     #[test]
     fn full_page_template() {
         let mut s = scope();
-        s.set_var("title", xval::Value::from_str("My Page"));
+        s.set_var("title", xval::valueof!("My Page"));
         s.set_var(
             "users",
-            xval::Value::from_array(vec![
-                xval::Value::from_str("alice"),
-                xval::Value::from_str("bob"),
-            ]),
+            xval::valueof!((vec![xval::valueof!("alice"), xval::valueof!("bob"),])),
         );
-        s.set_var("theme", xval::Value::from_str("dark"));
+        s.set_var("theme", xval::valueof!("dark"));
 
         s.set_template(
             "header",

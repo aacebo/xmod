@@ -78,13 +78,13 @@ mod tests {
     #[test]
     fn validate_null_passes_without_required() {
         let schema = bool();
-        assert!(schema.validate(&xval::Value::Null.into()).is_ok());
+        assert!(schema.validate(&xval::valueof!(null).into()).is_ok());
     }
 
     #[test]
     fn validate_required_rejects_null() {
         let schema = bool().required();
-        let err = schema.validate(&xval::Value::Null.into()).unwrap_err();
+        let err = schema.validate(&xval::valueof!(null).into()).unwrap_err();
         assert_eq!(err.errors[0].message.as_deref(), Some("required"));
     }
 
@@ -107,6 +107,6 @@ mod tests {
         let schema = bool().required().equals(false);
         assert!(schema.validate(&false.as_value().into()).is_ok());
         assert!(schema.validate(&true.as_value().into()).is_err());
-        assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        assert!(schema.validate(&xval::valueof!(null).into()).is_err());
     }
 }

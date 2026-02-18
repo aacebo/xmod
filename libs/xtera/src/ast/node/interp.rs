@@ -38,27 +38,18 @@ mod tests {
     #[test]
     fn render_int() {
         let scope = Scope::new();
-        assert_eq!(
-            interp(xval::Value::from_i64(42)).render(&scope).unwrap(),
-            "42"
-        );
+        assert_eq!(interp(xval::valueof!(42_i64)).render(&scope).unwrap(), "42");
     }
 
     #[test]
     fn render_string() {
         let scope = Scope::new();
-        assert_eq!(
-            interp(xval::Value::from_str("hi")).render(&scope).unwrap(),
-            "hi"
-        );
+        assert_eq!(interp(xval::valueof!("hi")).render(&scope).unwrap(), "hi");
     }
 
     #[test]
     fn render_bool() {
         let scope = Scope::new();
-        assert_eq!(
-            interp(xval::Value::from_bool(true)).render(&scope).unwrap(),
-            "true"
-        );
+        assert_eq!(interp(xval::valueof!(true)).render(&scope).unwrap(), "true");
     }
 }

@@ -72,7 +72,7 @@ mod tests {
         let scope = Scope::new();
         let node = IfNode {
             branches: vec![IfBranch {
-                condition: val(xval::Value::from_bool(true)),
+                condition: val(xval::valueof!(true)),
                 body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
@@ -88,7 +88,7 @@ mod tests {
         let scope = Scope::new();
         let node = IfNode {
             branches: vec![IfBranch {
-                condition: val(xval::Value::from_bool(false)),
+                condition: val(xval::valueof!(false)),
                 body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
@@ -104,7 +104,7 @@ mod tests {
         let scope = Scope::new();
         let node = IfNode {
             branches: vec![IfBranch {
-                condition: val(xval::Value::from_bool(false)),
+                condition: val(xval::valueof!(false)),
                 body: block(vec![text("yes")]),
                 span: Span::new(0, 1),
             }],
@@ -121,12 +121,12 @@ mod tests {
         let node = IfNode {
             branches: vec![
                 IfBranch {
-                    condition: val(xval::Value::from_bool(false)),
+                    condition: val(xval::valueof!(false)),
                     body: block(vec![text("first")]),
                     span: Span::new(0, 1),
                 },
                 IfBranch {
-                    condition: val(xval::Value::from_bool(true)),
+                    condition: val(xval::valueof!(true)),
                     body: block(vec![text("second")]),
                     span: Span::new(0, 1),
                 },

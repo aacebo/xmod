@@ -118,11 +118,7 @@ mod tests {
     use crate::*;
 
     fn sample_array() -> Vec<Value> {
-        vec![
-            Value::from_i32(1),
-            Value::from_bool(true),
-            Value::from_str("hello"),
-        ]
+        vec![valueof!(1_i32), valueof!(true), valueof!("hello")]
     }
 
     #[test]

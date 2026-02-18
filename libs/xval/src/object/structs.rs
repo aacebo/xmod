@@ -123,8 +123,8 @@ mod tests {
 
     fn sample_struct() -> HashMap<Ident, Value> {
         let mut map = HashMap::new();
-        map.insert(Ident::key("a"), Value::from_i32(1));
-        map.insert(Ident::key("b"), Value::from_str("hello"));
+        map.insert(Ident::key("a"), valueof!(1_i32));
+        map.insert(Ident::key("b"), valueof!("hello"));
         map
     }
 

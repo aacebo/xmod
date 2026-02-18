@@ -147,11 +147,7 @@ mod tests {
     use crate::*;
 
     fn sample_tuple() -> (Value, Value, Value) {
-        (
-            Value::from_i32(1),
-            Value::from_bool(true),
-            Value::from_str("hello"),
-        )
+        (valueof!(1_i32), valueof!(true), valueof!("hello"))
     }
 
     #[test]
@@ -174,7 +170,7 @@ mod tests {
 
     #[test]
     fn is_empty() {
-        let single = (Value::from_i32(1),);
+        let single = (valueof!(1_i32),);
         assert!(!single.is_empty());
         assert!(!sample_tuple().is_empty());
     }

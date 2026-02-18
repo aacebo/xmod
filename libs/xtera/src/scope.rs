@@ -87,7 +87,7 @@ mod tests {
     #[test]
     fn var_set_and_get() {
         let mut scope = Scope::new();
-        scope.set_var("x", xval::Value::from_i64(42));
+        scope.set_var("x", xval::valueof!(42_i64));
         assert_eq!(*scope.var("x").unwrap(), 42i64);
     }
 
@@ -100,8 +100,8 @@ mod tests {
     #[test]
     fn var_overwrite() {
         let mut scope = Scope::new();
-        scope.set_var("x", xval::Value::from_i64(1));
-        scope.set_var("x", xval::Value::from_i64(2));
+        scope.set_var("x", xval::valueof!(1_i64));
+        scope.set_var("x", xval::valueof!(2_i64));
         assert_eq!(*scope.var("x").unwrap(), 2i64);
     }
 
@@ -121,7 +121,7 @@ mod tests {
     #[test]
     fn func_set_and_get() {
         let mut scope = Scope::new();
-        scope.set_func("greet", ConstFunc(xval::Value::from_str("hi")));
+        scope.set_func("greet", ConstFunc(xval::valueof!("hi")));
         assert!(scope.func("greet").is_some());
     }
 
@@ -134,7 +134,7 @@ mod tests {
     #[test]
     fn template_set_and_render() {
         let mut scope = Scope::new();
-        scope.set_var("name", xval::Value::from_str("world"));
+        scope.set_var("name", xval::valueof!("world"));
         let tpl = Template::parse("hello {{ name }}").unwrap();
         scope.set_template("greeting", tpl);
         assert_eq!(scope.render("greeting").unwrap(), "hello world");
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     fn include_template() {
         let mut scope = Scope::new();
-        scope.set_var("name", xval::Value::from_str("world"));
+        scope.set_var("name", xval::valueof!("world"));
         scope.set_template("header", Template::parse("Hello {{ name }}!").unwrap());
         scope.set_template(
             "page",
@@ -162,10 +162,10 @@ mod tests {
     #[test]
     fn clone_isolates_mutations() {
         let mut scope = Scope::new();
-        scope.set_var("x", xval::Value::from_i64(1));
+        scope.set_var("x", xval::valueof!(1_i64));
         let mut cloned = scope.clone();
-        cloned.set_var("x", xval::Value::from_i64(2));
-        cloned.set_var("y", xval::Value::from_i64(3));
+        cloned.set_var("x", xval::valueof!(2_i64));
+        cloned.set_var("y", xval::valueof!(3_i64));
         assert_eq!(*scope.var("x").unwrap(), 1i64);
         assert!(scope.var("y").is_none());
     }

@@ -72,11 +72,13 @@ mod tests {
         let mut scope = Scope::new();
         scope.set_var(
             "items",
-            xval::Value::from_array(vec![
-                xval::Value::from_i64(1),
-                xval::Value::from_i64(2),
-                xval::Value::from_i64(3),
-            ]),
+            xval::valueof!(
+                (vec![
+                    xval::valueof!(1_i64),
+                    xval::valueof!(2_i64),
+                    xval::valueof!(3_i64),
+                ])
+            ),
         );
 
         let node = ForNode {
@@ -99,7 +101,7 @@ mod tests {
     #[test]
     fn render_empty_array() {
         let mut scope = Scope::new();
-        scope.set_var("items", xval::Value::from_array(vec![]));
+        scope.set_var("items", xval::valueof!((vec![] as Vec<xval::Value>)));
 
         let node = ForNode {
             binding: "n".into(),
@@ -115,7 +117,7 @@ mod tests {
     #[test]
     fn render_not_iterable() {
         let mut scope = Scope::new();
-        scope.set_var("items", xval::Value::from_i64(42));
+        scope.set_var("items", xval::valueof!(42_i64));
 
         let node = ForNode {
             binding: "n".into(),

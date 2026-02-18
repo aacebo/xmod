@@ -1,5 +1,6 @@
 mod bool;
 mod ident;
+mod macros;
 pub mod num;
 mod object;
 mod string;
@@ -394,26 +395,26 @@ mod tests {
 
     #[test]
     fn is_predicates() {
-        let null = Value::Null;
+        let null = valueof!(null);
         assert!(null.is_null());
         assert!(!null.is_bool());
         assert!(!null.is_number());
         assert!(!null.is_string());
         assert!(!null.is_object());
 
-        let b = Value::from_bool(true);
+        let b = valueof!(true);
         assert!(b.is_bool());
         assert!(!b.is_null());
         assert!(!b.is_number());
         assert!(!b.is_string());
 
-        let n = Value::from_i32(1);
+        let n = valueof!(1_i32);
         assert!(n.is_number());
         assert!(!n.is_null());
         assert!(!n.is_bool());
         assert!(!n.is_string());
 
-        let s = Value::from_str("hello");
+        let s = valueof!("hello");
         assert!(s.is_string());
         assert!(!s.is_null());
         assert!(!s.is_bool());
@@ -422,56 +423,56 @@ mod tests {
 
     #[test]
     fn as_bool() {
-        let v = Value::from_bool(true);
+        let v = valueof!(true);
         assert_eq!(v.to_bool(), true);
     }
 
     #[test]
     fn as_number() {
-        let v = Value::from_i32(42);
+        let v = valueof!(42_i32);
         assert_eq!(*v.as_number(), Number::from_i32(42));
     }
 
     #[test]
     #[should_panic(expected = "expected Bool")]
     fn as_bool_panics_on_mismatch() {
-        Value::from_i32(1).as_bool();
+        valueof!(1_i32).as_bool();
     }
 
     #[test]
     #[should_panic(expected = "expected Number")]
     fn as_number_panics_on_mismatch() {
-        Value::from_bool(true).as_number();
+        valueof!(true).as_number();
     }
 
     #[test]
     fn as_str() {
-        let v = Value::from_str("hello");
+        let v = valueof!("hello");
         assert_eq!(v.as_str(), "hello");
     }
 
     #[test]
     #[should_panic(expected = "expected Str")]
     fn as_str_panics_on_mismatch() {
-        Value::from_bool(true).as_str();
+        valueof!(true).as_str();
     }
 
     #[test]
     fn debug_null() {
-        assert_eq!(format!("{:?}", Value::Null), "<null>");
+        assert_eq!(format!("{:?}", valueof!(null)), "<null>");
     }
 
     #[test]
     fn eq_null() {
-        assert_eq!(Value::Null, Value::Null);
-        assert_ne!(Value::Null, Value::from_bool(true));
-        assert_ne!(Value::Null, Value::from_i32(0));
-        assert_ne!(Value::Null, Value::from_str(""));
+        assert_eq!(valueof!(null), valueof!(null));
+        assert_ne!(valueof!(null), valueof!(true));
+        assert_ne!(valueof!(null), valueof!(0_i32));
+        assert_ne!(valueof!(null), valueof!(""));
     }
 
     #[test]
     fn clone_null() {
-        let v = Value::Null;
+        let v = valueof!(null);
         let cloned = v.clone();
         assert!(cloned.is_null());
         assert_eq!(v, cloned);
@@ -480,75 +481,61 @@ mod tests {
     #[test]
     #[should_panic(expected = "Value::Null")]
     fn type_id_panics_on_null() {
-        Value::Null.type_id();
+        valueof!(null).type_id();
     }
 
     #[test]
     #[should_panic(expected = "expected Bool")]
     fn as_bool_panics_on_null() {
-        Value::Null.as_bool();
+        valueof!(null).as_bool();
     }
 
     #[test]
     #[should_panic(expected = "expected Number")]
     fn as_number_panics_on_null() {
-        Value::Null.as_number();
+        valueof!(null).as_number();
     }
 
     #[test]
     #[should_panic(expected = "expected String")]
     fn as_string_panics_on_null() {
-        Value::Null.as_string();
+        valueof!(null).as_string();
     }
 
     #[test]
     #[should_panic(expected = "expected Object")]
     fn as_object_panics_on_null() {
-        Value::Null.as_object();
+        valueof!(null).as_object();
     }
 
     #[test]
     fn display() {
-        assert_eq!(Value::Null.to_string(), "<null>");
-        assert_eq!(Value::from_bool(true).to_string(), "true");
-        assert_eq!(Value::from_i32(42).to_string(), "42");
-        assert_eq!(Value::from_f64(3.14).to_string(), "3.14");
-        assert_eq!(Value::from_str("hello").to_string(), "hello");
+        assert_eq!(valueof!(null).to_string(), "<null>");
+        assert_eq!(valueof!(true).to_string(), "true");
+        assert_eq!(valueof!(42_i32).to_string(), "42");
+        assert_eq!(valueof!(3.14_f64).to_string(), "3.14");
+        assert_eq!(valueof!("hello").to_string(), "hello");
     }
 
     #[test]
     fn type_id() {
+        assert_eq!(valueof!(true).type_id(), std::any::TypeId::of::<bool>());
+        assert_eq!(valueof!(1.0_f32).type_id(), std::any::TypeId::of::<f32>());
+        assert_eq!(valueof!(1.0_f64).type_id(), std::any::TypeId::of::<f64>());
+        assert_eq!(valueof!(1_i32).type_id(), std::any::TypeId::of::<i32>());
+        assert_eq!(valueof!(1_u32).type_id(), std::any::TypeId::of::<u32>());
         assert_eq!(
-            Value::from_bool(true).type_id(),
-            std::any::TypeId::of::<bool>()
-        );
-        assert_eq!(
-            Value::from_f32(1.0).type_id(),
-            std::any::TypeId::of::<f32>()
-        );
-        assert_eq!(
-            Value::from_f64(1.0).type_id(),
-            std::any::TypeId::of::<f64>()
-        );
-        assert_eq!(Value::from_i32(1).type_id(), std::any::TypeId::of::<i32>());
-        assert_eq!(Value::from_u32(1).type_id(), std::any::TypeId::of::<u32>());
-        assert_eq!(
-            Value::from_str("hello").type_id(),
+            valueof!("hello").type_id(),
             std::any::TypeId::of::<String>()
         );
     }
 
     mod get {
-        use std::collections::HashMap;
-
         use super::*;
 
         #[test]
         fn struct_field() {
-            let mut map = HashMap::new();
-            map.insert(Ident::key("a"), Value::from_i32(1));
-            map.insert(Ident::key("b"), Value::from_str("hello"));
-            let v = Value::from_struct(map);
+            let v = valueof!({ "a": 1_i32, "b": "hello" });
 
             let path = xpath::Path::parse("a").unwrap();
             let result = v.get(&path).unwrap();
@@ -561,12 +548,7 @@ mod tests {
 
         #[test]
         fn array_index() {
-            let arr = vec![
-                Value::from_i32(10),
-                Value::from_bool(true),
-                Value::from_str("world"),
-            ];
-            let v = Value::from_array(arr);
+            let v = valueof!([10_i32, true, "world"]);
 
             let path = xpath::Path::parse("0").unwrap();
             assert_eq!(v.get(&path).unwrap().to_i32(), 10);
@@ -580,10 +562,7 @@ mod tests {
 
         #[test]
         fn nested_struct_to_array() {
-            let arr = vec![Value::from_i32(42), Value::from_i32(99)];
-            let mut map = HashMap::new();
-            map.insert(Ident::key("items"), Value::from_array(arr));
-            let v = Value::from_struct(map);
+            let v = valueof!({ "items": [42_i32, 99_i32] });
 
             let path = xpath::Path::parse("items/0").unwrap();
             assert_eq!(v.get(&path).unwrap().to_i32(), 42);
@@ -594,12 +573,7 @@ mod tests {
 
         #[test]
         fn nested_array_to_struct() {
-            let mut m1 = HashMap::new();
-            m1.insert(Ident::key("name"), Value::from_str("alice"));
-            let mut m2 = HashMap::new();
-            m2.insert(Ident::key("name"), Value::from_str("bob"));
-            let arr = vec![Value::from_struct(m1), Value::from_struct(m2)];
-            let v = Value::from_array(arr);
+            let v = valueof!([{ "name": "alice" }, { "name": "bob" }]);
 
             let path = xpath::Path::parse("0/name").unwrap();
             assert_eq!(v.get(&path).unwrap().as_str(), "alice");
@@ -610,9 +584,7 @@ mod tests {
 
         #[test]
         fn missing_key() {
-            let mut map = HashMap::new();
-            map.insert(Ident::key("a"), Value::from_i32(1));
-            let v = Value::from_struct(map);
+            let v = valueof!({ "a": 1_i32 });
 
             let path = xpath::Path::parse("z").unwrap();
             assert!(v.get(&path).is_none());
@@ -620,8 +592,7 @@ mod tests {
 
         #[test]
         fn missing_index() {
-            let arr = vec![Value::from_i32(1)];
-            let v = Value::from_array(arr);
+            let v = valueof!([1_i32]);
 
             let path = xpath::Path::parse("5").unwrap();
             assert!(v.get(&path).is_none());
@@ -629,7 +600,7 @@ mod tests {
 
         #[test]
         fn empty_path() {
-            let v = Value::from_i32(42);
+            let v = valueof!(42_i32);
             let path = xpath::Path::parse("").unwrap();
             let result = v.get(&path).unwrap();
             assert_eq!(result.to_i32(), 42);
@@ -642,17 +613,11 @@ mod tests {
 
         #[test]
         fn serialize() {
+            assert_eq!(serde_json::to_string(&valueof!(true)).unwrap(), "true");
+            assert_eq!(serde_json::to_string(&valueof!(42_i32)).unwrap(), "42");
+            assert_eq!(serde_json::to_string(&valueof!(3.14_f64)).unwrap(), "3.14");
             assert_eq!(
-                serde_json::to_string(&Value::from_bool(true)).unwrap(),
-                "true"
-            );
-            assert_eq!(serde_json::to_string(&Value::from_i32(42)).unwrap(), "42");
-            assert_eq!(
-                serde_json::to_string(&Value::from_f64(3.14)).unwrap(),
-                "3.14"
-            );
-            assert_eq!(
-                serde_json::to_string(&Value::from_str("hello")).unwrap(),
+                serde_json::to_string(&valueof!("hello")).unwrap(),
                 "\"hello\""
             );
         }
@@ -683,7 +648,7 @@ mod tests {
 
         #[test]
         fn serialize_null() {
-            assert_eq!(serde_json::to_string(&Value::Null).unwrap(), "null");
+            assert_eq!(serde_json::to_string(&valueof!(null)).unwrap(), "null");
         }
 
         #[test]
@@ -694,12 +659,7 @@ mod tests {
 
         #[test]
         fn serialize_object_array() {
-            let arr = vec![
-                Value::from_i32(1),
-                Value::from_bool(true),
-                Value::from_str("a"),
-            ];
-            let v = Value::Object(Object::Array(std::sync::Arc::new(arr)));
+            let v = valueof!([1_i32, true, "a"]);
             let json = serde_json::to_string(&v).unwrap();
             assert_eq!(json, "[1,true,\"a\"]");
         }

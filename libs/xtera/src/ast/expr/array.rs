@@ -17,7 +17,7 @@ impl ArrayExpr {
             .map(|e| e.eval(scope))
             .collect::<Result<_>>()?;
 
-        Ok(xval::Value::from_array(values))
+        Ok(xval::valueof!((values)))
     }
 }
 
@@ -38,11 +38,11 @@ mod tests {
         let expr = ArrayExpr {
             elements: vec![
                 Expr::Value(ValueExpr {
-                    value: xval::Value::from_i64(1),
+                    value: xval::valueof!(1_i64),
                     span: Span::new(0, 1),
                 }),
                 Expr::Value(ValueExpr {
-                    value: xval::Value::from_i64(2),
+                    value: xval::valueof!(2_i64),
                     span: Span::new(0, 1),
                 }),
             ],
