@@ -140,6 +140,146 @@ mod tests {
         }
 
         #[test]
+        fn serialize_string_empty() {
+            let schema = Schema::String(string());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"string"}"#);
+        }
+
+        #[test]
+        fn serialize_string_with_rules() {
+            let schema = Schema::String(string().required().equals("hello"));
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "string");
+            assert_eq!(v["required"], true);
+            assert_eq!(v["equals"], "hello");
+        }
+
+        #[test]
+        fn deserialize_string() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "string"}"#).unwrap();
+            assert!(matches!(schema, Schema::String(_)));
+        }
+
+        #[test]
+        fn roundtrip_string_with_rules() {
+            let json = r#"{"type":"string","required":true,"equals":"hello"}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::String(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
+        fn serialize_number_empty() {
+            let schema = Schema::Number(number());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"number"}"#);
+        }
+
+        #[test]
+        fn serialize_number_with_rules() {
+            let schema = Schema::Number(number().required().equals(xval::Number::from_i32(42)));
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "number");
+            assert_eq!(v["required"], true);
+            assert_eq!(v["equals"], 42);
+        }
+
+        #[test]
+        fn deserialize_number() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "number"}"#).unwrap();
+            assert!(matches!(schema, Schema::Number(_)));
+        }
+
+        #[test]
+        fn roundtrip_number_with_rules() {
+            let json = r#"{"type":"number","required":true,"options":[1,2,3]}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::Number(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
+        fn serialize_int_empty() {
+            let schema = Schema::Int(int());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"int"}"#);
+        }
+
+        #[test]
+        fn serialize_int_with_rules() {
+            let schema = Schema::Int(int().required().equals(xval::Int::from_i32(10)));
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "int");
+            assert_eq!(v["required"], true);
+            assert_eq!(v["equals"], 10);
+        }
+
+        #[test]
+        fn deserialize_int() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "int"}"#).unwrap();
+            assert!(matches!(schema, Schema::Int(_)));
+        }
+
+        #[test]
+        fn roundtrip_int_with_rules() {
+            let json = r#"{"type":"int","required":true,"options":[1,2,3]}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::Int(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
+        fn serialize_float_empty() {
+            let schema = Schema::Float(float());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"float"}"#);
+        }
+
+        #[test]
+        fn serialize_float_with_rules() {
+            let schema = Schema::Float(float().required().equals(xval::Float::from_f64(3.14)));
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "float");
+            assert_eq!(v["required"], true);
+            assert_eq!(v["equals"], 3.14);
+        }
+
+        #[test]
+        fn deserialize_float() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "float"}"#).unwrap();
+            assert!(matches!(schema, Schema::Float(_)));
+        }
+
+        #[test]
+        fn roundtrip_float_with_rules() {
+            let json = r#"{"type":"float","required":true,"options":[1.0,2.5,3.14]}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::Float(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
         fn deserialize_missing_type_errors() {
             let result = serde_json::from_str::<Schema>(r#"{"required": true}"#);
             assert!(result.is_err());
