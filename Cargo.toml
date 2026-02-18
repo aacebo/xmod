@@ -18,9 +18,14 @@ xflux = { path = "./libs/xflux", version = "0.0.0" }
 xpath = { path = "./libs/xpath", version = "0.0.0" }
 xpipe = { path = "./libs/xpipe", version = "0.0.0" }
 xsch = { path = "./libs/xsch", version = "0.0.0" }
-xtera = { path = "./libs/xtera", version = "0.0.0"}
+xsch-derive = { path = "./libs/xsch-derive", version = "0.0.0" }
+xtera = { path = "./libs/xtera", version = "0.0.0" }
 xtera-derive = { path = "./libs/xtera-derive", version = "0.0.0" }
 xval = { path = "./libs/xval", version = "0.0.0" }
 xval-derive = { path = "./libs/xval-derive", version = "0.0.0" }
 
+# 3rd Party
 serde = { version = "1", features = ["default", "derive"] }
+proc-macro2 = "1"
+quote = "1"
+syn = { version = "2", features = ["extra-traits"] }

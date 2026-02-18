@@ -266,7 +266,18 @@ dependencies = [
  "serde_json",
  "xok",
  "xpath",
+ "xsch-derive",
  "xval",
+]
+
+[[package]]
+name = "xsch-derive"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "xsch",
 ]
 
 [[package]]

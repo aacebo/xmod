@@ -24,6 +24,10 @@ pub use phase::*;
 pub use rule::*;
 pub use string::*;
 
+pub trait AsSchema {
+    fn as_schema(&self) -> Schema;
+}
+
 pub trait Validate {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError>;
 }

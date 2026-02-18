@@ -10,16 +10,18 @@ repository.workspace = true
 
 [features]
 default = []
+derive = ["xsch-derive"]
 serde = ["dep:serde", "xpath/serde", "xval/serde"]
 regex = ["dep:regex"]
 
 [dependencies]
 regex = { version = "1", optional = true }
+serde = { workspace = true, optional = true }
 
 xok = { workspace = true }
 xval = { workspace = true }
 xpath = { workspace = true }
-serde = { workspace = true, optional = true }
+xsch-derive = { workspace = true, optional = true }
 
 [dev-dependencies]
 serde_json = "1"

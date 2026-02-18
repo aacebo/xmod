@@ -1,5 +1,5 @@
 [package]
-name = "xtera-derive"
+name = "xsch-derive"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
@@ -18,5 +18,4 @@ quote = { workspace = true }
 syn = { workspace = true }
 
 [dev-dependencies]
-xtera = { workspace = true }
-xval = { workspace = true }
+xsch = { workspace = true }
