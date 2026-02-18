@@ -74,6 +74,62 @@ With the `serde` feature enabled, schemas serialize using a `type` tag:
 }
 ```
 
+## Validation Errors
+
+When validation fails, a `ValidError` is returned with the rule that failed, the path to the invalid value, and a message. For nested schemas (objects, arrays), errors are collected hierarchically.
+
+```json
+{
+  "rule": "required",
+  "path": "name",
+  "message": "required",
+  "errors": []
+}
+```
+
+Nested object validation produces a tree of errors:
+
+```json
+{
+  "rule": null,
+  "path": "",
+  "message": null,
+  "errors": [
+    {
+      "rule": "required",
+      "path": "name",
+      "message": "required",
+      "errors": []
+    },
+    {
+      "rule": null,
+      "path": "address",
+      "message": null,
+      "errors": [
+        {
+          "rule": null,
+          "path": "address/zip",
+          "message": "unexpected field 'zip'",
+          "errors": []
+        },
+        {
+          "rule": "required",
+          "path": "address/city",
+          "message": "required",
+          "errors": []
+        }
+      ]
+    },
+    {
+      "rule": "min",
+      "path": "tags",
+      "message": "length must be at least 1",
+      "errors": []
+    }
+  ]
+}
+```
+
 ## YAML Examples
 
 Schema definition for a workflow input:
