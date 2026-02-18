@@ -25,6 +25,16 @@ impl Rule {
     }
 }
 
+impl Validate for Rule {
+    fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
+        match self {
+            Self::Equals(v) => v.validate(ctx),
+            Self::Options(v) => v.validate(ctx),
+            Self::Required(v) => v.validate(ctx),
+        }
+    }
+}
+
 #[cfg(feature = "serde")]
 impl Rule {
     pub fn serialize_entry<S: serde::ser::SerializeMap>(
@@ -50,16 +60,6 @@ impl Rule {
                 let _ = map.next_value::<serde::de::IgnoredAny>()?;
                 Ok(None)
             }
-        }
-    }
-}
-
-impl Validate for Rule {
-    fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        match self {
-            Self::Equals(v) => v.validate(ctx),
-            Self::Options(v) => v.validate(ctx),
-            Self::Required(v) => v.validate(ctx),
         }
     }
 }
