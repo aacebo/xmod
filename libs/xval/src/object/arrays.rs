@@ -42,6 +42,18 @@ impl<T: Clone + AsValue + 'static> AsValue for Vec<T> {
     }
 }
 
+impl<T: Clone + AsValue + 'static> AsValue for [T] {
+    fn as_value(&self) -> Value {
+        Value::from_array(self.iter().map(|v| v.as_value()).collect::<Vec<_>>())
+    }
+}
+
+impl<T: Clone + AsValue + 'static> AsValue for &[T] {
+    fn as_value(&self) -> Value {
+        Value::from_array(self.iter().map(|v| v.as_value()).collect::<Vec<_>>())
+    }
+}
+
 impl From<Vec<Value>> for Object {
     fn from(value: Vec<Value>) -> Self {
         Self::Array(Arc::new(value))

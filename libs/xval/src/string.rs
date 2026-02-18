@@ -136,6 +136,12 @@ impl AsValue for str {
     }
 }
 
+impl AsValue for &str {
+    fn as_value(&self) -> Value {
+        Value::from_str(self)
+    }
+}
+
 impl AsValue for String {
     fn as_value(&self) -> Value {
         Value::from_string(self.clone())

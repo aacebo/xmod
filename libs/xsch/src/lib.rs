@@ -136,7 +136,7 @@ mod tests {
         #[test]
         fn array_items_valid() {
             let schema = Schema::Array(array().items(string().into()));
-            let value = vec!["a".to_string(), "b".to_string()].as_value();
+            let value = vec!["a", "b"].as_value();
             assert!(schema.validate(&value.into()).is_ok());
         }
 
