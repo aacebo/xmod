@@ -2,6 +2,7 @@ mod action;
 mod context;
 mod error;
 mod event;
+pub mod spec;
 mod trigger;
 
 pub use action::*;
