@@ -76,7 +76,7 @@ With the `serde` feature enabled, schemas serialize using a `type` tag:
 
 ## Validation Errors
 
-When validation fails, a `ValidError` is returned with the rule that failed, the path to the invalid value, and a message. For nested schemas (objects, arrays), errors are collected hierarchically.
+When validation fails, a `RuleError` is returned with the rule that failed, the path to the invalid value, and a message. For nested schemas (objects, arrays), errors are collected hierarchically.
 
 ```json
 {

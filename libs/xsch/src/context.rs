@@ -12,7 +12,7 @@ impl Context {
         let mut builder = ValidError::new(self.path.clone()).message(message);
 
         if let Some(rule) = &self.rule {
-            builder = builder.rule(&rule);
+            builder = builder.name(&rule);
         }
 
         builder.build()

@@ -1,7 +1,7 @@
 #[derive(Debug, Clone, PartialEq)]
 #[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct ValidError {
-    pub rule: Option<String>,    // "min"
+    pub name: String,            // (the schema or rule name) "min", "string"
     pub path: xpath::Path,       // "test[1].name"
     pub message: Option<String>, // "length must be at least 1"
     pub errors: Vec<ValidError>,
@@ -19,13 +19,7 @@ impl ValidError {
 
 impl std::fmt::Display for ValidError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "Error")?;
-
-        if let Some(rule) = &self.rule {
-            write!(f, " [{}]", &rule)?;
-        }
-
-        writeln!(f, "@ {}", &self.path)?;
+        writeln!(f, "Error[{}] @ {}", &self.name, &self.path)?;
 
         if let Some(message) = &self.message {
             writeln!(f, "  {}", &message)?;
@@ -53,7 +47,7 @@ impl xok::XError for ValidError {
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct ValidErrorBuilder {
-    rule: Option<String>,
+    name: String,
     path: xpath::Path,
     message: Option<String>,
     errors: Vec<ValidError>,
@@ -62,15 +56,15 @@ pub struct ValidErrorBuilder {
 impl ValidErrorBuilder {
     pub fn new(path: xpath::Path) -> Self {
         Self {
-            rule: None,
+            name: "unknown".to_string(),
             path,
             message: None,
             errors: vec![],
         }
     }
 
-    pub fn rule(mut self, name: &str) -> Self {
-        self.rule = Some(name.to_string());
+    pub fn name(mut self, name: &str) -> Self {
+        self.name = name.to_string();
         self
     }
 
@@ -81,7 +75,7 @@ impl ValidErrorBuilder {
 
     pub fn build(self) -> ValidError {
         ValidError {
-            rule: self.rule,
+            name: self.name,
             path: self.path,
             message: self.message,
             errors: self.errors,
@@ -99,13 +93,13 @@ mod tests {
         #[test]
         fn with_rule_and_message() {
             let err = ValidError::new(xpath::Path::parse("a/b").unwrap())
-                .rule("required")
+                .name("required")
                 .message("field is required")
                 .build();
             let output = err.to_string();
-            assert!(output.contains("Error [required]"));
-            assert!(output.contains("@ a/b"));
-            assert!(output.contains("  field is required"));
+            debug_assert!(output.contains("Error[required]"));
+            debug_assert!(output.contains("@ a/b"));
+            debug_assert!(output.contains("  field is required"));
         }
 
         #[test]
@@ -114,30 +108,29 @@ mod tests {
                 .message("something went wrong")
                 .build();
             let output = err.to_string();
-            assert!(output.contains("Error@ a"));
-            assert!(output.contains("  something went wrong"));
-            assert!(!output.contains("["));
+            debug_assert!(output.contains("Error[unknown] @ a"));
+            debug_assert!(output.contains("  something went wrong"));
         }
 
         #[test]
         fn without_message() {
             let err = ValidError::new(xpath::Path::parse("x").unwrap())
-                .rule("equals")
+                .name("equals")
                 .build();
             let output = err.to_string();
-            assert!(output.contains("Error [equals]"));
-            assert!(output.contains("@ x"));
+            debug_assert!(output.contains("Error[equals]"));
+            debug_assert!(output.contains("@ x"));
             assert_eq!(output.lines().count(), 1);
         }
 
         #[test]
         fn nested_errors() {
             let child1 = ValidError::new(xpath::Path::parse("a").unwrap())
-                .rule("required")
+                .name("required")
                 .message("required")
                 .build();
             let child2 = ValidError::new(xpath::Path::parse("a").unwrap())
-                .rule("equals")
+                .name("equals")
                 .message("not equal")
                 .build();
             let mut parent = ValidError::new(xpath::Path::parse("a").unwrap()).build();
@@ -145,10 +138,10 @@ mod tests {
             parent.errors.push(child2);
 
             let output = parent.to_string();
-            assert!(output.contains("Error [required]"));
-            assert!(output.contains("  required"));
-            assert!(output.contains("Error [equals]"));
-            assert!(output.contains("  not equal"));
+            debug_assert!(output.contains("Error[required]"));
+            debug_assert!(output.contains("  required"));
+            debug_assert!(output.contains("Error[equals]"));
+            debug_assert!(output.contains("  not equal"));
         }
     }
 
@@ -159,12 +152,12 @@ mod tests {
         #[test]
         fn serialize() {
             let err = ValidError::new(xpath::Path::parse("a/b").unwrap())
-                .rule("required")
+                .name("required")
                 .message("field is required")
                 .build();
             let json = serde_json::to_string(&err).unwrap();
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();
-            assert_eq!(v["rule"], "required");
+            assert_eq!(v["name"], "required");
             assert_eq!(v["path"], "a/b");
             assert_eq!(v["message"], "field is required");
         }
@@ -172,7 +165,7 @@ mod tests {
         #[test]
         fn roundtrip() {
             let err = ValidError::new(xpath::Path::parse("x/0").unwrap())
-                .rule("equals")
+                .name("equals")
                 .message("values differ")
                 .build();
             let json = serde_json::to_string(&err).unwrap();
