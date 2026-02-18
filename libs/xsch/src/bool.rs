@@ -43,7 +43,7 @@ impl Validate for BoolSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 
-        if !value.is_bool() {
+        if !value.is_null() && !value.is_bool() {
             return Err(ctx.error("expected bool"));
         }
 
@@ -78,7 +78,7 @@ mod tests {
     #[test]
     fn validate_null_passes_without_required() {
         let schema = bool();
-        assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        assert!(schema.validate(&xval::Value::Null.into()).is_ok());
     }
 
     #[test]
