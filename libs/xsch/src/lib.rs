@@ -1,19 +1,13 @@
 mod any;
 mod bool;
 mod context;
-mod equals;
 mod error;
-mod options;
-mod required;
-mod rule;
+pub mod rule;
 
 pub use any::*;
 pub use bool::*;
 pub use context::*;
-pub use equals::*;
 pub use error::*;
-pub use options::*;
-pub use required::*;
 pub use rule::*;
 
 pub trait Validate {

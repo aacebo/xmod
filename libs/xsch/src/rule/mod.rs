@@ -1,4 +1,12 @@
-use crate::{Context, Equals, Options, Required, ValidError, Validate};
+mod equals;
+mod options;
+mod required;
+
+pub use equals::*;
+pub use options::*;
+pub use required::*;
+
+use crate::{Context, ValidError, Validate};
 
 #[derive(Debug, Clone)]
 pub enum Rule {
