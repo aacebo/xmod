@@ -234,10 +234,10 @@ impl std::fmt::Display for RuleSet {
 impl Validate for RuleSet {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let mut next = ctx.clone();
-        let mut error = ValidError::new(ctx.path.clone()).build();
+        let mut error = ValidError::new(ctx.path.clone()).name(&ctx.name).build();
 
         for rule in &self.0 {
-            next.rule = Some(rule.key().to_string());
+            next.name = rule.key().to_string();
             next.value = match rule.validate(&next) {
                 Ok(v) => v,
                 Err(err) => {
@@ -294,11 +294,15 @@ impl<'de> serde::Deserialize<'de> for RuleSet {
             where
                 A: MapAccess<'de>,
             {
-                let mut rules = Vec::new();
+                use serde::de::Error;
+
+                let mut rules = vec![];
 
                 while let Some(key) = map.next_key::<String>()? {
                     if let Some(rule) = Rule::deserialize_entry(&key, &mut map)? {
                         rules.push(rule);
+                    } else {
+                        return Err(A::Error::custom(format!("rule '{}' not found", &key)));
                     }
                 }
 
@@ -357,10 +361,9 @@ mod tests {
         }
 
         #[test]
-        fn deserialize_unknown_keys_ignored() {
-            let rs: RuleSet =
-                serde_json::from_str(r#"{"required": true, "unknown": 123}"#).unwrap();
-            assert_eq!(rs.len(), 1);
+        fn deserialize_unknown_keys_error() {
+            let res = serde_json::from_str::<RuleSet>(r#"{"required": true, "unknown": 123}"#);
+            assert!(res.is_err());
         }
     }
 }

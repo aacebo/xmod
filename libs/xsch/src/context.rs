@@ -2,20 +2,17 @@ use crate::ValidError;
 
 #[derive(Debug, Default, Clone)]
 pub struct Context {
-    pub rule: Option<String>,
+    pub name: String,
     pub path: xpath::Path,
     pub value: xval::Value,
 }
 
 impl Context {
     pub fn error(&self, message: &str) -> ValidError {
-        let mut builder = ValidError::new(self.path.clone()).message(message);
-
-        if let Some(rule) = &self.rule {
-            builder = builder.name(&rule);
-        }
-
-        builder.build()
+        ValidError::new(self.path.clone())
+            .name(&self.name)
+            .message(message)
+            .build()
     }
 }
 
