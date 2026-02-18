@@ -35,6 +35,12 @@ impl Template {
     }
 }
 
+impl std::fmt::Display for Template {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", &self.src)
+    }
+}
+
 #[cfg(feature = "serde")]
 impl serde::Serialize for Template {
     fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
