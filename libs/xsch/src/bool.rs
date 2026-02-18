@@ -12,7 +12,7 @@ pub fn bool() -> BoolSchema {
     derive(serde::Deserialize, serde::Serialize),
     serde(transparent)
 )]
-pub struct BoolSchema(RuleSet);
+pub struct BoolSchema(pub(crate) RuleSet);
 
 impl BoolSchema {
     pub fn equals(mut self, value: bool) -> Self {

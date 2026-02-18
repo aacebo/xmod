@@ -1,4 +1,4 @@
-use xval::{AsValue, UInt};
+use xval::AsValue;
 
 use crate::{Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validate};
 
@@ -12,7 +12,7 @@ pub fn string() -> StringSchema {
     derive(serde::Deserialize, serde::Serialize),
     serde(transparent)
 )]
-pub struct StringSchema(RuleSet);
+pub struct StringSchema(pub(crate) RuleSet);
 
 impl StringSchema {
     pub fn equals(mut self, value: &str) -> Self {
@@ -33,12 +33,12 @@ impl StringSchema {
     }
 
     pub fn min(mut self, min: usize) -> Self {
-        self.0 = self.0.add(Min::from(UInt::from_usize(min)).into());
+        self.0 = self.0.add(Min::from(xval::UInt::from_usize(min)).into());
         self
     }
 
     pub fn max(mut self, max: usize) -> Self {
-        self.0 = self.0.add(Max::from(UInt::from_usize(max)).into());
+        self.0 = self.0.add(Max::from(xval::UInt::from_usize(max)).into());
         self
     }
 }

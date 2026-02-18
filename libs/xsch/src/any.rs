@@ -10,7 +10,7 @@ pub fn any() -> AnySchema {
     derive(serde::Deserialize, serde::Serialize),
     serde(transparent)
 )]
-pub struct AnySchema(RuleSet);
+pub struct AnySchema(pub(crate) RuleSet);
 
 impl AnySchema {
     pub fn equals(mut self, value: xval::Value) -> Self {

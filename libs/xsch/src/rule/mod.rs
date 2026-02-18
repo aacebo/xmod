@@ -82,8 +82,17 @@ impl Rule {
 pub struct RuleSet(Vec<Rule>);
 
 impl RuleSet {
+    pub fn exists(&self, key: &str) -> bool {
+        self.0.iter().any(|r| r.key() == key)
+    }
+
     pub fn add(mut self, rule: Rule) -> Self {
         self.0.push(rule);
+        self
+    }
+
+    pub fn merge(mut self, other: Self) -> Self {
+        self.0.extend(other.0);
         self
     }
 }

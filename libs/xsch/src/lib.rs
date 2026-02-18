@@ -2,6 +2,9 @@ mod any;
 mod bool;
 mod context;
 mod error;
+mod float;
+mod int;
+mod number;
 pub mod rule;
 mod string;
 
@@ -9,6 +12,9 @@ pub use any::*;
 pub use bool::*;
 pub use context::*;
 pub use error::*;
+pub use float::*;
+pub use int::*;
+pub use number::*;
 pub use rule::*;
 pub use string::*;
 
@@ -26,6 +32,9 @@ pub enum Schema {
     Any(AnySchema),
     Bool(BoolSchema),
     String(StringSchema),
+    Number(NumberSchema),
+    Int(IntSchema),
+    Float(FloatSchema),
 }
 
 impl Validate for Schema {
@@ -34,6 +43,9 @@ impl Validate for Schema {
             Self::Any(v) => v.validate(ctx),
             Self::Bool(v) => v.validate(ctx),
             Self::String(v) => v.validate(ctx),
+            Self::Number(v) => v.validate(ctx),
+            Self::Int(v) => v.validate(ctx),
+            Self::Float(v) => v.validate(ctx),
         }
     }
 }
