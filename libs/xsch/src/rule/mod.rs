@@ -1,4 +1,5 @@
 mod equals;
+mod fields;
 mod items;
 mod max;
 mod min;
@@ -6,6 +7,7 @@ mod options;
 mod required;
 
 pub use equals::*;
+pub use fields::*;
 pub use items::*;
 pub use max::*;
 pub use min::*;
@@ -22,6 +24,7 @@ pub enum Rule {
     Min(Min),
     Max(Max),
     Items(Items),
+    Fields(Fields),
 }
 
 impl Rule {
@@ -33,6 +36,105 @@ impl Rule {
             Self::Min(_) => Min::KEY,
             Self::Max(_) => Max::KEY,
             Self::Items(_) => Items::KEY,
+            Self::Fields(_) => Fields::KEY,
+        }
+    }
+
+    pub fn as_equals(&self) -> Option<&Equals> {
+        match self {
+            Self::Equals(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_equals_mut(&mut self) -> Option<&mut Equals> {
+        match self {
+            Self::Equals(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_required(&self) -> Option<&Required> {
+        match self {
+            Self::Required(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_required_mut(&mut self) -> Option<&mut Required> {
+        match self {
+            Self::Required(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_options(&self) -> Option<&Options> {
+        match self {
+            Self::Options(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_options_mut(&mut self) -> Option<&mut Options> {
+        match self {
+            Self::Options(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_min(&self) -> Option<&Min> {
+        match self {
+            Self::Min(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_min_mut(&mut self) -> Option<&mut Min> {
+        match self {
+            Self::Min(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_max(&self) -> Option<&Max> {
+        match self {
+            Self::Max(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_max_mut(&mut self) -> Option<&mut Max> {
+        match self {
+            Self::Max(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_items(&self) -> Option<&Items> {
+        match self {
+            Self::Items(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_items_mut(&mut self) -> Option<&mut Items> {
+        match self {
+            Self::Items(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_fields(&self) -> Option<&Fields> {
+        match self {
+            Self::Fields(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_fields_mut(&mut self) -> Option<&mut Fields> {
+        match self {
+            Self::Fields(v) => Some(v),
+            _ => None,
         }
     }
 }
@@ -46,6 +148,7 @@ impl Validate for Rule {
             Self::Min(v) => v.validate(ctx),
             Self::Max(v) => v.validate(ctx),
             Self::Items(v) => v.validate(ctx),
+            Self::Fields(v) => v.validate(ctx),
         }
     }
 }
@@ -63,6 +166,7 @@ impl Rule {
             Self::Min(v) => map.serialize_entry(Min::KEY, v),
             Self::Max(v) => map.serialize_entry(Max::KEY, v),
             Self::Items(v) => map.serialize_entry(Items::KEY, v),
+            Self::Fields(v) => map.serialize_entry(Fields::KEY, v),
         }
     }
 
@@ -77,6 +181,7 @@ impl Rule {
             Min::KEY => Ok(Some(Self::Min(map.next_value()?))),
             Max::KEY => Ok(Some(Self::Max(map.next_value()?))),
             Items::KEY => Ok(Some(Self::Items(map.next_value()?))),
+            Fields::KEY => Ok(Some(Self::Fields(map.next_value()?))),
             _ => {
                 let _ = map.next_value::<serde::de::IgnoredAny>()?;
                 Ok(None)
@@ -91,6 +196,14 @@ pub struct RuleSet(Vec<Rule>);
 impl RuleSet {
     pub fn exists(&self, key: &str) -> bool {
         self.0.iter().any(|r| r.key() == key)
+    }
+
+    pub fn get(&self, key: &str) -> Option<&Rule> {
+        self.0.iter().find(|r| r.key() == key)
+    }
+
+    pub fn get_mut(&mut self, key: &str) -> Option<&mut Rule> {
+        self.0.iter_mut().find(|r| r.key() == key)
     }
 
     pub fn add(mut self, rule: Rule) -> Self {

@@ -11,6 +11,10 @@ impl ValidError {
     pub fn new(path: xpath::Path) -> ValidErrorBuilder {
         ValidErrorBuilder::new(path)
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.errors.is_empty()
+    }
 }
 
 impl std::fmt::Display for ValidError {

@@ -6,6 +6,7 @@ mod error;
 mod float;
 mod int;
 mod number;
+mod object;
 mod phase;
 pub mod rule;
 mod string;
@@ -18,6 +19,7 @@ pub use error::*;
 pub use float::*;
 pub use int::*;
 pub use number::*;
+pub use object::*;
 pub use phase::*;
 pub use rule::*;
 pub use string::*;
@@ -40,6 +42,7 @@ pub enum Schema {
     Int(IntSchema),
     Float(FloatSchema),
     Array(ArraySchema),
+    Object(ObjectSchema),
 }
 
 impl Validate for Schema {
@@ -52,6 +55,7 @@ impl Validate for Schema {
             Self::Int(v) => v.validate(ctx),
             Self::Float(v) => v.validate(ctx),
             Self::Array(v) => v.validate(ctx),
+            Self::Object(v) => v.validate(ctx),
         }
     }
 }
@@ -175,6 +179,128 @@ mod tests {
                     .validate(&Vec::<i32>::new().as_value().into())
                     .is_ok()
             );
+        }
+
+        #[test]
+        fn object_dispatches() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(object());
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("a"), xval::Value::from_i32(1));
+            assert!(schema.validate(&map.as_value().into()).is_ok());
+        }
+
+        #[test]
+        fn object_rejects_non_object() {
+            let schema = Schema::Object(object());
+            assert!(schema.validate(&42i32.as_value().into()).is_err());
+            assert!(schema.validate(&"hello".as_value().into()).is_err());
+        }
+
+        #[test]
+        fn object_allows_null() {
+            let schema = Schema::Object(object());
+            assert!(schema.validate(&xval::Value::Null.into()).is_ok());
+        }
+
+        #[test]
+        fn object_required_rejects_null() {
+            let schema = Schema::Object(object().required());
+            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        }
+
+        #[test]
+        fn object_field_valid() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(object().field("name", string().into()));
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            assert!(schema.validate(&map.as_value().into()).is_ok());
+        }
+
+        #[test]
+        fn object_field_invalid_type() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(object().field("name", string().into()));
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("name"), xval::Value::from_i32(42));
+            assert!(schema.validate(&map.as_value().into()).is_err());
+        }
+
+        #[test]
+        fn object_unexpected_field() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(object().field("name", string().into()));
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            map.insert(xval::Ident::key("extra"), xval::Value::from_i32(1));
+            assert!(schema.validate(&map.as_value().into()).is_err());
+        }
+
+        #[test]
+        fn object_missing_required_field() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(
+                object()
+                    .field("name", string().required().into())
+                    .field("age", int().into()),
+            );
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("age"), xval::Value::from_i32(30));
+            assert!(schema.validate(&map.as_value().into()).is_err());
+        }
+
+        #[test]
+        fn object_multiple_fields() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(
+                object()
+                    .field("name", string().into())
+                    .field("age", int().into()),
+            );
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            map.insert(xval::Ident::key("age"), xval::Value::from_i32(30));
+            assert!(schema.validate(&map.as_value().into()).is_ok());
+        }
+
+        #[test]
+        fn object_nested_object() {
+            use std::collections::HashMap;
+            let inner_schema = object().field("street", string().into());
+            let schema = Schema::Object(object().field("address", inner_schema.into()));
+            let mut inner = HashMap::new();
+            inner.insert(
+                xval::Ident::key("street"),
+                xval::Value::from_str("123 Main"),
+            );
+            let mut outer = HashMap::new();
+            outer.insert(xval::Ident::key("address"), inner.as_value());
+            assert!(schema.validate(&outer.as_value().into()).is_ok());
+        }
+
+        #[test]
+        fn object_combined_rules() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(
+                object()
+                    .required()
+                    .field("name", string().required().into()),
+            );
+            // valid
+            let mut map = HashMap::new();
+            map.insert(xval::Ident::key("name"), xval::Value::from_str("alice"));
+            assert!(schema.validate(&map.as_value().into()).is_ok());
+            // null rejected
+            assert!(schema.validate(&xval::Value::Null.into()).is_err());
+        }
+
+        #[test]
+        fn object_empty_fields_valid() {
+            use std::collections::HashMap;
+            let schema = Schema::Object(object());
+            let map: HashMap<xval::Ident, xval::Value> = HashMap::new();
+            assert!(schema.validate(&map.as_value().into()).is_ok());
         }
     }
 
@@ -405,6 +531,48 @@ mod tests {
             let json = r#"{"type":"array","required":true,"min":1,"max":10}"#;
             let schema: Schema = serde_json::from_str(json).unwrap();
             assert!(matches!(schema, Schema::Array(_)));
+
+            let reserialized = serde_json::to_string(&schema).unwrap();
+            let v1: serde_json::Value = serde_json::from_str(json).unwrap();
+            let v2: serde_json::Value = serde_json::from_str(&reserialized).unwrap();
+            assert_eq!(v1, v2);
+        }
+
+        #[test]
+        fn serialize_object_empty() {
+            let schema = Schema::Object(object());
+            let json = serde_json::to_string(&schema).unwrap();
+            assert_eq!(json, r#"{"type":"object"}"#);
+        }
+
+        #[test]
+        fn serialize_object_with_fields() {
+            let schema = Schema::Object(
+                object()
+                    .required()
+                    .field("name", string().into())
+                    .field("age", int().into()),
+            );
+            let json = serde_json::to_string(&schema).unwrap();
+            let v: serde_json::Value = serde_json::from_str(&json).unwrap();
+            assert_eq!(v["type"], "object");
+            assert_eq!(v["required"], true);
+            assert!(v["fields"].is_object());
+            assert!(v["fields"]["name"].is_object());
+            assert!(v["fields"]["age"].is_object());
+        }
+
+        #[test]
+        fn deserialize_object() {
+            let schema: Schema = serde_json::from_str(r#"{"type": "object"}"#).unwrap();
+            assert!(matches!(schema, Schema::Object(_)));
+        }
+
+        #[test]
+        fn roundtrip_object_with_fields() {
+            let json = r#"{"type":"object","required":true,"fields":{"name":{"type":"string"},"age":{"type":"int"}}}"#;
+            let schema: Schema = serde_json::from_str(json).unwrap();
+            assert!(matches!(schema, Schema::Object(_)));
 
             let reserialized = serde_json::to_string(&schema).unwrap();
             let v1: serde_json::Value = serde_json::from_str(json).unwrap();
