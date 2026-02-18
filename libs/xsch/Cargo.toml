@@ -11,8 +11,11 @@ repository.workspace = true
 [features]
 default = []
 serde = ["dep:serde", "xpath/serde", "xval/serde"]
+regex = ["dep:regex"]
 
 [dependencies]
+regex = { version = "1", optional = true }
+
 xok = { workspace = true }
 xval = { workspace = true }
 xpath = { workspace = true }

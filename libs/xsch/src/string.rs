@@ -41,6 +41,14 @@ impl StringSchema {
         self.0 = self.0.add(Max::from(xval::Number::from_usize(max)).into());
         self
     }
+
+    #[cfg(feature = "regex")]
+    pub fn pattern(mut self, pattern: &str) -> Self {
+        use crate::Pattern;
+
+        self.0 = self.0.add(Pattern::from(pattern.to_string()).into());
+        self
+    }
 }
 
 impl From<StringSchema> for Schema {
@@ -127,5 +135,16 @@ mod tests {
         assert!(schema.validate(&"hi".as_value().into()).is_ok());
         assert!(schema.validate(&"hel".as_value().into()).is_ok());
         assert!(schema.validate(&"hello".as_value().into()).is_err());
+    }
+
+    #[test]
+    fn validate_pattern() {
+        let schema = string().pattern("Homer (.)\\. Simpson");
+        assert!(
+            schema
+                .validate(&"Homer J. Simpson".as_value().into())
+                .is_ok()
+        );
+        assert!(schema.validate(&"Sam Simpson".as_value().into()).is_err());
     }
 }

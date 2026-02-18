@@ -4,6 +4,8 @@ mod items;
 mod max;
 mod min;
 mod options;
+#[cfg(feature = "regex")]
+mod pattern;
 mod required;
 
 pub use equals::*;
@@ -12,6 +14,8 @@ pub use items::*;
 pub use max::*;
 pub use min::*;
 pub use options::*;
+#[cfg(feature = "regex")]
+pub use pattern::*;
 pub use required::*;
 
 use crate::{Context, ValidError, Validate};
@@ -25,6 +29,8 @@ pub enum Rule {
     Max(Max),
     Items(Items),
     Fields(Fields),
+    #[cfg(feature = "regex")]
+    Pattern(Pattern),
 }
 
 impl Rule {
@@ -37,6 +43,8 @@ impl Rule {
             Self::Max(_) => Max::KEY,
             Self::Items(_) => Items::KEY,
             Self::Fields(_) => Fields::KEY,
+            #[cfg(feature = "regex")]
+            Self::Pattern(_) => Pattern::KEY,
         }
     }
 
@@ -137,6 +145,22 @@ impl Rule {
             _ => None,
         }
     }
+
+    #[cfg(feature = "regex")]
+    pub fn as_pattern(&self) -> Option<&Pattern> {
+        match self {
+            Self::Pattern(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    #[cfg(feature = "regex")]
+    pub fn as_pattern_mut(&mut self) -> Option<&mut Pattern> {
+        match self {
+            Self::Pattern(v) => Some(v),
+            _ => None,
+        }
+    }
 }
 
 impl Validate for Rule {
@@ -149,6 +173,8 @@ impl Validate for Rule {
             Self::Max(v) => v.validate(ctx),
             Self::Items(v) => v.validate(ctx),
             Self::Fields(v) => v.validate(ctx),
+            #[cfg(feature = "regex")]
+            Self::Pattern(v) => v.validate(ctx),
         }
     }
 }
@@ -167,6 +193,8 @@ impl Rule {
             Self::Max(v) => map.serialize_entry(Max::KEY, v),
             Self::Items(v) => map.serialize_entry(Items::KEY, v),
             Self::Fields(v) => map.serialize_entry(Fields::KEY, v),
+            #[cfg(feature = "regex")]
+            Self::Pattern(v) => map.serialize_entry(Pattern::KEY, v),
         }
     }
 
@@ -182,6 +210,8 @@ impl Rule {
             Max::KEY => Ok(Some(Self::Max(map.next_value()?))),
             Items::KEY => Ok(Some(Self::Items(map.next_value()?))),
             Fields::KEY => Ok(Some(Self::Fields(map.next_value()?))),
+            #[cfg(feature = "regex")]
+            Pattern::KEY => Ok(Some(Self::Pattern(map.next_value()?))),
             _ => {
                 let _ = map.next_value::<serde::de::IgnoredAny>()?;
                 Ok(None)
