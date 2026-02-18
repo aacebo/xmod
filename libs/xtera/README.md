@@ -1,121 +1,170 @@
-# XTera
+# xtera
 
-Typed Expression Rendering Architecture. An Angular-style template parser built on [logos](https://github.com/maciejhirsz/logos).
+A template engine for Rust with runtime and compile-time parsing. Supports interpolation, control flow directives, pipes, functions, and template composition.
 
-## Syntax
+## Quick Start
 
-### Interpolation
+```rust
+use xtera::{Scope, Template};
 
-```html
-{{ expression }}
-{{ user.name }}
-{{ value | uppercase }}
-{{ value | slice:0:5 }}
+let mut scope = Scope::new();
+scope.set_var("name", xval::valueof!("world"));
+
+let tpl = Template::parse("Hello {{ name }}!").unwrap();
+assert_eq!(tpl.render(&scope).unwrap(), "Hello world!");
 ```
 
-### Collections
+## Template Syntax
 
-```html
-{{ setCols([1, 2, 3]) }}
-{{ setConfig({ theme: 'dark', count: 5 }) }}
+### Text and Interpolation
+
+Plain text passes through unchanged. Expressions inside `{{ }}` are evaluated and rendered:
+
 ```
+Hello {{ name }}!
+The answer is {{ x * 2 + 1 }}.
+```
+
+### Expressions
+
+```
+{{ x + y }}              Arithmetic: + - * / %
+{{ a == b }}             Comparison: == != < <= > >=
+{{ cond && other }}      Logical: && || (short-circuit)
+{{ !flag }}              Unary: ! -
+{{ user.name }}          Member access
+{{ items[0] }}           Index access
+{{ len(items) }}         Function calls
+{{ name | upper }}       Pipes
+{{ val | slice:0:5 }}    Pipes with arguments
+{{ [1, 2, 3] }}          Array literals
+{{ { name: "alice" } }}  Object literals
+```
+
+Pipes can be chained: `{{ name | trim | upper }}`.
 
 ### Control Flow
 
-**Conditionals**
+**Conditionals:**
 
-```html
-@if (isVisible) {
-  <p>Visible</p>
-} @else @if (isFallback) {
-  <p>Fallback</p>
+```
+@if (show) {
+    visible
+} @else if (alt) {
+    alternative
 } @else {
-  <p>Hidden</p>
+    hidden
 }
 ```
 
-**Iteration**
+**Loops:**
 
-```html
-@for (item of items; track item.id) {
-  <li>{{ item.name }}</li>
+```
+@for (item of items; track item) {
+    [{{ item }}]
 }
 ```
 
-**Switch**
+**Pattern matching:**
 
-```html
-@switch (color) {
-  @case ('red') {
-    <span>Red</span>
-  }
-  @case ('blue') {
-    <span>Blue</span>
-  }
-  @default {
-    <span>Unknown</span>
-  }
+```
+@match (color) {
+    "red" => { R },
+    "blue" => { B },
+    _ => { ? }
 }
 ```
 
-## Expressions
+**Template inclusion:**
 
-| Feature | Example |
-|---------|---------|
-| Identifiers | `name`, `_count`, `$ref` |
-| Member access | `user.name` |
-| Index access | `items[0]` |
-| Function calls | `greet('world')` |
-| Method calls | `list.contains(item)` |
-| Pipes | `value \| uppercase`, `value \| slice:0:5` |
-| Binary operators | `+`, `-`, `*`, `/`, `%`, `==`, `!=`, `<`, `<=`, `>`, `>=`, `&&`, `\|\|` |
-| Unary operators | `!`, `-` |
-| Grouping | `(a + b) * c` |
-| Literals | `42`, `3.14`, `'hello'`, `"world"`, `true`, `false`, `null` |
-| Array literals | `[1, 2, 3]`, `[]` |
-| Object literals | `{ a: 1, b: 'two' }`, `{}` |
+```
+@include('header')
+```
 
-## Usage
+Renders a named template registered in the scope.
+
+## Scope API
+
+`Scope` holds variables, pipes, functions, and templates:
 
 ```rust
-use xtera::ast::NodeKind;
-use xtera::parse;
+let mut scope = Scope::new();
 
-let template = parse::parse("Hello {{ name | uppercase }}!").unwrap();
+// Variables (any xval::Value)
+scope.set_var("name", xval::valueof!("alice"));
+scope.set_var("items", xval::valueof!([1_i64, 2_i64, 3_i64]));
 
-for node in &template.nodes {
-    match &node.kind {
-        NodeKind::Text(text) => {
-            println!("text: {text}");
-        }
-        NodeKind::Interpolation(expr) => {
-            println!("expr: {expr:?}");
-        }
-        NodeKind::If(block) => {
-            println!("if: {} branches", block.branches.len());
-        }
-        NodeKind::For(block) => {
-            println!("for: {} of {:?}", block.binding, block.iterable);
-        }
-        NodeKind::Switch(block) => {
-            println!("switch: {} cases", block.cases.len());
-        }
+// Pipes (implement the Pipe trait)
+scope.set_pipe("upper", UpperPipe);
+
+// Functions (implement the Func trait)
+scope.set_func("len", LenFunc);
+
+// Named templates
+scope.set_template("header", Template::parse("<h1>{{ title }}</h1>").unwrap());
+
+// Render a named template
+let html = scope.render("header").unwrap();
+```
+
+### Custom Pipes and Functions
+
+```rust
+use xtera::{Pipe, Func, ast};
+
+struct UpperPipe;
+impl Pipe for UpperPipe {
+    fn invoke(&self, val: &xval::Value, _args: &[xval::Value]) -> ast::Result<xval::Value> {
+        Ok(xval::valueof!((val.as_string().as_str().to_uppercase())))
+    }
+}
+
+struct LenFunc;
+impl Func for LenFunc {
+    fn invoke(&self, args: &[xval::Value]) -> ast::Result<xval::Value> {
+        Ok(xval::valueof!((args[0].as_array().len() as i64)))
     }
 }
 ```
 
-## Architecture
+## Compile-Time Templates
 
-```
-ast/                AST node types (the parsed template tree)
-├── node.rs         Template, Node, NodeKind, IfBlock, ForBlock, SwitchBlock
-├── expr.rs         Expr, ExprKind, Literal
-├── op.rs           BinaryOp, UnaryOp
-└── span.rs         Source location tracking
+Enable the `derive` feature for the `render!` macro, which parses templates at compile time:
 
-parse/              Parsing machinery (template string -> AST)
-├── token.rs        Token enum via #[derive(Logos)]
-├── lexer.rs        Dual-mode lexer (text mode + expression mode)
-├── parser.rs       Recursive descent parser with Pratt precedence
-└── error.rs        ParseError type
+```toml
+[dependencies]
+xtera = { version = "0.0.0", features = ["derive"] }
 ```
+
+```rust
+use xtera::{render, Scope};
+
+let tpl = render! {
+    @for (n of items; track n) {
+        @if (n % 2 == 0) { "even" } @else { "odd" }
+    }
+};
+
+let mut scope = Scope::new();
+scope.set_var("items", xval::valueof!([1_i64, 2_i64, 3_i64]));
+assert_eq!(tpl.render(&scope).unwrap(), "oddevenodd");
+```
+
+The `render!` macro produces a `Template` with the same behavior as `Template::parse`, but template syntax errors are caught at compile time.
+
+## Error Handling
+
+All evaluation errors include byte-offset spans for error reporting:
+
+- `UndefinedVariable` - variable not in scope
+- `UndefinedPipe` / `UndefinedTemplate` - pipe or template not registered
+- `TypeError` - type mismatch (e.g. iterating a number)
+- `DivisionByZero` - divide or modulo by zero
+- `IndexOutOfBounds` - array index out of range
+- `NotIterable` / `NotCallable` - wrong type for operation
+
+## Features
+
+| Feature | Description |
+|---------|-------------|
+| `derive` | Enables the `render!` compile-time template macro via `xtera-derive` |
