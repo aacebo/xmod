@@ -1,4 +1,4 @@
-use crate::{Context, Rule, ValidError, Validate};
+use crate::{Context, Rule, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -23,7 +23,7 @@ impl From<Required> for Rule {
     }
 }
 
-impl Validate for Required {
+impl Validator for Required {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if self.0 && ctx.value.is_null() {
             return Err(ctx.error("required"));

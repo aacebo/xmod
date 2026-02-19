@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Items, Max, Min, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Items, Max, Min, Required, RuleSet, Schema, ValidError, Validator};
 
 pub fn array() -> ArraySchema {
     ArraySchema::default()
@@ -46,7 +46,7 @@ impl From<ArraySchema> for Schema {
     }
 }
 
-impl Validate for ArraySchema {
+impl Validator for ArraySchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 

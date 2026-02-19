@@ -2,7 +2,7 @@ use xval::AsValue;
 
 use crate::{
     AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
-    ValidError, Validate,
+    ValidError, Validator,
 };
 
 pub fn int() -> IntSchema {
@@ -64,7 +64,7 @@ impl From<NumberSchema> for IntSchema {
     }
 }
 
-impl Validate for IntSchema {
+impl Validator for IntSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 

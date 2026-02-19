@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Fields, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Fields, Required, RuleSet, Schema, ValidError, Validator};
 
 pub fn object() -> ObjectSchema {
     ObjectSchema::default()
@@ -46,7 +46,7 @@ impl From<ObjectSchema> for Schema {
     }
 }
 
-impl Validate for ObjectSchema {
+impl Validator for ObjectSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 

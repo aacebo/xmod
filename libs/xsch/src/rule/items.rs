@@ -1,6 +1,6 @@
 use xval::AsValue;
 
-use crate::{Context, Rule, Schema, ValidError, Validate};
+use crate::{Context, Rule, Schema, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Default, Clone)]
@@ -27,7 +27,7 @@ impl From<Items> for Rule {
     }
 }
 
-impl Validate for Items {
+impl Validator for Items {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if !ctx.value.is_null() && ctx.value.is_array() {
             let mut items = vec![];

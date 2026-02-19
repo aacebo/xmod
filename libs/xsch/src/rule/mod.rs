@@ -18,7 +18,7 @@ pub use options::*;
 pub use pattern::*;
 pub use required::*;
 
-use crate::{Context, ValidError, Validate};
+use crate::{Context, ValidError, Validator};
 
 #[derive(Debug, Clone)]
 pub enum Rule {
@@ -163,7 +163,7 @@ impl Rule {
     }
 }
 
-impl Validate for Rule {
+impl Validator for Rule {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         match self {
             Self::Equals(v) => v.validate(ctx),
@@ -261,7 +261,7 @@ impl std::fmt::Display for RuleSet {
     }
 }
 
-impl Validate for RuleSet {
+impl Validator for RuleSet {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let mut next = ctx.clone();
         let mut error = ValidError::new(ctx.path.clone()).name(&ctx.name).build();

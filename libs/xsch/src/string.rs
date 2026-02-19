@@ -1,7 +1,7 @@
 use xval::AsValue;
 
 use crate::{
-    AsSchema, Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validate,
+    AsSchema, Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validator,
 };
 
 pub fn string() -> StringSchema {
@@ -65,7 +65,7 @@ impl From<StringSchema> for Schema {
     }
 }
 
-impl Validate for StringSchema {
+impl Validator for StringSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 

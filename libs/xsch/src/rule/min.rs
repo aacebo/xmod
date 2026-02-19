@@ -1,4 +1,4 @@
-use crate::{Context, Rule, ValidError, Validate};
+use crate::{Context, Rule, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl From<Min> for Rule {
     }
 }
 
-impl Validate for Min {
+impl Validator for Min {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if ctx.value.is_array() || ctx.value.is_string() {
             if ctx.value.len() < self.0.to_usize() {

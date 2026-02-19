@@ -46,7 +46,7 @@ object()
     .field("tags", array().items(string().into()).into())
 ```
 
-Validate values via the `Validate` trait:
+Validator values via the `Validator` trait:
 
 ```rust
 use xval::AsValue;

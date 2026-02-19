@@ -1,6 +1,6 @@
 use xval::AsValue;
 
-use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validator};
 
 pub fn bool() -> BoolSchema {
     BoolSchema::default()
@@ -45,7 +45,7 @@ impl From<BoolSchema> for Schema {
     }
 }
 
-impl Validate for BoolSchema {
+impl Validator for BoolSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let value = self.0.validate(ctx)?;
 

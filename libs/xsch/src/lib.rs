@@ -33,19 +33,35 @@ pub trait AsSchema {
     fn as_schema(&self) -> Schema;
 }
 
-impl<T: xval::AsValue> AsSchema for T {
+impl AsSchema for xval::Value {
     fn as_schema(&self) -> Schema {
-        match self.as_value() {
+        match self {
             xval::Value::Null => any().equals(xval::valueof!(null)).as_schema(),
             xval::Value::Bool(_) => bool().as_schema(),
             xval::Value::Number(_) => number().as_schema(),
             xval::Value::String(_) => string().as_schema(),
-            xval::Value::Object(_) => object().as_schema(),
+            xval::Value::Object(o) => match o {
+                xval::Object::Struct(v) => {
+                    let mut schema = object();
+
+                    for (ident, item) in v.items() {
+                        schema = schema.field(&ident.to_string(), item.as_value().as_schema());
+                    }
+
+                    schema.as_schema()
+                }
+                xval::Object::Array(_) => array().as_schema(),
+                v => panic!("unsupported value {}", v),
+            },
         }
     }
 }
 
 pub trait Validate {
+    fn validate(&self) -> Result<xval::Value, ValidError>;
+}
+
+pub trait Validator {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError>;
 }
 
@@ -72,7 +88,7 @@ impl AsSchema for Schema {
     }
 }
 
-impl Validate for Schema {
+impl Validator for Schema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         match self {
             Self::Any(v) => v.validate(ctx),

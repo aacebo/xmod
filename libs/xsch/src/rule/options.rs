@@ -1,4 +1,4 @@
-use crate::{Context, Rule, ValidError, Validate};
+use crate::{Context, Rule, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -31,7 +31,7 @@ impl From<Options> for Rule {
     }
 }
 
-impl Validate for Options {
+impl Validator for Options {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         for option in &self.0 {
             if ctx.value == *option {

@@ -1,4 +1,4 @@
-use crate::{Context, Rule, ValidError, Validate};
+use crate::{Context, Rule, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl From<Equals> for Rule {
     }
 }
 
-impl Validate for Equals {
+impl Validator for Equals {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if ctx.value != self.0 {
             return Err(ctx.error(&format!("{} is not equal to {}", &ctx.value, &self.0)));

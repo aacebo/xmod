@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validator};
 
 pub fn any() -> AnySchema {
     AnySchema::default()
@@ -41,7 +41,7 @@ impl From<AnySchema> for Schema {
     }
 }
 
-impl Validate for AnySchema {
+impl Validator for AnySchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         self.0.validate(ctx)
     }

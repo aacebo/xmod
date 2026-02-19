@@ -19,4 +19,4 @@ syn = { workspace = true }
 
 [dev-dependencies]
 xsch = { workspace = true, features = ["derive"] }
-xval = { workspace = true }
+xval = { workspace = true, features = ["derive"] }

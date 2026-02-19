@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use crate::{Context, Rule, Schema, ValidError, Validate};
+use crate::{Context, Rule, Schema, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Default, Clone)]
@@ -37,7 +37,7 @@ impl From<Fields> for Rule {
     }
 }
 
-impl Validate for Fields {
+impl Validator for Fields {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if !ctx.value.is_null() && ctx.value.is_struct() {
             let input = ctx.value.as_struct();
@@ -55,7 +55,7 @@ impl Validate for Fields {
                 }
             }
 
-            // Validate all schema-defined fields
+            // Validator all schema-defined fields
             for (name, schema) in &self.0 {
                 let mut next = ctx.clone();
                 next.path = ctx.path.child(xpath::Segment::parse(name));

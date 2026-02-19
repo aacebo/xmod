@@ -1,4 +1,4 @@
-use crate::{Context, Rule, ValidError, Validate};
+use crate::{Context, Rule, ValidError, Validator};
 
 #[repr(transparent)]
 #[derive(Debug, Clone)]
@@ -25,7 +25,7 @@ impl From<Pattern> for Rule {
     }
 }
 
-impl Validate for Pattern {
+impl Validator for Pattern {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         let reg = match regex::Regex::new(&self.0) {
             Ok(v) => v,

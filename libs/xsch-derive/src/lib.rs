@@ -21,10 +21,16 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 let mut schema = ::xsch::object();
 
                 #(
-                    schema = schema.field(stringify!(#fields), xsch::AsSchema::as_schema(&self.#fields));
+                    schema = schema.field(stringify!(#fields), xval::AsValue::as_value(&self.#fields).as_schema());
                 )*
 
                 schema.into()
+            }
+        }
+
+        impl ::xsch::Validate for #ident {
+            fn validate(&self) -> Result<::xval::Value, ::xsch::ValidError> {
+                self.as_schema().validate(&xval::AsValue::as_value(self).into())
             }
         }
     }
