@@ -18,6 +18,10 @@ impl Fields {
         Self(fields)
     }
 
+    pub fn get(&self, name: &str) -> Option<&Schema> {
+        self.0.get(name)
+    }
+
     pub fn set(&mut self, name: &str, schema: Schema) -> &mut Self {
         self.0.insert(name.to_string(), schema);
         self

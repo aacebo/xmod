@@ -32,6 +32,13 @@ impl ObjectSchema {
         self.0 = self.0.add(Fields::default().field(name, schema).into());
         self
     }
+
+    pub fn get_field(&self, name: &str) -> Option<&Schema> {
+        self.0
+            .get(Fields::KEY)
+            .and_then(|r| r.as_fields())
+            .and_then(|f| f.get(name))
+    }
 }
 
 impl AsSchema for ObjectSchema {

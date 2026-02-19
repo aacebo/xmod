@@ -82,6 +82,96 @@ pub enum Schema {
     Object(ObjectSchema),
 }
 
+impl Schema {
+    pub fn is_any(&self) -> bool {
+        matches!(self, Self::Any(_))
+    }
+
+    pub fn is_bool(&self) -> bool {
+        matches!(self, Self::Bool(_))
+    }
+
+    pub fn is_string(&self) -> bool {
+        matches!(self, Self::String(_))
+    }
+
+    pub fn is_number(&self) -> bool {
+        matches!(self, Self::Number(_))
+    }
+
+    pub fn is_int(&self) -> bool {
+        matches!(self, Self::Int(_))
+    }
+
+    pub fn is_float(&self) -> bool {
+        matches!(self, Self::Float(_))
+    }
+
+    pub fn is_array(&self) -> bool {
+        matches!(self, Self::Array(_))
+    }
+
+    pub fn is_object(&self) -> bool {
+        matches!(self, Self::Object(_))
+    }
+
+    pub fn as_any(&self) -> Option<&AnySchema> {
+        match self {
+            Self::Any(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_bool(&self) -> Option<&BoolSchema> {
+        match self {
+            Self::Bool(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_string(&self) -> Option<&StringSchema> {
+        match self {
+            Self::String(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_number(&self) -> Option<&NumberSchema> {
+        match self {
+            Self::Number(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_int(&self) -> Option<&IntSchema> {
+        match self {
+            Self::Int(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_float(&self) -> Option<&FloatSchema> {
+        match self {
+            Self::Float(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_array(&self) -> Option<&ArraySchema> {
+        match self {
+            Self::Array(v) => Some(v),
+            _ => None,
+        }
+    }
+
+    pub fn as_object(&self) -> Option<&ObjectSchema> {
+        match self {
+            Self::Object(v) => Some(v),
+            _ => None,
+        }
+    }
+}
+
 impl AsSchema for Schema {
     fn as_schema(&self) -> Schema {
         self.clone()
