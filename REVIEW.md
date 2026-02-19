@@ -38,7 +38,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 ### Missing Trait Implementations
 
 - `Hash` for `Value` (has `Eq` but no `Hash`)
-- `ToValue` for `Option<T>` (natural: `None` -> `Value::Null`)
 - `From<Bool> for bool`, `From<Str> for String` (reverse extractions)
 - `size_hint()` / `ExactSizeIterator` on `StructIter`, `ArrayIter`, `TupleIter`
 

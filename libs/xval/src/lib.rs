@@ -385,6 +385,15 @@ impl ToValue for Value {
     }
 }
 
+impl<T: ToValue> ToValue for Option<T> {
+    fn to_value(&self) -> Value {
+        match self {
+            Some(v) => v.to_value(),
+            None => Value::Null,
+        }
+    }
+}
+
 impl<T: ToValue> ToValue for Box<T> {
     fn to_value(&self) -> Value {
         self.as_ref().to_value()
