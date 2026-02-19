@@ -23,6 +23,7 @@ pub trait AsValue {
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
 #[derive(Clone)]
+#[repr(u8)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -37,6 +38,11 @@ pub enum Value {
 }
 
 impl Value {
+    fn discriminant(&self) -> u8 {
+        // Safety: #[repr(u8)] guarantees the first byte is the discriminant
+        unsafe { *std::ptr::from_ref(self).cast::<u8>() }
+    }
+
     pub fn is_null(&self) -> bool {
         matches!(self, Self::Null)
     }
@@ -349,13 +355,22 @@ impl PartialEq for Value {
 
 impl Ord for Value {
     fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.to_string().cmp(&other.to_string())
+        match (self, other) {
+            (Self::Null, Self::Null) => std::cmp::Ordering::Equal,
+            (Self::Bool(a), Self::Bool(b)) => a.cmp(b),
+            (Self::Number(a), Self::Number(b)) => a.cmp(b),
+            (Self::String(a), Self::String(b)) => a.cmp(b),
+            (Self::Object(_), Self::Object(_)) => self.to_string().cmp(&other.to_string()),
+            // Cross-type: use #[repr(u8)] discriminant ordering
+            // Null(0) < Bool(1) < Number(2) < String(3) < Object(4)
+            (l, r) => l.discriminant().cmp(&r.discriminant()),
+        }
     }
 }
 
 impl PartialOrd for Value {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.to_string().partial_cmp(&other.to_string())
+        Some(self.cmp(other))
     }
 }
 
@@ -528,6 +543,59 @@ mod tests {
             valueof!("hello").type_id(),
             std::any::TypeId::of::<String>()
         );
+    }
+
+    mod ord {
+        use super::*;
+
+        #[test]
+        fn numbers_order_correctly() {
+            assert!(valueof!(9_i32) < valueof!(10_i32));
+            assert!(valueof!(-1_i32) < valueof!(0_i32));
+            assert!(valueof!(1.5_f64) < valueof!(2.0_f64));
+        }
+
+        #[test]
+        fn cross_number_variants() {
+            assert!(valueof!(5_i32) < valueof!(5.5_f64));
+            assert!(valueof!(3_u32) > valueof!(2_i32));
+        }
+
+        #[test]
+        fn bools() {
+            assert!(valueof!(false) < valueof!(true));
+        }
+
+        #[test]
+        fn strings_lexicographic() {
+            assert!(valueof!("apple") < valueof!("banana"));
+            assert!(valueof!("a") < valueof!("b"));
+        }
+
+        #[test]
+        fn cross_type_ordering() {
+            assert!(valueof!(null) < valueof!(false));
+            assert!(valueof!(true) < valueof!(0_i32));
+            assert!(valueof!(999_i32) < valueof!(""));
+            assert!(valueof!("zzz") < valueof!([1_i32]));
+        }
+
+        #[test]
+        fn null_equals_null() {
+            assert_eq!(
+                valueof!(null).cmp(&valueof!(null)),
+                std::cmp::Ordering::Equal
+            );
+        }
+
+        #[test]
+        fn nan_does_not_panic() {
+            let nan = Value::Number(Number::Float(Float::F64(f64::NAN)));
+            let one = valueof!(1.0_f64);
+            // Should not panic — total_cmp gives NaN a deterministic position
+            let _ = nan.cmp(&one);
+            let _ = nan.cmp(&nan);
+        }
     }
 
     mod get {

@@ -135,9 +135,21 @@ impl Float {
     }
 }
 
+impl Eq for Float {}
+
+impl Ord for Float {
+    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
+        match (self, other) {
+            (Self::F32(a), Self::F32(b)) => a.total_cmp(b),
+            (Self::F64(a), Self::F64(b)) => a.total_cmp(b),
+            _ => self.to_f64().total_cmp(&other.to_f64()),
+        }
+    }
+}
+
 impl PartialOrd for Float {
     fn partial_cmp(&self, other: &Self) -> Option<std::cmp::Ordering> {
-        self.to_f64().partial_cmp(&other.to_f64())
+        Some(self.cmp(other))
     }
 }
 

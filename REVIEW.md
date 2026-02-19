@@ -26,7 +26,7 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 | # | Status | Severity | Issue | Location |
 |---|--------|----------|-------|----------|
 | 1.1 | ✅ | **Bug** | `Object::PartialEq` only compares `type_id`, not content — `{"a":1} == {"b":99}` | [object/mod.rs:96](libs/xval/src/object/mod.rs#L96) |
-| 1.2 | ⬜ | **Bug** | `Value::Ord` uses string comparison — `9 > 10` lexicographically | [lib.rs:351](libs/xval/src/lib.rs#L351) |
+| 1.2 | ✅ | **Bug** | `Value::Ord` uses string comparison — `9 > 10` lexicographically | [lib.rs:351](libs/xval/src/lib.rs#L351) |
 | 1.3 | ⬜ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
 | 1.4 | ⬜ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
 | 1.5 | ⬜ | **Perf** | `Value::get()` clones entire value tree on traversal | [lib.rs:288](libs/xval/src/lib.rs#L288) |
@@ -549,10 +549,11 @@ Most crates have good unit tests, though some public methods (especially in xpat
 The highest-priority items across the workspace:
 
 1. ✅ **Fix `Object::PartialEq`** in xval (1.1) — compares type_id only, not content
-2. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
-3. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-4. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
-5. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-6. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
-7. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-8. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+2. ✅ **Fix `Value::Ord`** in xval (1.2) — type-aware ordering with `total_cmp` for floats
+3. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
+4. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
+5. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
+6. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
+7. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
+8. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
+9. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
