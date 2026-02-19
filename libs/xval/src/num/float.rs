@@ -1,7 +1,7 @@
 use crate::{AsValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Copy, Clone)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -135,6 +135,12 @@ impl Float {
     }
 }
 
+impl PartialEq for Float {
+    fn eq(&self, other: &Self) -> bool {
+        self.cmp(other) == std::cmp::Ordering::Equal
+    }
+}
+
 impl Eq for Float {}
 
 impl Ord for Float {
@@ -155,13 +161,13 @@ impl PartialOrd for Float {
 
 impl PartialEq<f32> for Float {
     fn eq(&self, other: &f32) -> bool {
-        matches!(self, Self::F32(v) if v == other)
+        self.to_f64().total_cmp(&(*other as f64)) == std::cmp::Ordering::Equal
     }
 }
 
 impl PartialEq<f64> for Float {
     fn eq(&self, other: &f64) -> bool {
-        matches!(self, Self::F64(v) if v == other)
+        self.to_f64().total_cmp(other) == std::cmp::Ordering::Equal
     }
 }
 
@@ -387,6 +393,19 @@ mod tests {
             Float::from_f64(1.0).type_id(),
             std::any::TypeId::of::<f64>()
         );
+    }
+
+    #[test]
+    fn nan_eq_nan() {
+        assert_eq!(Float::F64(f64::NAN), Float::F64(f64::NAN));
+        assert_eq!(Float::F32(f32::NAN), Float::F32(f32::NAN));
+    }
+
+    #[test]
+    fn nan_value_eq() {
+        let a = Value::Number(Number::Float(Float::F64(f64::NAN)));
+        let b = Value::Number(Number::Float(Float::F64(f64::NAN)));
+        assert_eq!(a, b);
     }
 
     #[cfg(feature = "serde")]

@@ -27,7 +27,7 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 |---|--------|----------|-------|----------|
 | 1.1 | ✅ | **Bug** | `Object::PartialEq` only compares `type_id`, not content — `{"a":1} == {"b":99}` | [object/mod.rs:96](libs/xval/src/object/mod.rs#L96) |
 | 1.2 | ✅ | **Bug** | `Value::Ord` uses string comparison — `9 > 10` lexicographically | [lib.rs:351](libs/xval/src/lib.rs#L351) |
-| 1.3 | ⬜ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
+| 1.3 | ✅ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
 | 1.4 | ⬜ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
 | 1.5 | ⬜ | **Perf** | `Value::get()` clones entire value tree on traversal | [lib.rs:288](libs/xval/src/lib.rs#L288) |
 | 1.6 | ⬜ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
