@@ -294,14 +294,16 @@ impl Value {
         let mut value = self.clone();
 
         for segment in path.iter() {
-            let next = match segment {
-                xpath::Segment::Key(v) => value.as_object().as_struct().field(v.as_str().into()),
-                xpath::Segment::Index(v) => value.as_object().as_array().index(*v),
-            };
-
-            value = match next {
-                None => return None,
-                Some(v) => v.as_value(),
+            value = match segment {
+                xpath::Segment::Key(v) if value.is_struct() => value
+                    .as_object()
+                    .as_struct()
+                    .field(v.as_str().into())?
+                    .as_value(),
+                xpath::Segment::Index(v) if value.is_array() => {
+                    value.as_object().as_array().index(*v)?.as_value()
+                }
+                _ => return None,
             };
         }
 
@@ -672,6 +674,27 @@ mod tests {
             let path = xpath::Path::parse("").unwrap();
             let result = v.get(&path).unwrap();
             assert_eq!(result.to_i32(), 42);
+        }
+
+        #[test]
+        fn key_through_non_object_returns_none() {
+            let v = valueof!(42_i32);
+            let path = xpath::Path::parse("a").unwrap();
+            assert!(v.get(&path).is_none());
+        }
+
+        #[test]
+        fn index_through_non_array_returns_none() {
+            let v = valueof!("hello");
+            let path = xpath::Path::parse("0").unwrap();
+            assert!(v.get(&path).is_none());
+        }
+
+        #[test]
+        fn nested_key_through_non_object_returns_none() {
+            let v = valueof!({ "a": 1_i32 });
+            let path = xpath::Path::parse("a/b").unwrap();
+            assert!(v.get(&path).is_none());
         }
     }
 
