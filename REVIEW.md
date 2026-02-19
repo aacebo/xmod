@@ -17,32 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 1. xval — Dynamic Value System
-
-**Strengths:** Clean `Value` enum, good `valueof!` macro, proper `Arc`-based thread safety for objects.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 1.1 | ✅ | **Bug** | `Object::PartialEq` only compares `type_id`, not content — `{"a":1} == {"b":99}` | [object/mod.rs:96](libs/xval/src/object/mod.rs#L96) |
-| 1.2 | ✅ | **Bug** | `Value::Ord` uses string comparison — `9 > 10` lexicographically | [lib.rs:351](libs/xval/src/lib.rs#L351) |
-| 1.3 | ✅ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
-| 1.4 | ✅ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
-| 1.5 | ➖ | **Perf** | `Value::get()` clones entire value tree on traversal — won't fix (Arc bump is cheap) | [lib.rs:288](libs/xval/src/lib.rs#L288) |
-| 1.6 | ✅ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
-| 1.7 | ✅ | **Design** | `as_value()` returns owned `Value` (should be `to_value()` per Rust naming conventions) | [lib.rs:21](libs/xval/src/lib.rs#L21) |
-| 1.8 | ➖ | **Design** | All numeric `to_*` casts silently truncate/wrap — won't fix (intentional design) | [num/int.rs](libs/xval/src/num/int.rs), [num/float.rs](libs/xval/src/num/float.rs), [num/uint.rs](libs/xval/src/num/uint.rs) |
-| 1.9 | ✅ | **Lint** | `len()` without `is_empty()` | [lib.rs:279](libs/xval/src/lib.rs#L279) |
-
-### Missing Trait Implementations
-
-- `Hash` for `Value` (has `Eq` but no `Hash`)
-- `From<Bool> for bool`, `From<Str> for String` (reverse extractions)
-- `size_hint()` / `ExactSizeIterator` on `StructIter`, `ArrayIter`, `TupleIter`
-
----
-
 ## 2. xval-derive — Value Derive Macros
 
 **Strengths:** Clean array-based struct iteration pattern, correct `::xval::` path hygiene.
@@ -80,7 +54,7 @@ For a tuple struct with 2 elements, `len()` returns 2 but `items()` yields 0 ent
 #### 2.3 — Hidden `Clone` requirement
 
 ```rust
-fn as_value(&self) -> ::xval::Value {
+fn to_value(&self) -> ::xval::Value {
     ::xval::Value::from_struct(self.clone())
 }
 ```
@@ -293,7 +267,7 @@ These assertions are stripped in `cargo test --release`.
 3. Handle `&str` as string
 4. Handle qualified paths by checking last segment
 
-#### 6.4 — Unsigned integers → `any()`
+#### 6.4 — Unsigned integers -> `any()`
 
 ```rust
 "u8" | "u16" | "u32" | "u64" | "u128" | "usize" => Self::Any,
@@ -316,7 +290,7 @@ A `count: u32` field gets zero type checking at validation time.
 | 7.1 | ⬜ | **Design** | `From<&str>` panics on invalid input — violates infallible `From` contract | [path.rs:64](libs/xpath/src/path.rs#L64) |
 | 7.2 | ⬜ | **Testing** | `push`, `pop`, `child`, `peer`, `iter` have zero test coverage | — |
 | 7.3 | ⬜ | **Design** | No `FromStr`/`IntoIterator`/`TryFrom` standard trait impls | — |
-| 7.4 | ⬜ | **Design** | Numeric keys impossible — `"42"` always becomes `Index(42)` | [segment.rs:14](libs/xpath/src/segment.rs#L14) |
+| 7.4 | ⬜ | **Design** | Numeric keys impossible — `"42"` always becomes `Index(42)` | [ident.rs:14](libs/xpath/src/ident.rs#L14) |
 
 ### Details
 
@@ -341,7 +315,7 @@ pub fn parse(src: &str) -> Self {
     if let Ok(index) = src.parse::<usize>() {
         return Self::Index(index);
     }
-    Self::Key(src.to_string())
+    Self::Key(src.into())
 }
 ```
 
@@ -350,7 +324,7 @@ Any purely numeric segment becomes an `Index`. No way to represent a key that ha
 ### Missing
 
 - `first()` method (has `last()` but no `first()`)
-- `get(index) -> Option<&Segment>` for safe indexed access
+- `get(index) -> Option<&Ident>` for safe indexed access
 - `parent()` method (inverse of `child`)
 - Clippy nit: `split("/")` should be `split('/')`
 
@@ -447,11 +421,10 @@ Both [xval-derive](libs/xval-derive/src/lib.rs) and [xsch-derive](libs/xsch-deri
 - `Scope::render()` — [scope.rs:64](libs/xtera/src/scope.rs#L64)
 - `From<&str> for Path` — [path.rs:64](libs/xpath/src/path.rs#L64)
 - `ForkHandle` mutex poisoning — [fork.rs:30](libs/xpipe/src/op/fork.rs#L30)
-- `Value::get()` internally panics instead of returning `None` — [lib.rs:292](libs/xval/src/lib.rs#L292)
 
 ### C.3 — Missing standard trait implementations
 
-Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`, `is_empty()`.
+Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 
 ### C.4 — Dead code
 
@@ -472,19 +445,12 @@ Most crates have good unit tests, though some public methods (especially in xpat
 
 ## Priority Summary
 
-The highest-priority items across the workspace:
+Remaining items:
 
-1. ✅ **Fix `Object::PartialEq`** in xval (1.1) — compares type_id only, not content
-2. ✅ **Fix `Value::Ord`** in xval (1.2) — type-aware ordering with `total_cmp` for floats
-3. ✅ **Fix `Eq` unsoundness with NaN** in xval (1.3) — `Float::PartialEq` now uses `total_cmp`
-4. ✅ **Fix `Value::get()` panic** in xval (1.4) — returns `None` on type mismatch
-5. ✅ **Fix `Ident::PartialEq` allocations** (1.6) — consolidated `xval::Ident` and `xpath::Segment` into `xpath::Ident`
-6. ✅ **Rename `AsValue`/`as_value` to `ToValue`/`to_value`** (1.7) — workspace-wide rename
-7. ✅ **Add `Value::is_empty()`** (1.9)
-8. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
-9. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-10. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
-11. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-12. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
-13. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-14. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+1. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
+2. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
+3. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
+4. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
+5. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
+6. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
+7. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
