@@ -1,6 +1,6 @@
 use xval::ToValue;
 
-use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validator};
+use crate::{Context, Equals, Options, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
 
 pub fn bool() -> BoolSchema {
     BoolSchema::default()
@@ -33,8 +33,8 @@ impl BoolSchema {
     }
 }
 
-impl AsSchema for BoolSchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for BoolSchema {
+    fn to_schema(&self) -> Schema {
         Schema::Bool(self.clone())
     }
 }

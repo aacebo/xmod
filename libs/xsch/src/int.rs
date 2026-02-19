@@ -1,7 +1,7 @@
 use xval::ToValue;
 
 use crate::{
-    AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
+    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ToSchema,
     ValidError, Validator,
 };
 
@@ -46,8 +46,8 @@ impl IntSchema {
     }
 }
 
-impl AsSchema for IntSchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for IntSchema {
+    fn to_schema(&self) -> Schema {
         Schema::Int(self.clone())
     }
 }

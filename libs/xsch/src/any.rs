@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validator};
+use crate::{Context, Equals, Options, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
 
 pub fn any() -> AnySchema {
     AnySchema::default()
@@ -29,8 +29,8 @@ impl AnySchema {
     }
 }
 
-impl AsSchema for AnySchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for AnySchema {
+    fn to_schema(&self) -> Schema {
         Schema::Any(self.clone())
     }
 }

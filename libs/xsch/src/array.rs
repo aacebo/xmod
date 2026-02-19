@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Items, Max, Min, Required, RuleSet, Schema, ValidError, Validator};
+use crate::{Context, Items, Max, Min, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
 
 pub fn array() -> ArraySchema {
     ArraySchema::default()
@@ -34,8 +34,8 @@ impl ArraySchema {
     }
 }
 
-impl AsSchema for ArraySchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for ArraySchema {
+    fn to_schema(&self) -> Schema {
         Schema::Array(self.clone())
     }
 }

@@ -57,8 +57,8 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
         .collect();
 
     quote! {
-        impl ::xsch::AsSchema for #ident {
-            fn as_schema(&self) -> ::xsch::Schema {
+        impl ::xsch::ToSchema for #ident {
+            fn to_schema(&self) -> ::xsch::Schema {
                 let mut schema = ::xsch::object();
                 #(#field_stmts)*
                 schema.into()
@@ -67,7 +67,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
 
         impl ::xsch::Validate for #ident {
             fn validate(&self) -> Result<::xval::Value, ::xsch::ValidError> {
-                self.as_schema().validate(&::xval::ToValue::to_value(self).into())
+                self.to_schema().validate(&::xval::ToValue::to_value(self).into())
             }
         }
     }

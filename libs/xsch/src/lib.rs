@@ -29,28 +29,28 @@ pub mod derive {
     pub use xsch_derive::*;
 }
 
-pub trait AsSchema {
-    fn as_schema(&self) -> Schema;
+pub trait ToSchema {
+    fn to_schema(&self) -> Schema;
 }
 
-impl AsSchema for xval::Value {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for xval::Value {
+    fn to_schema(&self) -> Schema {
         match self {
-            xval::Value::Null => any().equals(xval::valueof!(null)).as_schema(),
-            xval::Value::Bool(_) => bool().as_schema(),
-            xval::Value::Number(_) => number().as_schema(),
-            xval::Value::String(_) => string().as_schema(),
+            xval::Value::Null => any().equals(xval::valueof!(null)).to_schema(),
+            xval::Value::Bool(_) => bool().to_schema(),
+            xval::Value::Number(_) => number().to_schema(),
+            xval::Value::String(_) => string().to_schema(),
             xval::Value::Object(o) => match o {
                 xval::Object::Struct(v) => {
                     let mut schema = object();
 
                     for (ident, item) in v.items() {
-                        schema = schema.field(&ident.to_string(), item.to_value().as_schema());
+                        schema = schema.field(&ident.to_string(), item.to_value().to_schema());
                     }
 
-                    schema.as_schema()
+                    schema.to_schema()
                 }
-                xval::Object::Array(_) => array().as_schema(),
+                xval::Object::Array(_) => array().to_schema(),
                 v => panic!("unsupported value {}", v),
             },
         }
@@ -172,8 +172,8 @@ impl Schema {
     }
 }
 
-impl AsSchema for Schema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for Schema {
+    fn to_schema(&self) -> Schema {
         self.clone()
     }
 }

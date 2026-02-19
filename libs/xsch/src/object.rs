@@ -1,4 +1,4 @@
-use crate::{AsSchema, Context, Fields, Required, RuleSet, Schema, ValidError, Validator};
+use crate::{Context, Fields, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
 
 pub fn object() -> ObjectSchema {
     ObjectSchema::default()
@@ -41,8 +41,8 @@ impl ObjectSchema {
     }
 }
 
-impl AsSchema for ObjectSchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for ObjectSchema {
+    fn to_schema(&self) -> Schema {
         Schema::Object(self.clone())
     }
 }

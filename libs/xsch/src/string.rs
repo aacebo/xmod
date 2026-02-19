@@ -1,7 +1,7 @@
 use xval::ToValue;
 
 use crate::{
-    AsSchema, Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validator,
+    Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ToSchema, ValidError, Validator,
 };
 
 pub fn string() -> StringSchema {
@@ -53,8 +53,8 @@ impl StringSchema {
     }
 }
 
-impl AsSchema for StringSchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for StringSchema {
+    fn to_schema(&self) -> Schema {
         Schema::String(self.clone())
     }
 }

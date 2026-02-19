@@ -1,7 +1,7 @@
 use xval::ToValue;
 
 use crate::{
-    AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
+    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ToSchema,
     ValidError, Validator,
 };
 
@@ -46,8 +46,8 @@ impl FloatSchema {
     }
 }
 
-impl AsSchema for FloatSchema {
-    fn as_schema(&self) -> Schema {
+impl ToSchema for FloatSchema {
+    fn to_schema(&self) -> Schema {
         Schema::Float(self.clone())
     }
 }

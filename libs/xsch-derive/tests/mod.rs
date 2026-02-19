@@ -1,4 +1,4 @@
-use xsch::{AsSchema, Validate, Validator};
+use xsch::{ToSchema, Validate, Validator};
 use xsch_derive::Validate;
 use xval::derive::Value;
 
@@ -22,13 +22,13 @@ struct Simple {
 
 #[test]
 fn simple_struct_produces_object_schema() {
-    let schema = Simple::default().as_schema();
+    let schema = Simple::default().to_schema();
     assert!(schema.is_object());
 }
 
 #[test]
 fn simple_struct_has_correct_field_schemas() {
-    let schema = Simple::default().as_schema();
+    let schema = Simple::default().to_schema();
     let obj = schema.as_object().expect("expected ObjectSchema");
 
     assert!(
@@ -78,12 +78,12 @@ fn simple_struct_validates_matching_value() {
 
 #[test]
 fn field_rules_produce_object_schema() {
-    assert!(WithRules::default().as_schema().is_object());
+    assert!(WithRules::default().to_schema().is_object());
 }
 
 #[test]
 fn field_rules_has_correct_field_schemas() {
-    let schema = WithRules::default().as_schema();
+    let schema = WithRules::default().to_schema();
     let obj = schema.as_object().expect("expected ObjectSchema");
 
     assert!(
