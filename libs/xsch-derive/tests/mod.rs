@@ -1,4 +1,5 @@
-use xsch::{AsSchema, Validate, Validator, derive::Validate};
+use xsch::{AsSchema, Validate, Validator};
+use xsch_derive::Validate;
 use xval::derive::Value;
 
 #[derive(Clone, Default, Value, Validate)]

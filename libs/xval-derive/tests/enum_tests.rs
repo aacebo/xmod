@@ -1,4 +1,5 @@
-use xval::{AsValue, derive::Value};
+use xval::AsValue;
+use xval_derive::Value;
 
 #[derive(Clone, Value)]
 enum Message {

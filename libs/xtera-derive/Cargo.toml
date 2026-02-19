@@ -18,5 +18,5 @@ quote = { workspace = true }
 syn = { workspace = true }
 
 [dev-dependencies]
-xtera = { workspace = true, features = ["derive"] }
+xtera = { workspace = true }
 xval = { workspace = true }
