@@ -21,7 +21,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 let mut schema = ::xsch::object();
 
                 #(
-                    schema = schema.field(stringify!(#fields), self.#fields.as_schema());
+                    schema = schema.field(stringify!(#fields), xsch::AsSchema::as_schema(&self.#fields));
                 )*
 
                 schema.into()

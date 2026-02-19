@@ -33,6 +33,18 @@ pub trait AsSchema {
     fn as_schema(&self) -> Schema;
 }
 
+impl<T: xval::AsValue> AsSchema for T {
+    fn as_schema(&self) -> Schema {
+        match self.as_value() {
+            xval::Value::Null => any().equals(xval::valueof!(null)).as_schema(),
+            xval::Value::Bool(_) => bool().as_schema(),
+            xval::Value::Number(_) => number().as_schema(),
+            xval::Value::String(_) => string().as_schema(),
+            xval::Value::Object(_) => object().as_schema(),
+        }
+    }
+}
+
 pub trait Validate {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError>;
 }
