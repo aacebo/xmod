@@ -29,7 +29,7 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 | 1.2 | ✅ | **Bug** | `Value::Ord` uses string comparison — `9 > 10` lexicographically | [lib.rs:351](libs/xval/src/lib.rs#L351) |
 | 1.3 | ✅ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
 | 1.4 | ✅ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
-| 1.5 | ⬜ | **Perf** | `Value::get()` clones entire value tree on traversal | [lib.rs:288](libs/xval/src/lib.rs#L288) |
+| 1.5 | ➖ | **Perf** | `Value::get()` clones entire value tree on traversal — won't fix (Arc bump is cheap) | [lib.rs:288](libs/xval/src/lib.rs#L288) |
 | 1.6 | ⬜ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
 | 1.7 | ⬜ | **Design** | `as_value()` returns owned `Value` (should be `to_value()` per Rust naming conventions) | [lib.rs:21](libs/xval/src/lib.rs#L21) |
 | 1.8 | ⬜ | **Design** | All numeric `to_*` casts silently truncate/wrap | [num/int.rs](libs/xval/src/num/int.rs), [num/float.rs](libs/xval/src/num/float.rs), [num/uint.rs](libs/xval/src/num/uint.rs) |
@@ -550,10 +550,12 @@ The highest-priority items across the workspace:
 
 1. ✅ **Fix `Object::PartialEq`** in xval (1.1) — compares type_id only, not content
 2. ✅ **Fix `Value::Ord`** in xval (1.2) — type-aware ordering with `total_cmp` for floats
-3. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
-4. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-5. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
-6. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-7. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
-8. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-9. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+3. ✅ **Fix `Eq` unsoundness with NaN** in xval (1.3) — `Float::PartialEq` now uses `total_cmp`
+4. ✅ **Fix `Value::get()` panic** in xval (1.4) — returns `None` on type mismatch
+5. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
+6. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
+7. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
+8. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
+9. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
+10. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
+11. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
