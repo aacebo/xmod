@@ -1,8 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ValidError,
-    Validate,
+    AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
+    ValidError, Validate,
 };
 
 pub fn float() -> FloatSchema {
@@ -43,6 +43,12 @@ impl FloatSchema {
     pub fn max(mut self, max: f64) -> Self {
         self.0 = self.0.add(Max::from(xval::Number::from_f64(max)).into());
         self
+    }
+}
+
+impl AsSchema for FloatSchema {
+    fn as_schema(&self) -> Schema {
+        Schema::Float(self.clone())
     }
 }
 

@@ -1,5 +1,3 @@
-#![allow(unused)]
-
 use proc_macro::TokenStream;
 use quote::quote;
 
@@ -8,13 +6,13 @@ pub fn derive_value(input: TokenStream) -> TokenStream {
     let input = syn::parse_macro_input!(input as syn::DeriveInput);
 
     match &input.data {
-        syn::Data::Struct(data) => derive_struct_value(&input, data),
-        syn::Data::Enum(data) => derive_enum_value(&input, data),
+        syn::Data::Struct(data) => derive_struct(&input, data),
+        syn::Data::Enum(data) => derive_enum(&input, data),
         _ => quote!().into(),
     }
 }
 
-fn derive_struct_value(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
+fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
     let ident = &input.ident;
     let len = data.fields.len();
     let fields: Vec<syn::Ident> = data.fields.iter().filter_map(|f| f.ident.clone()).collect();
@@ -62,7 +60,7 @@ fn derive_struct_value(input: &syn::DeriveInput, data: &syn::DataStruct) -> Toke
     .into()
 }
 
-fn derive_enum_value(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
+fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     let ident = &input.ident;
 
     let match_arms = data.variants.iter().map(|variant| {

@@ -1,6 +1,6 @@
 use xval::AsValue;
 
-use crate::{Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validate};
 
 pub fn bool() -> BoolSchema {
     BoolSchema::default()
@@ -30,6 +30,12 @@ impl BoolSchema {
     pub fn required(mut self) -> Self {
         self.0 = self.0.add(Required::new(true).into());
         self
+    }
+}
+
+impl AsSchema for BoolSchema {
+    fn as_schema(&self) -> Schema {
+        Schema::Bool(self.clone())
     }
 }
 

@@ -1,6 +1,8 @@
 use xval::AsValue;
 
-use crate::{Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{
+    AsSchema, Context, Equals, Max, Min, Options, Required, RuleSet, Schema, ValidError, Validate,
+};
 
 pub fn string() -> StringSchema {
     StringSchema::default()
@@ -48,6 +50,12 @@ impl StringSchema {
 
         self.0 = self.0.add(Pattern::from(pattern.to_string()).into());
         self
+    }
+}
+
+impl AsSchema for StringSchema {
+    fn as_schema(&self) -> Schema {
+        Schema::String(self.clone())
     }
 }
 

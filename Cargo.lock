@@ -278,6 +278,7 @@ dependencies = [
  "quote",
  "syn",
  "xsch",
+ "xval",
 ]
 
 [[package]]

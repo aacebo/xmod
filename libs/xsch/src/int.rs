@@ -1,8 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ValidError,
-    Validate,
+    AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
+    ValidError, Validate,
 };
 
 pub fn int() -> IntSchema {
@@ -43,6 +43,12 @@ impl IntSchema {
     pub fn max(mut self, max: isize) -> Self {
         self.0 = self.0.add(Max::from(xval::Number::from_isize(max)).into());
         self
+    }
+}
+
+impl AsSchema for IntSchema {
+    fn as_schema(&self) -> Schema {
+        Schema::Int(self.clone())
     }
 }
 

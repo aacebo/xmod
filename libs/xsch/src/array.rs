@@ -1,4 +1,4 @@
-use crate::{Context, Items, Max, Min, Required, RuleSet, Schema, ValidError, Validate};
+use crate::{AsSchema, Context, Items, Max, Min, Required, RuleSet, Schema, ValidError, Validate};
 
 pub fn array() -> ArraySchema {
     ArraySchema::default()
@@ -31,6 +31,12 @@ impl ArraySchema {
     pub fn items(mut self, items: Schema) -> Self {
         self.0 = self.0.add(Items::from(items).into());
         self
+    }
+}
+
+impl AsSchema for ArraySchema {
+    fn as_schema(&self) -> Schema {
+        Schema::Array(self.clone())
     }
 }
 

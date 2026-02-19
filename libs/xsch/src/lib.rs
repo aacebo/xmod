@@ -24,6 +24,11 @@ pub use phase::*;
 pub use rule::*;
 pub use string::*;
 
+#[cfg(feature = "derive")]
+pub mod derive {
+    pub use xsch_derive::*;
+}
+
 pub trait AsSchema {
     fn as_schema(&self) -> Schema;
 }
@@ -47,6 +52,12 @@ pub enum Schema {
     Float(FloatSchema),
     Array(ArraySchema),
     Object(ObjectSchema),
+}
+
+impl AsSchema for Schema {
+    fn as_schema(&self) -> Schema {
+        self.clone()
+    }
 }
 
 impl Validate for Schema {

@@ -1,5 +1,4 @@
-use xtera::{Func, Pipe, Scope, Template};
-use xtera_derive::render;
+use xtera::{Func, Pipe, Scope, Template, derive::render};
 
 struct UpperPipe;
 impl Pipe for UpperPipe {

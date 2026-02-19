@@ -1,8 +1,8 @@
 use xval::AsValue;
 
 use crate::{
-    Context, Equals, FloatSchema, IntSchema, Max, Min, Options, Required, RuleSet, Schema,
-    ValidError, Validate,
+    AsSchema, Context, Equals, FloatSchema, IntSchema, Max, Min, Options, Required, RuleSet,
+    Schema, ValidError, Validate,
 };
 
 pub fn number() -> NumberSchema {
@@ -51,6 +51,12 @@ impl NumberSchema {
 
     pub fn float(self) -> FloatSchema {
         self.into()
+    }
+}
+
+impl AsSchema for NumberSchema {
+    fn as_schema(&self) -> Schema {
+        Schema::Number(self.clone())
     }
 }
 
