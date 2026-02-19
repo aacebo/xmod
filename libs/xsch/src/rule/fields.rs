@@ -14,6 +14,10 @@ pub struct Fields(BTreeMap<String, Schema>);
 impl Fields {
     pub const KEY: &str = "fields";
 
+    pub fn new(fields: BTreeMap<String, Schema>) -> Self {
+        Self(fields)
+    }
+
     pub fn set(&mut self, name: &str, schema: Schema) -> &mut Self {
         self.0.insert(name.to_string(), schema);
         self

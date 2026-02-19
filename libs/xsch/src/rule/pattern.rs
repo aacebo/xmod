@@ -11,6 +11,10 @@ pub struct Pattern(String);
 
 impl Pattern {
     pub const KEY: &str = "pattern";
+
+    pub fn new(pattern: String) -> Self {
+        Self(pattern)
+    }
 }
 
 impl From<String> for Pattern {

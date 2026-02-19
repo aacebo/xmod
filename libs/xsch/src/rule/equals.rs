@@ -11,6 +11,10 @@ pub struct Equals(xval::Value);
 
 impl Equals {
     pub const KEY: &str = "equals";
+
+    pub fn new(value: xval::Value) -> Self {
+        Self(value)
+    }
 }
 
 impl From<xval::Value> for Equals {

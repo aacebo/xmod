@@ -11,6 +11,10 @@ pub struct Max(xval::Number);
 
 impl Max {
     pub const KEY: &str = "max";
+
+    pub fn new(value: xval::Number) -> Self {
+        Self(value)
+    }
 }
 
 impl From<xval::Number> for Max {

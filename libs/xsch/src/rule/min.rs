@@ -11,6 +11,10 @@ pub struct Min(xval::Number);
 
 impl Min {
     pub const KEY: &str = "min";
+
+    pub fn new(value: xval::Number) -> Self {
+        Self(value)
+    }
 }
 
 impl From<xval::Number> for Min {

@@ -247,6 +247,12 @@ impl RuleSet {
     }
 }
 
+impl From<Vec<Rule>> for RuleSet {
+    fn from(value: Vec<Rule>) -> Self {
+        Self(value)
+    }
+}
+
 impl std::ops::Deref for RuleSet {
     type Target = [Rule];
 

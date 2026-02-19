@@ -13,6 +13,10 @@ pub struct Items(Schema);
 
 impl Items {
     pub const KEY: &str = "items";
+
+    pub fn new(items: Schema) -> Self {
+        Self(items)
+    }
 }
 
 impl From<Schema> for Items {

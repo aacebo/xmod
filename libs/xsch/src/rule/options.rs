@@ -11,6 +11,10 @@ pub struct Options(Vec<xval::Value>);
 
 impl Options {
     pub const KEY: &str = "options";
+
+    pub fn new(options: Vec<xval::Value>) -> Self {
+        Self(options)
+    }
 }
 
 impl From<Vec<xval::Value>> for Options {
