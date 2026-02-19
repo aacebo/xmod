@@ -8,7 +8,7 @@
 /// // Null
 /// let v = valueof!(null);
 ///
-/// // Primitives (uses AsValue)
+/// // Primitives (uses ToValue)
 /// let v = valueof!(true);
 /// let v = valueof!(42_i32);
 /// let v = valueof!(3.14_f64);
@@ -74,7 +74,7 @@ macro_rules! valueof {
     ($value:tt as object) => { $crate::Object::from($value) };
 
     ($other:expr) => {
-        $crate::AsValue::as_value(&$other)
+        $crate::ToValue::to_value(&$other)
     };
 }
 
@@ -128,9 +128,9 @@ mod tests {
         let v = valueof!([1_i32, 2_i32, 3_i32]);
         assert!(v.is_array());
         assert_eq!(v.as_array().len(), 3);
-        assert_eq!(v.as_array().index(0).unwrap().as_value().to_i32(), 1);
-        assert_eq!(v.as_array().index(1).unwrap().as_value().to_i32(), 2);
-        assert_eq!(v.as_array().index(2).unwrap().as_value().to_i32(), 3);
+        assert_eq!(v.as_array().index(0).unwrap().to_value().to_i32(), 1);
+        assert_eq!(v.as_array().index(1).unwrap().to_value().to_i32(), 2);
+        assert_eq!(v.as_array().index(2).unwrap().to_value().to_i32(), 3);
     }
 
     #[test]
@@ -159,11 +159,11 @@ mod tests {
         let v = valueof!({ "a": 1_i32, "b": "hello" });
         assert!(v.is_struct());
         assert_eq!(
-            v.as_struct().field("a".into()).unwrap().as_value().to_i32(),
+            v.as_struct().field("a".into()).unwrap().to_value().to_i32(),
             1
         );
         assert_eq!(
-            v.as_struct().field("b".into()).unwrap().as_value().as_str(),
+            v.as_struct().field("b".into()).unwrap().to_value().as_str(),
             "hello"
         );
     }
@@ -184,11 +184,11 @@ mod tests {
             v.as_array()
                 .index(0)
                 .unwrap()
-                .as_value()
+                .to_value()
                 .as_struct()
                 .field("name".into())
                 .unwrap()
-                .as_value()
+                .to_value()
                 .as_str(),
             "alice"
         );
@@ -198,10 +198,10 @@ mod tests {
     fn nested_array_in_struct() {
         let v = valueof!({ "items": [42_i32, 99_i32] });
         assert!(v.is_struct());
-        let items = v.as_struct().field("items".into()).unwrap().as_value();
+        let items = v.as_struct().field("items".into()).unwrap().to_value();
         assert!(items.is_array());
-        assert_eq!(items.as_array().index(0).unwrap().as_value().to_i32(), 42);
-        assert_eq!(items.as_array().index(1).unwrap().as_value().to_i32(), 99);
+        assert_eq!(items.as_array().index(0).unwrap().to_value().to_i32(), 42);
+        assert_eq!(items.as_array().index(1).unwrap().to_value().to_i32(), 99);
     }
 
     #[test]
@@ -218,11 +218,11 @@ mod tests {
             v.as_struct()
                 .field("count".into())
                 .unwrap()
-                .as_value()
+                .to_value()
                 .to_i32(),
             2
         );
-        let users = v.as_struct().field("users".into()).unwrap().as_value();
+        let users = v.as_struct().field("users".into()).unwrap().to_value();
         assert!(users.is_array());
         assert_eq!(users.as_array().len(), 2);
     }
@@ -232,9 +232,9 @@ mod tests {
         let v = valueof!([1_i32, true, "hello"]);
         assert!(v.is_array());
         assert_eq!(v.as_array().len(), 3);
-        assert_eq!(v.as_array().index(0).unwrap().as_value().to_i32(), 1);
-        assert_eq!(v.as_array().index(1).unwrap().as_value().to_bool(), true);
-        assert_eq!(v.as_array().index(2).unwrap().as_value().as_str(), "hello");
+        assert_eq!(v.as_array().index(0).unwrap().to_value().to_i32(), 1);
+        assert_eq!(v.as_array().index(1).unwrap().to_value().to_bool(), true);
+        assert_eq!(v.as_array().index(2).unwrap().to_value().as_str(), "hello");
     }
 
     #[test]
@@ -244,7 +244,7 @@ mod tests {
             v.as_struct()
                 .field("x".into())
                 .unwrap()
-                .as_value()
+                .to_value()
                 .is_null()
         );
     }
@@ -252,7 +252,7 @@ mod tests {
     #[test]
     fn null_in_array() {
         let v = valueof!([null, 1_i32]);
-        assert!(v.as_array().index(0).unwrap().as_value().is_null());
+        assert!(v.as_array().index(0).unwrap().to_value().is_null());
     }
 
     #[test]

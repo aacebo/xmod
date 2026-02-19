@@ -45,7 +45,7 @@ impl AsSchema for xval::Value {
                     let mut schema = object();
 
                     for (ident, item) in v.items() {
-                        schema = schema.field(&ident.to_string(), item.as_value().as_schema());
+                        schema = schema.field(&ident.to_string(), item.to_value().as_schema());
                     }
 
                     schema.as_schema()
@@ -201,7 +201,7 @@ impl Default for Schema {
 
 #[cfg(test)]
 mod tests {
-    use xval::AsValue;
+    use xval::ToValue;
 
     use super::*;
 
@@ -211,29 +211,29 @@ mod tests {
         #[test]
         fn any_dispatches() {
             let schema = Schema::Any(any());
-            assert!(schema.validate(&"anything".as_value().into()).is_ok());
+            assert!(schema.validate(&"anything".to_value().into()).is_ok());
         }
 
         #[test]
         fn bool_dispatches() {
             let schema = Schema::Bool(bool());
-            assert!(schema.validate(&true.as_value().into()).is_ok());
-            assert!(schema.validate(&42i32.as_value().into()).is_err());
+            assert!(schema.validate(&true.to_value().into()).is_ok());
+            assert!(schema.validate(&42i32.to_value().into()).is_err());
         }
 
         #[test]
         fn bool_with_rules_dispatches() {
             let schema = Schema::Bool(bool().required().equals(true));
-            assert!(schema.validate(&true.as_value().into()).is_ok());
-            assert!(schema.validate(&false.as_value().into()).is_err());
+            assert!(schema.validate(&true.to_value().into()).is_ok());
+            assert!(schema.validate(&false.to_value().into()).is_err());
             assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
 
         #[test]
         fn array_dispatches() {
             let schema = Schema::Array(array());
-            assert!(schema.validate(&vec![1i32, 2, 3].as_value().into()).is_ok());
-            assert!(schema.validate(&42i32.as_value().into()).is_err());
+            assert!(schema.validate(&vec![1i32, 2, 3].to_value().into()).is_ok());
+            assert!(schema.validate(&42i32.to_value().into()).is_err());
         }
 
         #[test]
@@ -251,17 +251,17 @@ mod tests {
         #[test]
         fn array_min() {
             let schema = Schema::Array(array().min(2));
-            assert!(schema.validate(&vec![1i32, 2, 3].as_value().into()).is_ok());
-            assert!(schema.validate(&vec![1i32].as_value().into()).is_err());
+            assert!(schema.validate(&vec![1i32, 2, 3].to_value().into()).is_ok());
+            assert!(schema.validate(&vec![1i32].to_value().into()).is_err());
         }
 
         #[test]
         fn array_max() {
             let schema = Schema::Array(array().max(2));
-            assert!(schema.validate(&vec![1i32].as_value().into()).is_ok());
+            assert!(schema.validate(&vec![1i32].to_value().into()).is_ok());
             assert!(
                 schema
-                    .validate(&vec![1i32, 2, 3].as_value().into())
+                    .validate(&vec![1i32, 2, 3].to_value().into())
                     .is_err()
             );
         }
@@ -269,37 +269,37 @@ mod tests {
         #[test]
         fn array_items_valid() {
             let schema = Schema::Array(array().items(string().into()));
-            let value = vec!["a", "b"].as_value();
+            let value = vec!["a", "b"].to_value();
             assert!(schema.validate(&value.into()).is_ok());
         }
 
         #[test]
         fn array_items_invalid() {
             let schema = Schema::Array(array().items(string().into()));
-            let value = vec![1i32, 2].as_value();
+            let value = vec![1i32, 2].to_value();
             assert!(schema.validate(&value.into()).is_err());
         }
 
         #[test]
         fn array_items_with_inner_rules() {
             let schema = Schema::Array(array().items(int().required().into()));
-            let value = vec![1i32, 2, 3].as_value();
+            let value = vec![1i32, 2, 3].to_value();
             assert!(schema.validate(&value.into()).is_ok());
         }
 
         #[test]
         fn array_combined_rules() {
             let schema = Schema::Array(array().required().min(1).max(3).items(int().into()));
-            assert!(schema.validate(&vec![1i32, 2].as_value().into()).is_ok());
+            assert!(schema.validate(&vec![1i32, 2].to_value().into()).is_ok());
             assert!(schema.validate(&xval::valueof!(null).into()).is_err());
             assert!(
                 schema
-                    .validate(&Vec::<i32>::new().as_value().into())
+                    .validate(&Vec::<i32>::new().to_value().into())
                     .is_err()
             );
             assert!(
                 schema
-                    .validate(&vec![1i32, 2, 3, 4].as_value().into())
+                    .validate(&vec![1i32, 2, 3, 4].to_value().into())
                     .is_err()
             );
         }
@@ -309,7 +309,7 @@ mod tests {
             let schema = Schema::Array(array());
             assert!(
                 schema
-                    .validate(&Vec::<i32>::new().as_value().into())
+                    .validate(&Vec::<i32>::new().to_value().into())
                     .is_ok()
             );
         }
@@ -320,14 +320,14 @@ mod tests {
             let schema = Schema::Object(object());
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("a"), xval::valueof!(1_i32));
-            assert!(schema.validate(&map.as_value().into()).is_ok());
+            assert!(schema.validate(&map.to_value().into()).is_ok());
         }
 
         #[test]
         fn object_rejects_non_object() {
             let schema = Schema::Object(object());
-            assert!(schema.validate(&42i32.as_value().into()).is_err());
-            assert!(schema.validate(&"hello".as_value().into()).is_err());
+            assert!(schema.validate(&42i32.to_value().into()).is_err());
+            assert!(schema.validate(&"hello".to_value().into()).is_err());
         }
 
         #[test]
@@ -348,7 +348,7 @@ mod tests {
             let schema = Schema::Object(object().field("name", string().into()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
-            assert!(schema.validate(&map.as_value().into()).is_ok());
+            assert!(schema.validate(&map.to_value().into()).is_ok());
         }
 
         #[test]
@@ -357,7 +357,7 @@ mod tests {
             let schema = Schema::Object(object().field("name", string().into()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!(42_i32));
-            assert!(schema.validate(&map.as_value().into()).is_err());
+            assert!(schema.validate(&map.to_value().into()).is_err());
         }
 
         #[test]
@@ -367,7 +367,7 @@ mod tests {
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             map.insert(xval::Ident::key("extra"), xval::valueof!(1_i32));
-            assert!(schema.validate(&map.as_value().into()).is_err());
+            assert!(schema.validate(&map.to_value().into()).is_err());
         }
 
         #[test]
@@ -380,7 +380,7 @@ mod tests {
             );
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
-            assert!(schema.validate(&map.as_value().into()).is_err());
+            assert!(schema.validate(&map.to_value().into()).is_err());
         }
 
         #[test]
@@ -394,7 +394,7 @@ mod tests {
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
-            assert!(schema.validate(&map.as_value().into()).is_ok());
+            assert!(schema.validate(&map.to_value().into()).is_ok());
         }
 
         #[test]
@@ -405,8 +405,8 @@ mod tests {
             let mut inner = HashMap::new();
             inner.insert(xval::Ident::key("street"), xval::valueof!("123 Main"));
             let mut outer = HashMap::new();
-            outer.insert(xval::Ident::key("address"), inner.as_value());
-            assert!(schema.validate(&outer.as_value().into()).is_ok());
+            outer.insert(xval::Ident::key("address"), inner.to_value());
+            assert!(schema.validate(&outer.to_value().into()).is_ok());
         }
 
         #[test]
@@ -420,7 +420,7 @@ mod tests {
             // valid
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
-            assert!(schema.validate(&map.as_value().into()).is_ok());
+            assert!(schema.validate(&map.to_value().into()).is_ok());
             // null rejected
             assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
@@ -430,13 +430,13 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(object());
             let map: HashMap<xval::Ident, xval::Value> = HashMap::new();
-            assert!(schema.validate(&map.as_value().into()).is_ok());
+            assert!(schema.validate(&map.to_value().into()).is_ok());
         }
     }
 
     #[cfg(feature = "serde")]
     mod serde {
-        use xval::AsValue;
+        use xval::ToValue;
 
         use crate::*;
 
@@ -457,9 +457,9 @@ mod tests {
         #[test]
         fn serialize_any_with_rules() {
             let schema = Schema::Any(any().required().options(&[
-                1i32.as_value(),
-                "test".as_value(),
-                true.as_value(),
+                1i32.to_value(),
+                "test".to_value(),
+                true.to_value(),
             ]));
             let json = serde_json::to_string(&schema).unwrap();
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();

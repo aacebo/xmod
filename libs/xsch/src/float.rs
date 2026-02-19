@@ -1,4 +1,4 @@
-use xval::AsValue;
+use xval::ToValue;
 
 use crate::{
     AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
@@ -19,14 +19,14 @@ pub struct FloatSchema(pub(crate) RuleSet);
 
 impl FloatSchema {
     pub fn equals(mut self, value: xval::Float) -> Self {
-        self.0 = self.0.add(Equals::from(value.as_value()).into());
+        self.0 = self.0.add(Equals::from(value.to_value()).into());
         self
     }
 
     pub fn options(mut self, options: &[xval::Float]) -> Self {
         self.0 = self
             .0
-            .add(Options::from(options.iter().map(|v| v.as_value()).collect::<Vec<_>>()).into());
+            .add(Options::from(options.iter().map(|v| v.to_value()).collect::<Vec<_>>()).into());
         self
     }
 
@@ -83,20 +83,20 @@ mod tests {
     #[test]
     fn validate_float() {
         let schema = float();
-        assert!(schema.validate(&3.14f64.as_value().into()).is_ok());
+        assert!(schema.validate(&3.14f64.to_value().into()).is_ok());
     }
 
     #[test]
     fn validate_rejects_int() {
         let schema = float();
-        let err = schema.validate(&42i32.as_value().into()).unwrap_err();
+        let err = schema.validate(&42i32.to_value().into()).unwrap_err();
         assert_eq!(err.message.as_deref(), Some("expected float"));
     }
 
     #[test]
     fn validate_rejects_string() {
         let schema = float();
-        let err = schema.validate(&"hello".as_value().into()).unwrap_err();
+        let err = schema.validate(&"hello".to_value().into()).unwrap_err();
         assert_eq!(err.message.as_deref(), Some("expected float"));
     }
 
@@ -116,8 +116,8 @@ mod tests {
     #[test]
     fn validate_equals() {
         let schema = float().equals(xval::Float::from_f64(3.14));
-        assert!(schema.validate(&3.14f64.as_value().into()).is_ok());
-        assert!(schema.validate(&2.71f64.as_value().into()).is_err());
+        assert!(schema.validate(&3.14f64.to_value().into()).is_ok());
+        assert!(schema.validate(&2.71f64.to_value().into()).is_err());
     }
 
     #[test]
@@ -127,47 +127,47 @@ mod tests {
             xval::Float::from_f64(2.5),
             xval::Float::from_f64(3.14),
         ]);
-        assert!(schema.validate(&2.5f64.as_value().into()).is_ok());
-        assert!(schema.validate(&4.0f64.as_value().into()).is_err());
+        assert!(schema.validate(&2.5f64.to_value().into()).is_ok());
+        assert!(schema.validate(&4.0f64.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_required_and_equals() {
         let schema = float().required().equals(xval::Float::from_f64(1.5));
-        assert!(schema.validate(&1.5f64.as_value().into()).is_ok());
-        assert!(schema.validate(&2.5f64.as_value().into()).is_err());
+        assert!(schema.validate(&1.5f64.to_value().into()).is_ok());
+        assert!(schema.validate(&2.5f64.to_value().into()).is_err());
         assert!(schema.validate(&xval::valueof!(null).into()).is_err());
     }
 
     #[test]
     fn validate_min() {
         let schema = float().min(1.5);
-        assert!(schema.validate(&1.0f64.as_value().into()).is_err());
-        assert!(schema.validate(&1.5f64.as_value().into()).is_ok());
-        assert!(schema.validate(&2.0f64.as_value().into()).is_ok());
+        assert!(schema.validate(&1.0f64.to_value().into()).is_err());
+        assert!(schema.validate(&1.5f64.to_value().into()).is_ok());
+        assert!(schema.validate(&2.0f64.to_value().into()).is_ok());
     }
 
     #[test]
     fn validate_max() {
         let schema = float().max(9.9);
-        assert!(schema.validate(&9.0f64.as_value().into()).is_ok());
-        assert!(schema.validate(&9.9f64.as_value().into()).is_ok());
-        assert!(schema.validate(&10.0f64.as_value().into()).is_err());
+        assert!(schema.validate(&9.0f64.to_value().into()).is_ok());
+        assert!(schema.validate(&9.9f64.to_value().into()).is_ok());
+        assert!(schema.validate(&10.0f64.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_min_and_max() {
         let schema = float().min(0.0).max(1.0);
-        assert!(schema.validate(&(-0.1f64).as_value().into()).is_err());
-        assert!(schema.validate(&0.0f64.as_value().into()).is_ok());
-        assert!(schema.validate(&0.5f64.as_value().into()).is_ok());
-        assert!(schema.validate(&1.0f64.as_value().into()).is_ok());
-        assert!(schema.validate(&1.1f64.as_value().into()).is_err());
+        assert!(schema.validate(&(-0.1f64).to_value().into()).is_err());
+        assert!(schema.validate(&0.0f64.to_value().into()).is_ok());
+        assert!(schema.validate(&0.5f64.to_value().into()).is_ok());
+        assert!(schema.validate(&1.0f64.to_value().into()).is_ok());
+        assert!(schema.validate(&1.1f64.to_value().into()).is_err());
     }
 
     #[test]
     fn from_number_schema() {
         let schema: FloatSchema = NumberSchema::default().into();
-        assert!(schema.validate(&3.14f64.as_value().into()).is_ok());
+        assert!(schema.validate(&3.14f64.to_value().into()).is_ok());
     }
 }

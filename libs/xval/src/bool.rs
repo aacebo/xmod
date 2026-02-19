@@ -1,4 +1,4 @@
-use crate::{AsValue, Value};
+use crate::{ToValue, Value};
 
 /// A type-safe wrapper around a [`bool`] value.
 #[repr(transparent)]
@@ -80,14 +80,14 @@ impl PartialEq<bool> for Value {
     }
 }
 
-impl AsValue for Bool {
-    fn as_value(&self) -> Value {
+impl ToValue for Bool {
+    fn to_value(&self) -> Value {
         Value::Bool(*self)
     }
 }
 
-impl AsValue for bool {
-    fn as_value(&self) -> Value {
+impl ToValue for bool {
+    fn to_value(&self) -> Value {
         Value::from_bool(*self)
     }
 }

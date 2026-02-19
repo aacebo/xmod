@@ -1,4 +1,4 @@
-use crate::{AsValue, Value, num::Number};
+use crate::{ToValue, Value, num::Number};
 
 /// A floating-point value that can hold an [`f32`] or [`f64`].
 #[derive(Copy, Clone)]
@@ -281,20 +281,20 @@ impl std::fmt::Display for Float {
     }
 }
 
-impl AsValue for Float {
-    fn as_value(&self) -> Value {
+impl ToValue for Float {
+    fn to_value(&self) -> Value {
         Value::Number(Number::Float(*self))
     }
 }
 
-impl AsValue for f32 {
-    fn as_value(&self) -> Value {
+impl ToValue for f32 {
+    fn to_value(&self) -> Value {
         Value::from_f32(*self)
     }
 }
 
-impl AsValue for f64 {
-    fn as_value(&self) -> Value {
+impl ToValue for f64 {
+    fn to_value(&self) -> Value {
         Value::from_f64(*self)
     }
 }

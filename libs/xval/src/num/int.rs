@@ -1,4 +1,4 @@
-use crate::{AsValue, Value, num::Number};
+use crate::{ToValue, Value, num::Number};
 
 /// A signed integer value that can hold an [`i8`], [`i16`], [`i32`], [`i64`], or [`i128`].
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -517,44 +517,44 @@ impl std::fmt::Display for Int {
     }
 }
 
-impl AsValue for Int {
-    fn as_value(&self) -> Value {
+impl ToValue for Int {
+    fn to_value(&self) -> Value {
         Value::Number(Number::Int(*self))
     }
 }
 
-impl AsValue for i8 {
-    fn as_value(&self) -> Value {
+impl ToValue for i8 {
+    fn to_value(&self) -> Value {
         Value::from_i8(*self)
     }
 }
 
-impl AsValue for i16 {
-    fn as_value(&self) -> Value {
+impl ToValue for i16 {
+    fn to_value(&self) -> Value {
         Value::from_i16(*self)
     }
 }
 
-impl AsValue for i32 {
-    fn as_value(&self) -> Value {
+impl ToValue for i32 {
+    fn to_value(&self) -> Value {
         Value::from_i32(*self)
     }
 }
 
-impl AsValue for i64 {
-    fn as_value(&self) -> Value {
+impl ToValue for i64 {
+    fn to_value(&self) -> Value {
         Value::from_i64(*self)
     }
 }
 
-impl AsValue for i128 {
-    fn as_value(&self) -> Value {
+impl ToValue for i128 {
+    fn to_value(&self) -> Value {
         Value::from_i128(*self)
     }
 }
 
-impl AsValue for isize {
-    fn as_value(&self) -> Value {
+impl ToValue for isize {
+    fn to_value(&self) -> Value {
         Value::from_isize(*self)
     }
 }

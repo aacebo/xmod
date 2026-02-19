@@ -1,13 +1,13 @@
 use std::{collections::HashMap, sync::Arc};
 
-use crate::{AsValue, Ident, Object, Value};
+use crate::{Ident, Object, ToValue, Value};
 
 pub trait Struct: Send + Sync {
     fn name(&self) -> &str;
     fn type_id(&self) -> std::any::TypeId;
     fn len(&self) -> usize;
     fn items(&self) -> StructIter<'_>;
-    fn field(&self, ident: Ident) -> Option<&dyn AsValue>;
+    fn field(&self, ident: Ident) -> Option<&dyn ToValue>;
 
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -28,11 +28,11 @@ impl Struct for HashMap<Ident, Value> {
     }
 
     fn items(&self) -> StructIter<'_> {
-        StructIter::new(self.iter().map(|(k, v)| (k.clone(), v as &dyn AsValue)))
+        StructIter::new(self.iter().map(|(k, v)| (k.clone(), v as &dyn ToValue)))
     }
 
-    fn field(&self, ident: Ident) -> Option<&dyn AsValue> {
-        self.get(&ident).map(|v| v as &dyn AsValue)
+    fn field(&self, ident: Ident) -> Option<&dyn ToValue> {
+        self.get(&ident).map(|v| v as &dyn ToValue)
     }
 }
 
@@ -48,11 +48,11 @@ impl From<HashMap<Ident, Value>> for Value {
     }
 }
 
-impl<T: Clone + AsValue + 'static> AsValue for HashMap<Ident, T> {
-    fn as_value(&self) -> Value {
+impl<T: Clone + ToValue + 'static> ToValue for HashMap<Ident, T> {
+    fn to_value(&self) -> Value {
         Value::from_struct(
             self.iter()
-                .map(|(k, v)| (k.clone(), v.as_value()))
+                .map(|(k, v)| (k.clone(), v.to_value()))
                 .collect::<HashMap<Ident, Value>>(),
         )
     }
@@ -63,7 +63,7 @@ impl std::fmt::Debug for dyn Struct {
         let mut dbg = f.debug_struct(self.name());
 
         for (k, v) in self.items() {
-            dbg.field(&k.to_string(), &v.as_value());
+            dbg.field(&k.to_string(), &v.to_value());
         }
 
         dbg.finish()
@@ -82,23 +82,23 @@ impl serde::Serialize for dyn Struct {
         let mut map = serializer.serialize_map(None)?;
 
         for (ident, value) in iter {
-            map.serialize_entry(&ident.to_string(), &value.as_value())?;
+            map.serialize_entry(&ident.to_string(), &value.to_value())?;
         }
 
         map.end()
     }
 }
 
-pub struct StructIter<'a>(Box<dyn Iterator<Item = (Ident, &'a dyn AsValue)> + 'a>);
+pub struct StructIter<'a>(Box<dyn Iterator<Item = (Ident, &'a dyn ToValue)> + 'a>);
 
 impl<'a> StructIter<'a> {
-    pub fn new<T: Iterator<Item = (Ident, &'a dyn AsValue)> + 'a>(iter: T) -> Self {
+    pub fn new<T: Iterator<Item = (Ident, &'a dyn ToValue)> + 'a>(iter: T) -> Self {
         Self(Box::new(iter))
     }
 }
 
 impl<'a> Iterator for StructIter<'a> {
-    type Item = (Ident, &'a dyn AsValue);
+    type Item = (Ident, &'a dyn ToValue);
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
@@ -110,7 +110,7 @@ impl<'a, const N: usize> From<&'a [(Ident, Value); N]> for StructIter<'a> {
         Self::new(
             value
                 .iter()
-                .map(|(ident, value)| (ident.clone(), value as &dyn AsValue)),
+                .map(|(ident, value)| (ident.clone(), value as &dyn ToValue)),
         )
     }
 }
@@ -174,49 +174,49 @@ mod tests {
     fn field() {
         let s = sample_struct();
         let v = s.field("a".into()).unwrap();
-        assert_eq!(v.as_value().to_i32(), 1);
+        assert_eq!(v.to_value().to_i32(), 1);
 
         let v = s.field("b".into()).unwrap();
-        assert_eq!(v.as_value().as_str(), "hello");
+        assert_eq!(v.to_value().as_str(), "hello");
 
         assert!(s.field("missing".into()).is_none());
     }
 
     #[test]
-    fn as_value() {
+    fn to_value() {
         let s = sample_struct();
-        let v = s.as_value();
+        let v = s.to_value();
         assert!(v.is_object());
         assert!(v.is_struct());
     }
 
     #[test]
-    fn hashmap_i32_as_value() {
+    fn hashmap_i32_to_value() {
         let mut map = HashMap::new();
         map.insert(Ident::key("x"), 10i32);
         map.insert(Ident::key("y"), 20i32);
-        let v = map.as_value();
+        let v = map.to_value();
         assert!(v.is_struct());
         let s = v.as_struct();
         assert_eq!(s.len(), 2);
-        assert_eq!(s.field("x".into()).unwrap().as_value().to_i32(), 10);
-        assert_eq!(s.field("y".into()).unwrap().as_value().to_i32(), 20);
+        assert_eq!(s.field("x".into()).unwrap().to_value().to_i32(), 10);
+        assert_eq!(s.field("y".into()).unwrap().to_value().to_i32(), 20);
     }
 
     #[test]
-    fn hashmap_string_as_value() {
+    fn hashmap_string_to_value() {
         let mut map = HashMap::new();
         map.insert(Ident::key("name"), String::from("alice"));
-        let v = map.as_value();
+        let v = map.to_value();
         assert!(v.is_struct());
         let s = v.as_struct();
-        assert_eq!(s.field("name".into()).unwrap().as_value().as_str(), "alice");
+        assert_eq!(s.field("name".into()).unwrap().to_value().as_str(), "alice");
     }
 
     #[test]
-    fn hashmap_empty_as_value() {
+    fn hashmap_empty_to_value() {
         let map: HashMap<Ident, i32> = HashMap::new();
-        let v = map.as_value();
+        let v = map.to_value();
         assert!(v.is_struct());
         assert_eq!(v.as_struct().len(), 0);
     }

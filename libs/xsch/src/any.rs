@@ -49,14 +49,14 @@ impl Validator for AnySchema {
 
 #[cfg(test)]
 mod tests {
-    use xval::AsValue;
+    use xval::ToValue;
 
     use super::*;
 
     #[test]
     fn validate_any_value() {
         let schema = any();
-        let result = schema.validate(&true.as_value().into());
+        let result = schema.validate(&true.to_value().into());
         assert!(result.is_ok());
     }
 
@@ -81,35 +81,35 @@ mod tests {
     #[test]
     fn validate_required_accepts_value() {
         let schema = any().required();
-        let result = schema.validate(&42i32.as_value().into());
+        let result = schema.validate(&42i32.to_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_equals_match() {
-        let schema = any().equals("hello".as_value());
-        let result = schema.validate(&"hello".as_value().into());
+        let schema = any().equals("hello".to_value());
+        let result = schema.validate(&"hello".to_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_equals_mismatch() {
-        let schema = any().equals("hello".as_value());
-        let result = schema.validate(&"world".as_value().into());
+        let schema = any().equals("hello".to_value());
+        let result = schema.validate(&"world".to_value().into());
         assert!(result.is_err());
     }
 
     #[test]
     fn validate_options_match() {
-        let schema = any().options(&[1i32.as_value(), "test".as_value(), true.as_value()]);
-        let result = schema.validate(&"test".as_value().into());
+        let schema = any().options(&[1i32.to_value(), "test".to_value(), true.to_value()]);
+        let result = schema.validate(&"test".to_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_options_mismatch() {
-        let schema = any().options(&[1i32.as_value(), 2i32.as_value()]);
-        let result = schema.validate(&3i32.as_value().into());
+        let schema = any().options(&[1i32.to_value(), 2i32.to_value()]);
+        let result = schema.validate(&3i32.to_value().into());
         assert!(result.is_err());
     }
 
@@ -117,17 +117,17 @@ mod tests {
     fn validate_required_and_options() {
         let schema = any()
             .required()
-            .options(&[true.as_value(), false.as_value()]);
+            .options(&[true.to_value(), false.to_value()]);
 
-        assert!(schema.validate(&true.as_value().into()).is_ok());
-        assert!(schema.validate(&false.as_value().into()).is_ok());
+        assert!(schema.validate(&true.to_value().into()).is_ok());
+        assert!(schema.validate(&false.to_value().into()).is_ok());
         assert!(schema.validate(&xval::valueof!(null).into()).is_err());
-        assert!(schema.validate(&42i32.as_value().into()).is_err());
+        assert!(schema.validate(&42i32.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_collects_multiple_errors() {
-        let schema = any().required().equals(true.as_value());
+        let schema = any().required().equals(true.to_value());
         let err = schema.validate(&xval::valueof!(null).into()).unwrap_err();
         assert_eq!(err.errors.len(), 2);
     }

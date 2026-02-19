@@ -23,7 +23,7 @@ impl MemberExpr {
 
         obj.as_struct()
             .field(xval::Ident::key(&self.field))
-            .map(|v| v.as_value())
+            .map(|v| v.to_value())
             .ok_or_else(|| {
                 EvalError::UndefinedField(UndefinedFieldError {
                     name: self.field.clone(),

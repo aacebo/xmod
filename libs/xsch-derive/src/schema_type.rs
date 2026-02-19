@@ -4,7 +4,7 @@ use quote::{TokenStreamExt, quote};
 ///
 /// `Int` and `Float` carry the exact `xval::Int::from_*` / `xval::Float::from_*`
 /// constructor so that options/equals comparisons use the same variant as the
-/// actual runtime value produced by `AsValue`.
+/// actual runtime value produced by `ToValue`.
 pub enum SchemaType {
     String,
     Int { ctor: proc_macro2::TokenStream },

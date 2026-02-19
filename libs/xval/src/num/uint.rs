@@ -1,4 +1,4 @@
-use crate::{AsValue, Value, num::Number};
+use crate::{ToValue, Value, num::Number};
 
 /// An unsigned integer value that can hold a [`u8`], [`u16`], [`u32`], [`u64`], or [`u128`].
 #[derive(Copy, Clone, PartialEq, Eq, Hash)]
@@ -517,44 +517,44 @@ impl std::fmt::Display for UInt {
     }
 }
 
-impl AsValue for UInt {
-    fn as_value(&self) -> Value {
+impl ToValue for UInt {
+    fn to_value(&self) -> Value {
         Value::Number(Number::UInt(*self))
     }
 }
 
-impl AsValue for u8 {
-    fn as_value(&self) -> Value {
+impl ToValue for u8 {
+    fn to_value(&self) -> Value {
         Value::from_u8(*self)
     }
 }
 
-impl AsValue for u16 {
-    fn as_value(&self) -> Value {
+impl ToValue for u16 {
+    fn to_value(&self) -> Value {
         Value::from_u16(*self)
     }
 }
 
-impl AsValue for u32 {
-    fn as_value(&self) -> Value {
+impl ToValue for u32 {
+    fn to_value(&self) -> Value {
         Value::from_u32(*self)
     }
 }
 
-impl AsValue for u64 {
-    fn as_value(&self) -> Value {
+impl ToValue for u64 {
+    fn to_value(&self) -> Value {
         Value::from_u64(*self)
     }
 }
 
-impl AsValue for u128 {
-    fn as_value(&self) -> Value {
+impl ToValue for u128 {
+    fn to_value(&self) -> Value {
         Value::from_u128(*self)
     }
 }
 
-impl AsValue for usize {
-    fn as_value(&self) -> Value {
+impl ToValue for usize {
+    fn to_value(&self) -> Value {
         Value::from_usize(*self)
     }
 }

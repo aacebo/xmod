@@ -354,7 +354,7 @@ impl<'de> serde::Deserialize<'de> for RuleSet {
 mod tests {
     #[cfg(feature = "serde")]
     mod serde {
-        use xval::AsValue;
+        use xval::ToValue;
 
         use crate::*;
 
@@ -375,7 +375,7 @@ mod tests {
         #[test]
         fn serialize_multiple_rules() {
             let rs = RuleSet::default().add(Required::new(true).into()).add(
-                Options::from(vec![1i32.as_value(), "test".as_value(), true.as_value()]).into(),
+                Options::from(vec![1i32.to_value(), "test".to_value(), true.to_value()]).into(),
             );
             let json = serde_json::to_string(&rs).unwrap();
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();

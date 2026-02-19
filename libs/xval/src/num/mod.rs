@@ -6,7 +6,7 @@ pub use float::*;
 pub use int::*;
 pub use uint::*;
 
-use crate::{AsValue, Value};
+use crate::{ToValue, Value};
 
 /// A numeric value that can hold a float, signed integer, or unsigned integer.
 #[derive(Copy, Clone, PartialEq, Eq)]
@@ -273,8 +273,8 @@ impl std::fmt::Display for Number {
     }
 }
 
-impl AsValue for Number {
-    fn as_value(&self) -> Value {
+impl ToValue for Number {
+    fn to_value(&self) -> Value {
         Value::Number(*self)
     }
 }

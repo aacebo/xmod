@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
-use crate::{AsValue, Object, Value};
+use crate::{Object, ToValue, Value};
 
 pub trait Tuple: Send + Sync {
     fn name(&self) -> &str;
     fn type_id(&self) -> std::any::TypeId;
     fn len(&self) -> usize;
     fn items(&self) -> TupleIter<'_>;
-    fn index(&self, i: usize) -> Option<&dyn AsValue>;
+    fn index(&self, i: usize) -> Option<&dyn ToValue>;
 
     fn is_empty(&self) -> bool {
         self.len() == 0
@@ -19,7 +19,7 @@ impl std::fmt::Debug for dyn Tuple {
         let mut dbg = f.debug_tuple(self.name());
 
         for v in self.items() {
-            dbg.field(&v.as_value());
+            dbg.field(&v.to_value());
         }
 
         dbg.finish()
@@ -38,23 +38,23 @@ impl serde::Serialize for dyn Tuple {
         let mut tup = serializer.serialize_tuple(len)?;
 
         for item in self.items() {
-            tup.serialize_element(&item.as_value())?;
+            tup.serialize_element(&item.to_value())?;
         }
 
         tup.end()
     }
 }
 
-pub struct TupleIter<'a>(Box<dyn Iterator<Item = &'a dyn AsValue> + 'a>);
+pub struct TupleIter<'a>(Box<dyn Iterator<Item = &'a dyn ToValue> + 'a>);
 
 impl<'a> TupleIter<'a> {
-    pub fn new(iter: impl Iterator<Item = &'a dyn AsValue> + 'a) -> Self {
+    pub fn new(iter: impl Iterator<Item = &'a dyn ToValue> + 'a) -> Self {
         Self(Box::new(iter))
     }
 }
 
 impl<'a> Iterator for TupleIter<'a> {
-    type Item = &'a dyn AsValue;
+    type Item = &'a dyn ToValue;
 
     fn next(&mut self) -> Option<Self::Item> {
         self.0.next()
@@ -78,13 +78,13 @@ macro_rules! impl_tuple {
 
             fn items(&self) -> TupleIter<'_> {
                 TupleIter::new(vec![
-                    $( &self.$idx as &dyn AsValue, )+
+                    $( &self.$idx as &dyn ToValue, )+
                 ].into_iter())
             }
 
-            fn index(&self, i: usize) -> Option<&dyn AsValue> {
+            fn index(&self, i: usize) -> Option<&dyn ToValue> {
                 match i {
-                    $( $idx => Some(&self.$idx as &dyn AsValue), )+
+                    $( $idx => Some(&self.$idx as &dyn ToValue), )+
                     _ => None,
                 }
             }
@@ -119,28 +119,28 @@ impl_tuple!("Tuple10", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9);
 impl_tuple!("Tuple11", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10);
 impl_tuple!("Tuple12", 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11);
 
-macro_rules! impl_tuple_as_value {
+macro_rules! impl_tuple_to_value {
     ($($idx:tt $T:ident),+) => {
-        impl<$($T: Clone + AsValue + 'static),+> AsValue for ($($T,)+) {
-            fn as_value(&self) -> Value {
-                Value::from_tuple(($(self.$idx.as_value(),)+))
+        impl<$($T: Clone + ToValue + 'static),+> ToValue for ($($T,)+) {
+            fn to_value(&self) -> Value {
+                Value::from_tuple(($(self.$idx.to_value(),)+))
             }
         }
     };
 }
 
-impl_tuple_as_value!(0 A);
-impl_tuple_as_value!(0 A, 1 B);
-impl_tuple_as_value!(0 A, 1 B, 2 C);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K);
-impl_tuple_as_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K, 11 L);
+impl_tuple_to_value!(0 A);
+impl_tuple_to_value!(0 A, 1 B);
+impl_tuple_to_value!(0 A, 1 B, 2 C);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K);
+impl_tuple_to_value!(0 A, 1 B, 2 C, 3 D, 4 E, 5 F, 6 G, 7 H, 8 I, 9 J, 10 K, 11 L);
 
 #[cfg(test)]
 mod tests {
@@ -180,60 +180,60 @@ mod tests {
         let t = sample_tuple();
         let items: Vec<_> = t.items().collect();
         assert_eq!(items.len(), 3);
-        assert_eq!(items[0].as_value().to_i32(), 1);
-        assert_eq!(items[1].as_value().to_bool(), true);
-        assert_eq!(items[2].as_value().as_str(), "hello");
+        assert_eq!(items[0].to_value().to_i32(), 1);
+        assert_eq!(items[1].to_value().to_bool(), true);
+        assert_eq!(items[2].to_value().as_str(), "hello");
     }
 
     #[test]
     fn index() {
         let t = sample_tuple();
         let v = t.index(0).unwrap();
-        assert_eq!(v.as_value().to_i32(), 1);
+        assert_eq!(v.to_value().to_i32(), 1);
 
         let v = t.index(2).unwrap();
-        assert_eq!(v.as_value().as_str(), "hello");
+        assert_eq!(v.to_value().as_str(), "hello");
 
         assert!(t.index(99).is_none());
     }
 
     #[test]
-    fn as_value() {
+    fn to_value() {
         let t = sample_tuple();
-        let v = t.as_value();
+        let v = t.to_value();
         assert!(v.is_object());
         assert!(v.is_tuple());
     }
 
     #[test]
-    fn tuple_i32_as_value() {
-        let v = (1i32,).as_value();
+    fn tuple_i32_to_value() {
+        let v = (1i32,).to_value();
         assert!(v.is_tuple());
         let t = v.as_tuple();
         assert_eq!(t.len(), 1);
-        assert_eq!(t.index(0).unwrap().as_value().to_i32(), 1);
+        assert_eq!(t.index(0).unwrap().to_value().to_i32(), 1);
     }
 
     #[test]
-    fn tuple_mixed_as_value() {
-        let v = (1i32, true, String::from("hi")).as_value();
+    fn tuple_mixed_to_value() {
+        let v = (1i32, true, String::from("hi")).to_value();
         assert!(v.is_tuple());
         let t = v.as_tuple();
         assert_eq!(t.len(), 3);
-        assert_eq!(t.index(0).unwrap().as_value().to_i32(), 1);
-        assert_eq!(t.index(1).unwrap().as_value().to_bool(), true);
-        assert_eq!(t.index(2).unwrap().as_value().as_str(), "hi");
+        assert_eq!(t.index(0).unwrap().to_value().to_i32(), 1);
+        assert_eq!(t.index(1).unwrap().to_value().to_bool(), true);
+        assert_eq!(t.index(2).unwrap().to_value().as_str(), "hi");
     }
 
     #[test]
-    fn tuple_nested_as_value() {
-        let v = (vec![1i32, 2], true).as_value();
+    fn tuple_nested_to_value() {
+        let v = (vec![1i32, 2], true).to_value();
         assert!(v.is_tuple());
         let t = v.as_tuple();
         assert_eq!(t.len(), 2);
-        let inner = t.index(0).unwrap().as_value();
+        let inner = t.index(0).unwrap().to_value();
         assert!(inner.is_array());
         assert_eq!(inner.as_array().len(), 2);
-        assert_eq!(t.index(1).unwrap().as_value().to_bool(), true);
+        assert_eq!(t.index(1).unwrap().to_value().to_bool(), true);
     }
 }

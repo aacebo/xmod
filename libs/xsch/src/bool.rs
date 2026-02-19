@@ -1,4 +1,4 @@
-use xval::AsValue;
+use xval::ToValue;
 
 use crate::{AsSchema, Context, Equals, Options, Required, RuleSet, Schema, ValidError, Validator};
 
@@ -16,14 +16,14 @@ pub struct BoolSchema(pub(crate) RuleSet);
 
 impl BoolSchema {
     pub fn equals(mut self, value: bool) -> Self {
-        self.0 = self.0.add(Equals::from(value.as_value()).into());
+        self.0 = self.0.add(Equals::from(value.to_value()).into());
         self
     }
 
     pub fn options(mut self, options: &[bool]) -> Self {
         self.0 = self
             .0
-            .add(Options::from(options.iter().map(|v| v.as_value()).collect::<Vec<_>>()).into());
+            .add(Options::from(options.iter().map(|v| v.to_value()).collect::<Vec<_>>()).into());
         self
     }
 
@@ -64,21 +64,21 @@ mod tests {
     #[test]
     fn validate_bool() {
         let schema = bool();
-        assert!(schema.validate(&true.as_value().into()).is_ok());
-        assert!(schema.validate(&false.as_value().into()).is_ok());
+        assert!(schema.validate(&true.to_value().into()).is_ok());
+        assert!(schema.validate(&false.to_value().into()).is_ok());
     }
 
     #[test]
     fn validate_rejects_non_bool() {
         let schema = bool();
-        let err = schema.validate(&42i32.as_value().into()).unwrap_err();
+        let err = schema.validate(&42i32.to_value().into()).unwrap_err();
         assert_eq!(err.message.as_deref(), Some("expected bool"));
     }
 
     #[test]
     fn validate_rejects_string() {
         let schema = bool();
-        assert!(schema.validate(&"true".as_value().into()).is_err());
+        assert!(schema.validate(&"true".to_value().into()).is_err());
     }
 
     #[test]
@@ -97,22 +97,22 @@ mod tests {
     #[test]
     fn validate_equals() {
         let schema = bool().equals(true);
-        assert!(schema.validate(&true.as_value().into()).is_ok());
-        assert!(schema.validate(&false.as_value().into()).is_err());
+        assert!(schema.validate(&true.to_value().into()).is_ok());
+        assert!(schema.validate(&false.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_options() {
         let schema = bool().options(&[true]);
-        assert!(schema.validate(&true.as_value().into()).is_ok());
-        assert!(schema.validate(&false.as_value().into()).is_err());
+        assert!(schema.validate(&true.to_value().into()).is_ok());
+        assert!(schema.validate(&false.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_required_and_equals() {
         let schema = bool().required().equals(false);
-        assert!(schema.validate(&false.as_value().into()).is_ok());
-        assert!(schema.validate(&true.as_value().into()).is_err());
+        assert!(schema.validate(&false.to_value().into()).is_ok());
+        assert!(schema.validate(&true.to_value().into()).is_err());
         assert!(schema.validate(&xval::valueof!(null).into()).is_err());
     }
 }

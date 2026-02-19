@@ -18,8 +18,8 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
     let fields: Vec<syn::Ident> = data.fields.iter().filter_map(|f| f.ident.clone()).collect();
 
     quote! {
-        impl ::xval::AsValue for #ident {
-            fn as_value(&self) -> ::xval::Value {
+        impl ::xval::ToValue for #ident {
+            fn to_value(&self) -> ::xval::Value {
                 ::xval::Value::from_struct(self.clone())
             }
         }
@@ -41,15 +41,15 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
                 ::xval::StructIter::new(
                     [#((
                         ::xval::Ident::from(stringify!(#fields)),
-                        &self.#fields as &dyn ::xval::AsValue,
+                        &self.#fields as &dyn ::xval::ToValue,
                     ),)*].into_iter()
                 )
             }
 
-            fn field(&self, ident: ::xval::Ident) -> Option<&dyn ::xval::AsValue> {
+            fn field(&self, ident: ::xval::Ident) -> Option<&dyn ::xval::ToValue> {
                 #(
                     if ident == stringify!(#fields) {
-                        return Some(&self.#fields as &dyn ::xval::AsValue);
+                        return Some(&self.#fields as &dyn ::xval::ToValue);
                     }
                 )*
 
@@ -80,7 +80,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
                         #(
                             map.insert(
                                 ::xval::Ident::from(stringify!(#field_idents)),
-                                #field_idents.as_value(),
+                                #field_idents.to_value(),
                             );
                         )*
                         ::xval::Value::from_struct(map)
@@ -94,7 +94,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
 
                 quote! {
                     Self::#variant_ident( #( #bindings ),* ) => {
-                        ::xval::Value::from_tuple(( #( #bindings.as_value(), )* ))
+                        ::xval::Value::from_tuple(( #( #bindings.to_value(), )* ))
                     }
                 }
             }
@@ -107,8 +107,8 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     });
 
     quote! {
-        impl ::xval::AsValue for #ident {
-            fn as_value(&self) -> ::xval::Value {
+        impl ::xval::ToValue for #ident {
+            fn to_value(&self) -> ::xval::Value {
                 match self {
                     #( #match_arms ),*
                 }

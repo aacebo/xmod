@@ -1,4 +1,4 @@
-use xval::AsValue;
+use xval::ToValue;
 
 use crate::{Context, Rule, Schema, ValidError, Validator};
 
@@ -39,11 +39,11 @@ impl Validator for Items {
             for (i, item) in ctx.value.as_array().items().enumerate() {
                 let mut next = ctx.clone();
                 next.path = ctx.path.child(i.into());
-                next.value = item.as_value();
+                next.value = item.to_value();
                 items.push(self.0.validate(&next)?);
             }
 
-            return Ok(items.as_value());
+            return Ok(items.to_value());
         }
 
         Ok(ctx.value.clone())

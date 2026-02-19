@@ -16,8 +16,8 @@ pub mod derive {
 }
 
 /// A trait for types that can produce a [`Value`] from a shared reference.
-pub trait AsValue {
-    fn as_value(&self) -> Value;
+pub trait ToValue {
+    fn to_value(&self) -> Value;
 }
 
 /// A dynamically-typed value that can hold a boolean or any numeric type.
@@ -289,6 +289,10 @@ impl Value {
         }
     }
 
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+
     pub fn get(&self, path: &xpath::Path) -> Option<Self> {
         let mut value = self.clone();
 
@@ -298,9 +302,9 @@ impl Value {
                     .as_object()
                     .as_struct()
                     .field(ident.clone())?
-                    .as_value(),
+                    .to_value(),
                 xpath::Ident::Index(v) if value.is_array() => {
-                    value.as_object().as_array().index(*v)?.as_value()
+                    value.as_object().as_array().index(*v)?.to_value()
                 }
                 _ => return None,
             };
@@ -375,33 +379,33 @@ impl PartialOrd for Value {
     }
 }
 
-impl AsValue for Value {
-    fn as_value(&self) -> Value {
+impl ToValue for Value {
+    fn to_value(&self) -> Value {
         self.clone()
     }
 }
 
-impl<T: AsValue> AsValue for Box<T> {
-    fn as_value(&self) -> Value {
-        self.as_ref().as_value()
+impl<T: ToValue> ToValue for Box<T> {
+    fn to_value(&self) -> Value {
+        self.as_ref().to_value()
     }
 }
 
-impl<T: AsValue> AsValue for std::rc::Rc<T> {
-    fn as_value(&self) -> Value {
-        self.as_ref().as_value()
+impl<T: ToValue> ToValue for std::rc::Rc<T> {
+    fn to_value(&self) -> Value {
+        self.as_ref().to_value()
     }
 }
 
-impl<T: AsValue> AsValue for std::sync::Arc<T> {
-    fn as_value(&self) -> Value {
-        self.as_ref().as_value()
+impl<T: ToValue> ToValue for std::sync::Arc<T> {
+    fn to_value(&self) -> Value {
+        self.as_ref().to_value()
     }
 }
 
-impl<T: AsValue> AsValue for std::cell::RefCell<T> {
-    fn as_value(&self) -> Value {
-        self.borrow().as_value()
+impl<T: ToValue> ToValue for std::cell::RefCell<T> {
+    fn to_value(&self) -> Value {
+        self.borrow().to_value()
     }
 }
 

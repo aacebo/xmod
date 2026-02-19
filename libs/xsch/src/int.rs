@@ -1,4 +1,4 @@
-use xval::AsValue;
+use xval::ToValue;
 
 use crate::{
     AsSchema, Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema,
@@ -19,14 +19,14 @@ pub struct IntSchema(pub(crate) RuleSet);
 
 impl IntSchema {
     pub fn equals(mut self, value: xval::Int) -> Self {
-        self.0 = self.0.add(Equals::from(value.as_value()).into());
+        self.0 = self.0.add(Equals::from(value.to_value()).into());
         self
     }
 
     pub fn options(mut self, options: &[xval::Int]) -> Self {
         self.0 = self
             .0
-            .add(Options::from(options.iter().map(|v| v.as_value()).collect::<Vec<_>>()).into());
+            .add(Options::from(options.iter().map(|v| v.to_value()).collect::<Vec<_>>()).into());
         self
     }
 
@@ -83,20 +83,20 @@ mod tests {
     #[test]
     fn validate_int() {
         let schema = int();
-        assert!(schema.validate(&42i32.as_value().into()).is_ok());
+        assert!(schema.validate(&42i32.to_value().into()).is_ok());
     }
 
     #[test]
     fn validate_rejects_float() {
         let schema = int();
-        let err = schema.validate(&3.14f64.as_value().into()).unwrap_err();
+        let err = schema.validate(&3.14f64.to_value().into()).unwrap_err();
         assert_eq!(err.message.as_deref(), Some("expected integer"));
     }
 
     #[test]
     fn validate_rejects_string() {
         let schema = int();
-        let err = schema.validate(&"hello".as_value().into()).unwrap_err();
+        let err = schema.validate(&"hello".to_value().into()).unwrap_err();
         assert_eq!(err.message.as_deref(), Some("expected integer"));
     }
 
@@ -116,8 +116,8 @@ mod tests {
     #[test]
     fn validate_equals() {
         let schema = int().equals(xval::Int::from_i32(42));
-        assert!(schema.validate(&42i32.as_value().into()).is_ok());
-        assert!(schema.validate(&43i32.as_value().into()).is_err());
+        assert!(schema.validate(&42i32.to_value().into()).is_ok());
+        assert!(schema.validate(&43i32.to_value().into()).is_err());
     }
 
     #[test]
@@ -127,55 +127,55 @@ mod tests {
             xval::Int::from_i32(2),
             xval::Int::from_i32(3),
         ]);
-        assert!(schema.validate(&2i32.as_value().into()).is_ok());
-        assert!(schema.validate(&4i32.as_value().into()).is_err());
+        assert!(schema.validate(&2i32.to_value().into()).is_ok());
+        assert!(schema.validate(&4i32.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_required_and_equals() {
         let schema = int().required().equals(xval::Int::from_i32(10));
-        assert!(schema.validate(&10i32.as_value().into()).is_ok());
-        assert!(schema.validate(&11i32.as_value().into()).is_err());
+        assert!(schema.validate(&10i32.to_value().into()).is_ok());
+        assert!(schema.validate(&11i32.to_value().into()).is_err());
         assert!(schema.validate(&xval::valueof!(null).into()).is_err());
     }
 
     #[test]
     fn validate_min() {
         let schema = int().min(5);
-        assert!(schema.validate(&3i32.as_value().into()).is_err());
-        assert!(schema.validate(&5i32.as_value().into()).is_ok());
-        assert!(schema.validate(&10i32.as_value().into()).is_ok());
+        assert!(schema.validate(&3i32.to_value().into()).is_err());
+        assert!(schema.validate(&5i32.to_value().into()).is_ok());
+        assert!(schema.validate(&10i32.to_value().into()).is_ok());
     }
 
     #[test]
     fn validate_max() {
         let schema = int().max(10);
-        assert!(schema.validate(&5i32.as_value().into()).is_ok());
-        assert!(schema.validate(&10i32.as_value().into()).is_ok());
-        assert!(schema.validate(&15i32.as_value().into()).is_err());
+        assert!(schema.validate(&5i32.to_value().into()).is_ok());
+        assert!(schema.validate(&10i32.to_value().into()).is_ok());
+        assert!(schema.validate(&15i32.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_min_and_max() {
         let schema = int().min(1).max(10);
-        assert!(schema.validate(&0i32.as_value().into()).is_err());
-        assert!(schema.validate(&1i32.as_value().into()).is_ok());
-        assert!(schema.validate(&5i32.as_value().into()).is_ok());
-        assert!(schema.validate(&10i32.as_value().into()).is_ok());
-        assert!(schema.validate(&11i32.as_value().into()).is_err());
+        assert!(schema.validate(&0i32.to_value().into()).is_err());
+        assert!(schema.validate(&1i32.to_value().into()).is_ok());
+        assert!(schema.validate(&5i32.to_value().into()).is_ok());
+        assert!(schema.validate(&10i32.to_value().into()).is_ok());
+        assert!(schema.validate(&11i32.to_value().into()).is_err());
     }
 
     #[test]
     fn validate_min_negative() {
         let schema = int().min(-5);
-        assert!(schema.validate(&(-10i32).as_value().into()).is_err());
-        assert!(schema.validate(&(-5i32).as_value().into()).is_ok());
-        assert!(schema.validate(&0i32.as_value().into()).is_ok());
+        assert!(schema.validate(&(-10i32).to_value().into()).is_err());
+        assert!(schema.validate(&(-5i32).to_value().into()).is_ok());
+        assert!(schema.validate(&0i32.to_value().into()).is_ok());
     }
 
     #[test]
     fn from_number_schema() {
         let schema: IntSchema = NumberSchema::default().into();
-        assert!(schema.validate(&42i32.as_value().into()).is_ok());
+        assert!(schema.validate(&42i32.to_value().into()).is_ok());
     }
 }

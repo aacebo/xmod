@@ -31,87 +31,14 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 | 1.4 | ✅ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
 | 1.5 | ➖ | **Perf** | `Value::get()` clones entire value tree on traversal — won't fix (Arc bump is cheap) | [lib.rs:288](libs/xval/src/lib.rs#L288) |
 | 1.6 | ✅ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
-| 1.7 | ⬜ | **Design** | `as_value()` returns owned `Value` (should be `to_value()` per Rust naming conventions) | [lib.rs:21](libs/xval/src/lib.rs#L21) |
-| 1.8 | ⬜ | **Design** | All numeric `to_*` casts silently truncate/wrap | [num/int.rs](libs/xval/src/num/int.rs), [num/float.rs](libs/xval/src/num/float.rs), [num/uint.rs](libs/xval/src/num/uint.rs) |
-| 1.9 | ⬜ | **Lint** | `len()` without `is_empty()` | [lib.rs:279](libs/xval/src/lib.rs#L279) |
-
-### Details
-
-#### 1.1 — `Object::PartialEq` only compares `type_id`
-
-```rust
-impl PartialEq for Object {
-    fn eq(&self, other: &Self) -> bool {
-        self.type_id() == other.type_id()
-    }
-}
-```
-
-Two `HashMap<Ident, Value>` objects with completely different contents are considered equal as long as they share the same backing concrete type. This means `valueof!({"a": 1_i32}) == valueof!({"b": 99_i32})` evaluates to `true`.
-
-**Fix:** Compare by iterating and checking field/element values.
-
-#### 1.2 — `Value::Ord` uses string comparison
-
-```rust
-impl Ord for Value {
-    fn cmp(&self, other: &Self) -> std::cmp::Ordering {
-        self.to_string().cmp(&other.to_string())
-    }
-}
-```
-
-`Value::from_i32(9)` compares as greater than `Value::from_i32(10)` because `"9" > "10"` lexicographically. Also allocates on every comparison.
-
-**Fix:** Either remove `Ord` or implement proper multi-type ordering (e.g., Null < Bool < Number < String < Object, with numeric comparison within Number).
-
-#### 1.3 — `Eq` on `Value` is unsound with NaN
-
-`Value` implements `Eq` but can contain `Float` wrapping `f64`/`f32`. Since `NaN != NaN`, this violates the reflexivity requirement of `Eq`. This can cause logical bugs in `HashMap`, `BTreeMap`, deduplication, etc.
-
-**Fix:** Either remove `Eq` from `Value`, normalize NaN in `PartialEq`, or use a NaN-free float wrapper.
-
-#### 1.4 — `Value::get()` panics on non-object traversal
-
-```rust
-pub fn get(&self, path: &xpath::Path) -> Option<Self> {
-    let mut value = self.clone();
-    for segment in path.iter() {
-        let next = match segment {
-            xpath::Segment::Key(v) => value.as_object().as_struct().field(v.as_str().into()),
-            // ...
-        };
-    }
-}
-```
-
-`get()` returns `Option<Self>`, so callers expect `None` on failure. But if the path navigates into a non-Object (e.g., path `"a/b"` but `a` holds a `Number`), the internal `as_object()` call panics. Since `get()` already signals failure via `Option`, it should guard with `is_object()` / `is_array()` before calling `as_object()` and return `None` on mismatch.
-
-**Fix:** Check type before calling `as_object()` internally. Also avoid cloning the entire value tree upfront — traverse by reference instead.
-
-#### 1.6 — `Ident::PartialEq<usize>` allocates needlessly
-
-```rust
-impl PartialEq<usize> for Ident {
-    fn eq(&self, other: &usize) -> bool {
-        self.to_string() == format!("{}", other)
-    }
-}
-```
-
-**Fix:** `matches!(self, Self::Index(v) if v == other)`
-
-#### 1.8 — Numeric conversion boilerplate
-
-~700 lines of near-identical `to_i8()`, `to_i16()`, ... methods across [int.rs](libs/xval/src/num/int.rs), [uint.rs](libs/xval/src/num/uint.rs), [float.rs](libs/xval/src/num/float.rs). All use `as` casts that silently truncate.
-
-**Fix:** Use macros to reduce duplication. Provide `TryFrom` implementations for checked conversions.
+| 1.7 | ✅ | **Design** | `as_value()` returns owned `Value` (should be `to_value()` per Rust naming conventions) | [lib.rs:21](libs/xval/src/lib.rs#L21) |
+| 1.8 | ➖ | **Design** | All numeric `to_*` casts silently truncate/wrap — won't fix (intentional design) | [num/int.rs](libs/xval/src/num/int.rs), [num/float.rs](libs/xval/src/num/float.rs), [num/uint.rs](libs/xval/src/num/uint.rs) |
+| 1.9 | ✅ | **Lint** | `len()` without `is_empty()` | [lib.rs:279](libs/xval/src/lib.rs#L279) |
 
 ### Missing Trait Implementations
 
 - `Hash` for `Value` (has `Eq` but no `Hash`)
-- `is_empty()` for `Value` (has `len()`)
-- `AsValue` for `Option<T>` (natural: `None` -> `Value::Null`)
+- `ToValue` for `Option<T>` (natural: `None` -> `Value::Null`)
 - `From<Bool> for bool`, `From<Str> for String` (reverse extractions)
 - `size_hint()` / `ExactSizeIterator` on `StructIter`, `ArrayIter`, `TupleIter`
 
@@ -552,10 +479,13 @@ The highest-priority items across the workspace:
 2. ✅ **Fix `Value::Ord`** in xval (1.2) — type-aware ordering with `total_cmp` for floats
 3. ✅ **Fix `Eq` unsoundness with NaN** in xval (1.3) — `Float::PartialEq` now uses `total_cmp`
 4. ✅ **Fix `Value::get()` panic** in xval (1.4) — returns `None` on type mismatch
-5. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
-6. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-7. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
-8. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-9. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
-10. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-11. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+5. ✅ **Fix `Ident::PartialEq` allocations** (1.6) — consolidated `xval::Ident` and `xpath::Segment` into `xpath::Ident`
+6. ✅ **Rename `AsValue`/`as_value` to `ToValue`/`to_value`** (1.7) — workspace-wide rename
+7. ✅ **Add `Value::is_empty()`** (1.9)
+8. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
+9. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
+10. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
+11. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
+12. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
+13. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
+14. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)

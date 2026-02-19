@@ -27,7 +27,7 @@ impl ForNode {
 
         for item in arr.items() {
             let mut inner = scope.clone();
-            inner.set_var(&self.binding, item.as_value());
+            inner.set_var(&self.binding, item.to_value());
             output.push_str(&self.body.render(&inner)?);
         }
 

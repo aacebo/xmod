@@ -1,4 +1,4 @@
-use crate::{AsValue, Value};
+use crate::{ToValue, Value};
 
 /// A type-safe wrapper around a [`str`] value.
 #[repr(transparent)]
@@ -124,26 +124,26 @@ impl PartialEq<String> for Value {
     }
 }
 
-impl AsValue for Str {
-    fn as_value(&self) -> Value {
+impl ToValue for Str {
+    fn to_value(&self) -> Value {
         Value::String(self.clone())
     }
 }
 
-impl AsValue for str {
-    fn as_value(&self) -> Value {
+impl ToValue for str {
+    fn to_value(&self) -> Value {
         Value::from_str(self)
     }
 }
 
-impl AsValue for &str {
-    fn as_value(&self) -> Value {
+impl ToValue for &str {
+    fn to_value(&self) -> Value {
         Value::from_str(self)
     }
 }
 
-impl AsValue for String {
-    fn as_value(&self) -> Value {
+impl ToValue for String {
+    fn to_value(&self) -> Value {
         Value::from_string(self.clone())
     }
 }

@@ -67,7 +67,7 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
 
         impl ::xsch::Validate for #ident {
             fn validate(&self) -> Result<::xval::Value, ::xsch::ValidError> {
-                self.as_schema().validate(&::xval::AsValue::as_value(self).into())
+                self.as_schema().validate(&::xval::ToValue::to_value(self).into())
             }
         }
     }
@@ -110,7 +110,7 @@ fn parse_rule(meta: &syn::Meta, kind: &SchemaType) -> Result<proc_macro2::TokenS
             SchemaType::Int { ctor } => Ok(quote!(equals(#ctor(#val)))),
             SchemaType::Float { ctor } => Ok(quote!(equals(#ctor(#val)))),
             SchemaType::Bool => Ok(quote!(equals(#val))),
-            SchemaType::Any => Ok(quote!(equals(::xval::AsValue::as_value(&#val)))),
+            SchemaType::Any => Ok(quote!(equals(::xval::ToValue::to_value(&#val)))),
         }
     } else if rule_path.is_ident("options") {
         let val = rule_value.ok_or_else(|| {

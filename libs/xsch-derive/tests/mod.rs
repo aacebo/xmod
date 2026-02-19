@@ -61,15 +61,15 @@ fn simple_struct_validates_matching_value() {
 
     assert!(value.is_struct());
     assert_eq!(
-        value.as_struct().field("name".into()).unwrap().as_value(),
+        value.as_struct().field("name".into()).unwrap().to_value(),
         "alice"
     );
     assert_eq!(
-        value.as_struct().field("age".into()).unwrap().as_value(),
+        value.as_struct().field("age".into()).unwrap().to_value(),
         30_i32
     );
     assert_eq!(
-        value.as_struct().field("active".into()).unwrap().as_value(),
+        value.as_struct().field("active".into()).unwrap().to_value(),
         true
     );
 }

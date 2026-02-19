@@ -27,7 +27,7 @@ impl IndexExpr {
 
         let i = value_to_usize(&idx, self.span.clone())?;
         let arr = obj.as_array();
-        arr.index(i).map(|v| v.as_value()).ok_or_else(|| {
+        arr.index(i).map(|v| v.to_value()).ok_or_else(|| {
             EvalError::IndexOutOfBounds(IndexOutOfBoundsError {
                 index: i,
                 len: arr.len(),

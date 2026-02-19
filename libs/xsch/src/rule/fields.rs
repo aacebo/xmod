@@ -69,7 +69,7 @@ impl Validator for Fields {
                 next.path = ctx.path.child(xpath::Ident::parse(name));
                 next.value = input
                     .field(xpath::Ident::key(name))
-                    .map(|v| v.as_value())
+                    .map(|v| v.to_value())
                     .unwrap_or(xval::valueof!(null));
 
                 if let Err(err) = schema.validate(&next) {

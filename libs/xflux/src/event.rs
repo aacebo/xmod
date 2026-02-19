@@ -1,4 +1,4 @@
-use xval::{AsValue, Value};
+use xval::{ToValue, Value};
 
 #[derive(Debug, Clone)]
 pub struct Event {
@@ -7,10 +7,10 @@ pub struct Event {
 }
 
 impl Event {
-    pub fn new(name: &str, payload: impl AsValue) -> Self {
+    pub fn new(name: &str, payload: impl ToValue) -> Self {
         Self {
             name: name.to_string(),
-            payload: payload.as_value(),
+            payload: payload.to_value(),
         }
     }
 }

@@ -8,7 +8,7 @@ pub use tuples::*;
 
 use std::sync::Arc;
 
-use crate::{AsValue, Value};
+use crate::{ToValue, Value};
 
 #[derive(Clone)]
 pub enum Object {
@@ -102,7 +102,7 @@ impl PartialEq for Object {
 
                 a.items().all(|(k, v)| {
                     b.field(k.clone())
-                        .is_some_and(|bv| v.as_value() == bv.as_value())
+                        .is_some_and(|bv| v.to_value() == bv.to_value())
                 })
             }
             (Self::Array(a), Self::Array(b)) => {
@@ -112,7 +112,7 @@ impl PartialEq for Object {
 
                 a.items()
                     .zip(b.items())
-                    .all(|(av, bv)| av.as_value() == bv.as_value())
+                    .all(|(av, bv)| av.to_value() == bv.to_value())
             }
             (Self::Tuple(a), Self::Tuple(b)) => {
                 if a.len() != b.len() {
@@ -121,7 +121,7 @@ impl PartialEq for Object {
 
                 a.items()
                     .zip(b.items())
-                    .all(|(av, bv)| av.as_value() == bv.as_value())
+                    .all(|(av, bv)| av.to_value() == bv.to_value())
             }
             _ => false,
         }
@@ -164,8 +164,8 @@ impl std::fmt::Display for Object {
     }
 }
 
-impl AsValue for Object {
-    fn as_value(&self) -> Value {
+impl ToValue for Object {
+    fn to_value(&self) -> Value {
         Value::Object(self.clone())
     }
 }
@@ -591,9 +591,9 @@ mod tests {
         }
 
         #[test]
-        fn as_value_object() {
+        fn to_value_object() {
             let obj = Object::from(sample_array());
-            let v = obj.as_value();
+            let v = obj.to_value();
             assert!(v.is_array());
         }
     }
@@ -633,8 +633,8 @@ mod tests {
             assert!(obj.is_struct());
             let s = obj.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field("x".into()).unwrap().as_value().to_i8(), 42);
-            assert_eq!(s.field("y".into()).unwrap().as_value().as_str(), "world");
+            assert_eq!(s.field("x".into()).unwrap().to_value().to_i8(), 42);
+            assert_eq!(s.field("y".into()).unwrap().to_value().as_str(), "world");
         }
 
         #[test]
@@ -643,9 +643,9 @@ mod tests {
             assert!(obj.is_array());
             let a = obj.as_array();
             assert_eq!(a.len(), 3);
-            assert_eq!(a.index(0).unwrap().as_value().to_i8(), 10);
-            assert_eq!(a.index(1).unwrap().as_value().to_bool(), false);
-            assert_eq!(a.index(2).unwrap().as_value().as_str(), "test");
+            assert_eq!(a.index(0).unwrap().to_value().to_i8(), 10);
+            assert_eq!(a.index(1).unwrap().to_value().to_bool(), false);
+            assert_eq!(a.index(2).unwrap().to_value().as_str(), "test");
         }
 
         #[test]
@@ -656,7 +656,7 @@ mod tests {
             assert!(deserialized.is_struct());
             let s = deserialized.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field("a".into()).unwrap().as_value().to_i8(), 1);
+            assert_eq!(s.field("a".into()).unwrap().to_value().to_i8(), 1);
         }
 
         #[test]
@@ -667,9 +667,9 @@ mod tests {
             assert!(deserialized.is_array());
             let a = deserialized.as_array();
             assert_eq!(a.len(), 3);
-            assert_eq!(a.index(0).unwrap().as_value().to_i8(), 1);
-            assert_eq!(a.index(1).unwrap().as_value().to_bool(), true);
-            assert_eq!(a.index(2).unwrap().as_value().as_str(), "hello");
+            assert_eq!(a.index(0).unwrap().to_value().to_i8(), 1);
+            assert_eq!(a.index(1).unwrap().to_value().to_bool(), true);
+            assert_eq!(a.index(2).unwrap().to_value().as_str(), "hello");
         }
     }
 }
