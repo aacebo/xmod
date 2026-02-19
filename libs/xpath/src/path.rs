@@ -1,7 +1,7 @@
-use crate::{ParseError, Segment};
+use crate::{Ident, ParseError};
 
 #[derive(Default, Debug, Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
-pub struct Path(Vec<Segment>);
+pub struct Path(Vec<Ident>);
 
 impl Path {
     pub fn parse(src: &str) -> Result<Self, ParseError> {
@@ -16,7 +16,7 @@ impl Path {
                 return Err("path segments cannot be empty".into());
             }
 
-            items.push(Segment::parse(item));
+            items.push(Ident::parse(item));
         }
 
         Ok(Self(items))
@@ -30,33 +30,33 @@ impl Path {
         self.0.len()
     }
 
-    pub fn last(&self) -> Option<&Segment> {
+    pub fn last(&self) -> Option<&Ident> {
         self.0.last()
     }
 
-    pub fn iter(&self) -> std::slice::Iter<'_, Segment> {
+    pub fn iter(&self) -> std::slice::Iter<'_, Ident> {
         self.0.iter()
     }
 
-    pub fn push(&mut self, segment: Segment) -> &mut Self {
-        self.0.push(segment);
+    pub fn push(&mut self, ident: Ident) -> &mut Self {
+        self.0.push(ident);
         self
     }
 
-    pub fn pop(&mut self) -> Option<Segment> {
+    pub fn pop(&mut self) -> Option<Ident> {
         self.0.pop()
     }
 
-    pub fn child(&self, segment: Segment) -> Self {
+    pub fn child(&self, ident: Ident) -> Self {
         let mut path = self.clone();
-        path.0.push(segment);
+        path.0.push(ident);
         path
     }
 
-    pub fn peer(&self, segment: Segment) -> Self {
+    pub fn peer(&self, ident: Ident) -> Self {
         let mut path = self.clone();
         path.0.pop();
-        path.0.push(segment);
+        path.0.push(ident);
         path
     }
 }
@@ -75,12 +75,12 @@ impl From<String> for Path {
 
 impl std::fmt::Display for Path {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for (i, segment) in self.0.iter().enumerate() {
+        for (i, ident) in self.0.iter().enumerate() {
             if i > 0 {
                 write!(f, "/")?;
             }
 
-            write!(f, "{}", segment)?;
+            write!(f, "{}", ident)?;
         }
 
         Ok(())
@@ -88,7 +88,7 @@ impl std::fmt::Display for Path {
 }
 
 impl std::ops::Index<usize> for Path {
-    type Output = Segment;
+    type Output = Ident;
 
     fn index(&self, index: usize) -> &Self::Output {
         self.0.index(index)
@@ -124,25 +124,25 @@ mod tests {
     fn parse_simple() {
         let path = Path::parse("a/b/c").unwrap();
         assert_eq!(path.len(), 3);
-        assert_eq!(path[0], Segment::Key("a".into()));
-        assert_eq!(path[1], Segment::Key("b".into()));
-        assert_eq!(path[2], Segment::Key("c".into()));
+        assert_eq!(path[0], Ident::Key("a".into()));
+        assert_eq!(path[1], Ident::Key("b".into()));
+        assert_eq!(path[2], Ident::Key("c".into()));
     }
 
     #[test]
     fn parse_mixed() {
         let path = Path::parse("users/0/name").unwrap();
         assert_eq!(path.len(), 3);
-        assert_eq!(path[0], Segment::Key("users".into()));
-        assert_eq!(path[1], Segment::Index(0));
-        assert_eq!(path[2], Segment::Key("name".into()));
+        assert_eq!(path[0], Ident::Key("users".into()));
+        assert_eq!(path[1], Ident::Index(0));
+        assert_eq!(path[2], Ident::Key("name".into()));
     }
 
     #[test]
     fn parse_single() {
         let path = Path::parse("key").unwrap();
         assert_eq!(path.len(), 1);
-        assert_eq!(path[0], Segment::Key("key".into()));
+        assert_eq!(path[0], Ident::Key("key".into()));
     }
 
     #[test]
@@ -197,11 +197,11 @@ mod tests {
     fn last() {
         assert_eq!(
             Path::parse("a/b/c").unwrap().last(),
-            Some(&Segment::Key("c".into()))
+            Some(&Ident::Key("c".into()))
         );
         assert_eq!(
             Path::parse("users/0").unwrap().last(),
-            Some(&Segment::Index(0))
+            Some(&Ident::Index(0))
         );
         assert_eq!(Path::parse("").unwrap().last(), None);
     }
@@ -209,9 +209,9 @@ mod tests {
     #[test]
     fn index() {
         let path = Path::parse("x/1/y").unwrap();
-        assert_eq!(path[0], Segment::Key("x".into()));
-        assert_eq!(path[1], Segment::Index(1));
-        assert_eq!(path[2], Segment::Key("y".into()));
+        assert_eq!(path[0], Ident::Key("x".into()));
+        assert_eq!(path[1], Ident::Index(1));
+        assert_eq!(path[2], Ident::Key("y".into()));
     }
 
     #[test]
@@ -266,9 +266,9 @@ mod tests {
         fn deserialize() {
             let path: Path = serde_json::from_str(r#""users/0/name""#).unwrap();
             assert_eq!(path.len(), 3);
-            assert_eq!(path[0], Segment::Key("users".into()));
-            assert_eq!(path[1], Segment::Index(0));
-            assert_eq!(path[2], Segment::Key("name".into()));
+            assert_eq!(path[0], Ident::Key("users".into()));
+            assert_eq!(path[1], Ident::Index(0));
+            assert_eq!(path[2], Ident::Key("name".into()));
         }
 
         #[test]

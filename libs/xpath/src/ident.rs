@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
+#[derive(Clone, Eq, PartialEq, Ord, PartialOrd, Hash)]
 #[cfg_attr(
     feature = "serde",
     derive(serde::Deserialize, serde::Serialize),
@@ -25,11 +25,19 @@ impl Ident {
     pub fn is_index(&self) -> bool {
         matches!(self, Self::Index(_))
     }
+
+    pub fn parse(src: &str) -> Self {
+        if let Ok(index) = src.parse::<usize>() {
+            return Self::Index(index);
+        }
+
+        Self::Key(src.into())
+    }
 }
 
 impl From<&str> for Ident {
     fn from(value: &str) -> Self {
-        Self::key(value)
+        Self::Key(value.into())
     }
 }
 
@@ -41,7 +49,7 @@ impl From<String> for Ident {
 
 impl From<usize> for Ident {
     fn from(value: usize) -> Self {
-        Self::index(value)
+        Self::Index(value)
     }
 }
 
@@ -107,6 +115,20 @@ mod tests {
     }
 
     #[test]
+    fn parse_key() {
+        let k = Ident::parse("foo");
+        assert!(k.is_key());
+        assert_eq!(k, Ident::key("foo"));
+    }
+
+    #[test]
+    fn parse_index() {
+        let i = Ident::parse("42");
+        assert!(i.is_index());
+        assert_eq!(i, Ident::index(42));
+    }
+
+    #[test]
     fn from_str() {
         let k: Ident = "bar".into();
         assert!(k.is_key());
@@ -149,7 +171,7 @@ mod tests {
     }
 
     #[cfg(feature = "serde")]
-    mod serde {
+    mod serde_tests {
         use super::*;
 
         #[test]
@@ -174,6 +196,22 @@ mod tests {
         fn deserialize_index() {
             let i: Ident = serde_json::from_str("7").unwrap();
             assert_eq!(i, Ident::index(7));
+        }
+
+        #[test]
+        fn roundtrip_key() {
+            let original = Ident::key("users");
+            let json = serde_json::to_string(&original).unwrap();
+            let restored: Ident = serde_json::from_str(&json).unwrap();
+            assert_eq!(original, restored);
+        }
+
+        #[test]
+        fn roundtrip_index() {
+            let original = Ident::index(7);
+            let json = serde_json::to_string(&original).unwrap();
+            let restored: Ident = serde_json::from_str(&json).unwrap();
+            assert_eq!(original, restored);
         }
     }
 }

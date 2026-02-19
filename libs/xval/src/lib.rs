@@ -1,15 +1,14 @@
 mod bool;
-mod ident;
 mod macros;
 pub mod num;
 mod object;
 mod string;
 
 pub use bool::*;
-pub use ident::*;
 pub use num::*;
 pub use object::*;
 pub use string::*;
+pub use xpath::Ident;
 
 #[cfg(feature = "derive")]
 pub mod derive {
@@ -293,14 +292,14 @@ impl Value {
     pub fn get(&self, path: &xpath::Path) -> Option<Self> {
         let mut value = self.clone();
 
-        for segment in path.iter() {
-            value = match segment {
-                xpath::Segment::Key(v) if value.is_struct() => value
+        for ident in path.iter() {
+            value = match ident {
+                xpath::Ident::Key(_) if value.is_struct() => value
                     .as_object()
                     .as_struct()
-                    .field(v.as_str().into())?
+                    .field(ident.clone())?
                     .as_value(),
-                xpath::Segment::Index(v) if value.is_array() => {
+                xpath::Ident::Index(v) if value.is_array() => {
                     value.as_object().as_array().index(*v)?.as_value()
                 }
                 _ => return None,

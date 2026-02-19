@@ -1,7 +1,7 @@
 mod error;
+mod ident;
 mod path;
-mod segment;
 
 pub use error::*;
+pub use ident::*;
 pub use path::*;
-pub use segment::*;

@@ -54,7 +54,7 @@ impl Validator for Fields {
             // Check for unexpected fields in the input
             for (ident, _) in input.items() {
                 if !self.0.contains_key(&ident.to_string()) {
-                    let path = ctx.path.child(xpath::Segment::parse(&ident.to_string()));
+                    let path = ctx.path.child(xpath::Ident::parse(&ident.to_string()));
                     error.errors.push(
                         ValidError::new(path)
                             .message(&format!("unexpected field '{}'", &ident))
@@ -66,9 +66,9 @@ impl Validator for Fields {
             // Validator all schema-defined fields
             for (name, schema) in &self.0 {
                 let mut next = ctx.clone();
-                next.path = ctx.path.child(xpath::Segment::parse(name));
+                next.path = ctx.path.child(xpath::Ident::parse(name));
                 next.value = input
-                    .field(xval::Ident::key(name))
+                    .field(xpath::Ident::key(name))
                     .map(|v| v.as_value())
                     .unwrap_or(xval::valueof!(null));
 
