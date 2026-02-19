@@ -65,25 +65,25 @@ impl std::fmt::Display for Ident {
 
 impl PartialEq<str> for Ident {
     fn eq(&self, other: &str) -> bool {
-        self.to_string() == other
+        matches!(self, Self::Key(v) if &**v == other)
     }
 }
 
 impl PartialEq<&str> for Ident {
     fn eq(&self, other: &&str) -> bool {
-        self.to_string() == *other
+        self == *other
     }
 }
 
 impl PartialEq<String> for Ident {
     fn eq(&self, other: &String) -> bool {
-        self.to_string() == *other
+        self == other.as_str()
     }
 }
 
 impl PartialEq<usize> for Ident {
     fn eq(&self, other: &usize) -> bool {
-        self.to_string() == format!("{}", other)
+        matches!(self, Self::Index(v) if v == other)
     }
 }
 

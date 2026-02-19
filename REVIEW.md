@@ -30,7 +30,7 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 | 1.3 | ✅ | **Bug** | `Eq` on `Value` is unsound when containing NaN floats | [lib.rs:336](libs/xval/src/lib.rs#L336) |
 | 1.4 | ✅ | **Bug** | `Value::get()` panics if path traverses a non-object value (should return `None` since it already returns `Option`) | [lib.rs:292](libs/xval/src/lib.rs#L292) |
 | 1.5 | ➖ | **Perf** | `Value::get()` clones entire value tree on traversal — won't fix (Arc bump is cheap) | [lib.rs:288](libs/xval/src/lib.rs#L288) |
-| 1.6 | ⬜ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
+| 1.6 | ✅ | **Perf** | `Ident::PartialEq<usize>` allocates two strings to compare | [ident.rs:85](libs/xval/src/ident.rs#L85) |
 | 1.7 | ⬜ | **Design** | `as_value()` returns owned `Value` (should be `to_value()` per Rust naming conventions) | [lib.rs:21](libs/xval/src/lib.rs#L21) |
 | 1.8 | ⬜ | **Design** | All numeric `to_*` casts silently truncate/wrap | [num/int.rs](libs/xval/src/num/int.rs), [num/float.rs](libs/xval/src/num/float.rs), [num/uint.rs](libs/xval/src/num/uint.rs) |
 | 1.9 | ⬜ | **Lint** | `len()` without `is_empty()` | [lib.rs:279](libs/xval/src/lib.rs#L279) |
