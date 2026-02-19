@@ -94,7 +94,37 @@ impl Object {
 
 impl PartialEq for Object {
     fn eq(&self, other: &Self) -> bool {
-        self.type_id() == other.type_id()
+        match (self, other) {
+            (Self::Struct(a), Self::Struct(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+
+                a.items().all(|(k, v)| {
+                    b.field(k.clone())
+                        .is_some_and(|bv| v.as_value() == bv.as_value())
+                })
+            }
+            (Self::Array(a), Self::Array(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+
+                a.items()
+                    .zip(b.items())
+                    .all(|(av, bv)| av.as_value() == bv.as_value())
+            }
+            (Self::Tuple(a), Self::Tuple(b)) => {
+                if a.len() != b.len() {
+                    return false;
+                }
+
+                a.items()
+                    .zip(b.items())
+                    .all(|(av, bv)| av.as_value() == bv.as_value())
+            }
+            _ => false,
+        }
     }
 }
 
@@ -369,6 +399,114 @@ mod tests {
                 obj.as_array().as_ref() as *const dyn Array,
                 cloned.as_array().as_ref() as *const dyn Array
             );
+        }
+
+        #[test]
+        fn eq_structs_same_content() {
+            let a = Object::from_struct(sample_struct());
+            let b = Object::from_struct(sample_struct());
+            assert_eq!(a, b);
+        }
+
+        #[test]
+        fn ne_structs_different_values() {
+            let mut m1 = HashMap::new();
+            m1.insert(Ident::key("x"), valueof!(1_i32));
+
+            let mut m2 = HashMap::new();
+            m2.insert(Ident::key("x"), valueof!(2_i32));
+
+            assert_ne!(Object::from_struct(m1), Object::from_struct(m2));
+        }
+
+        #[test]
+        fn ne_structs_different_keys() {
+            let mut m1 = HashMap::new();
+            m1.insert(Ident::key("a"), valueof!(1_i32));
+
+            let mut m2 = HashMap::new();
+            m2.insert(Ident::key("b"), valueof!(1_i32));
+
+            assert_ne!(Object::from_struct(m1), Object::from_struct(m2));
+        }
+
+        #[test]
+        fn ne_structs_different_lengths() {
+            let mut m1 = HashMap::new();
+            m1.insert(Ident::key("a"), valueof!(1_i32));
+
+            let mut m2 = HashMap::new();
+            m2.insert(Ident::key("a"), valueof!(1_i32));
+            m2.insert(Ident::key("b"), valueof!(2_i32));
+
+            assert_ne!(Object::from_struct(m1), Object::from_struct(m2));
+        }
+
+        #[test]
+        fn eq_arrays_same_content() {
+            let a = Object::from_array(sample_array());
+            let b = Object::from_array(sample_array());
+            assert_eq!(a, b);
+        }
+
+        #[test]
+        fn ne_arrays_different_elements() {
+            let a = Object::from_array(vec![valueof!(1_i32)]);
+            let b = Object::from_array(vec![valueof!(2_i32)]);
+            assert_ne!(a, b);
+        }
+
+        #[test]
+        fn ne_arrays_different_lengths() {
+            let a = Object::from_array(vec![valueof!(1_i32)]);
+            let b = Object::from_array(vec![valueof!(1_i32), valueof!(2_i32)]);
+            assert_ne!(a, b);
+        }
+
+        #[test]
+        fn eq_tuples_same_content() {
+            let a = Object::from_tuple(sample_tuple());
+            let b = Object::from_tuple(sample_tuple());
+            assert_eq!(a, b);
+        }
+
+        #[test]
+        fn ne_tuples_different_elements() {
+            let a = Object::from_tuple((valueof!(1_i32), valueof!(true)));
+            let b = Object::from_tuple((valueof!(2_i32), valueof!(true)));
+            assert_ne!(a, b);
+        }
+
+        #[test]
+        fn ne_struct_vs_array() {
+            let s = Object::from_struct(sample_struct());
+            let a = Object::from_array(sample_array());
+            assert_ne!(s, a);
+        }
+
+        #[test]
+        fn eq_empty_arrays() {
+            let a = Object::from_array(Vec::<Value>::new());
+            let b = Object::from_array(Vec::<Value>::new());
+            assert_eq!(a, b);
+        }
+
+        #[test]
+        fn eq_nested_objects() {
+            let inner1 = Object::from_array(vec![valueof!(1_i32)]);
+            let inner2 = Object::from_array(vec![valueof!(1_i32)]);
+            let a = Object::from_array(vec![Value::Object(inner1)]);
+            let b = Object::from_array(vec![Value::Object(inner2)]);
+            assert_eq!(a, b);
+        }
+
+        #[test]
+        fn ne_nested_objects() {
+            let inner1 = Object::from_array(vec![valueof!(1_i32)]);
+            let inner2 = Object::from_array(vec![valueof!(2_i32)]);
+            let a = Object::from_array(vec![Value::Object(inner1)]);
+            let b = Object::from_array(vec![Value::Object(inner2)]);
+            assert_ne!(a, b);
         }
     }
 
