@@ -1,13 +1,13 @@
 use xval::ToValue;
 use xval_derive::Value;
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Single(i32);
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Pair(i32, bool);
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Unit;
 
 #[test]

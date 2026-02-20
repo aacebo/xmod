@@ -1,16 +1,16 @@
 use xval::ToValue;
 use xval_derive::Value;
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Pair(i32, bool);
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct User {
     pub name: String,
     pub tags: Vec<String>,
 }
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct WithTuple {
     pub pair: Pair,
     pub name: String,

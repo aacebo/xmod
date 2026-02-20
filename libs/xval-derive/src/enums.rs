@@ -17,7 +17,7 @@ pub fn derive(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
 
                 quote! {
                     Self::#variant_ident { #( #field_idents ),* } => {
-                        let mut map = ::std::collections::HashMap::new();
+                        let mut map = ::std::collections::BTreeMap::new();
                         #(
                             map.insert(
                                 ::xval::Ident::from(stringify!(#field_idents)),

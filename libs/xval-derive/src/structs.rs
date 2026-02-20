@@ -10,7 +10,14 @@ pub fn derive(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
     quote! {
         impl #impl_generics ::xval::ToValue for #ident #type_generics #where_generics {
             fn to_value(&self) -> ::xval::Value {
-                ::xval::Value::from_struct(self.clone())
+                let mut map = ::std::collections::BTreeMap::new();
+                #(
+                    map.insert(
+                        ::xval::Ident::from(stringify!(#fields)),
+                        self.#fields.to_value(),
+                    );
+                )*
+                ::xval::Value::from_struct(map)
             }
         }
 

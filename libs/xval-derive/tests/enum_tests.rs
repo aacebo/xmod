@@ -1,7 +1,7 @@
 use xval::ToValue;
 use xval_derive::Value;
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 enum Message {
     Disconnect,
     Text(String),

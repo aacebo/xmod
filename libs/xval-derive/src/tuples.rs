@@ -10,7 +10,7 @@ pub fn derive(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
     quote! {
         impl #impl_generics ::xval::ToValue for #ident #type_generics #where_generics {
             fn to_value(&self) -> ::xval::Value {
-                ::xval::Value::from_tuple(self.clone())
+                ::xval::Value::from_tuple(( #( self.#indices.to_value(), )* ))
             }
         }
 

@@ -1,4 +1,7 @@
-use std::{collections::HashMap, sync::Arc};
+use std::{
+    collections::{BTreeMap, HashMap},
+    sync::Arc,
+};
 
 use crate::{Ident, Object, ToValue, Value};
 
@@ -54,6 +57,50 @@ impl<T: Clone + ToValue + 'static> ToValue for HashMap<Ident, T> {
             self.iter()
                 .map(|(k, v)| (k.clone(), v.to_value()))
                 .collect::<HashMap<Ident, Value>>(),
+        )
+    }
+}
+
+impl Struct for BTreeMap<Ident, Value> {
+    fn name(&self) -> &str {
+        "BTreeMap"
+    }
+
+    fn type_id(&self) -> std::any::TypeId {
+        std::any::TypeId::of::<Self>()
+    }
+
+    fn len(&self) -> usize {
+        self.len()
+    }
+
+    fn items(&self) -> StructIter<'_> {
+        StructIter::new(self.iter().map(|(k, v)| (k.clone(), v as &dyn ToValue)))
+    }
+
+    fn field(&self, ident: Ident) -> Option<&dyn ToValue> {
+        self.get(&ident).map(|v| v as &dyn ToValue)
+    }
+}
+
+impl From<BTreeMap<Ident, Value>> for Object {
+    fn from(value: BTreeMap<Ident, Value>) -> Self {
+        Self::Struct(Arc::new(value))
+    }
+}
+
+impl From<BTreeMap<Ident, Value>> for Value {
+    fn from(value: BTreeMap<Ident, Value>) -> Self {
+        Self::Object(Object::from(value))
+    }
+}
+
+impl<T: Clone + ToValue + 'static> ToValue for BTreeMap<Ident, T> {
+    fn to_value(&self) -> Value {
+        Value::from_struct(
+            self.iter()
+                .map(|(k, v)| (k.clone(), v.to_value()))
+                .collect::<BTreeMap<Ident, Value>>(),
         )
     }
 }

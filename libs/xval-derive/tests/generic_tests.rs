@@ -1,19 +1,19 @@
 use xval::ToValue;
 use xval_derive::Value;
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Wrapper<T: Clone + ToValue + Send + Sync + 'static> {
     value: T,
 }
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Pair<A: Clone + ToValue + Send + Sync + 'static, B: Clone + ToValue + Send + Sync + 'static>
 {
     first: A,
     second: B,
 }
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 struct Container<T>
 where
     T: Clone + ToValue + Send + Sync + 'static,
@@ -21,7 +21,7 @@ where
     items: Vec<T>,
 }
 
-#[derive(Clone, Value)]
+#[derive(Value)]
 enum Maybe<T: Clone + ToValue> {
     Nothing,
     Just(T),

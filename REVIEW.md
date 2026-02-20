@@ -17,37 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 2. xval-derive — Value Derive Macros
-
-**Strengths:** Clean array-based struct iteration pattern, correct `::xval::` path hygiene.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 2.1 | ✅ | **Bug** | Generics completely ignored — `Wrapper<T>` won't compile | [lib.rs:16](libs/xval-derive/src/lib.rs#L16) |
-| 2.2 | ✅ | **Bug** | `len` counts all fields but iteration skips unnamed (tuple structs break) | [lib.rs:17-18](libs/xval-derive/src/lib.rs#L17) |
-| 2.3 | ⬜ | **Design** | Hidden `Clone` requirement baked into struct derive (`self.clone()`) | [structs.rs:13](libs/xval-derive/src/structs.rs#L13) |
-| 2.4 | ✅ | **UX** | Unions silently produce empty output instead of `compile_error!` | [lib.rs:11](libs/xval-derive/src/lib.rs#L11) |
-| 2.5 | ⬜ | **Bug** | Enum named-variant uses `HashMap` — loses field declaration order | [lib.rs:79](libs/xval-derive/src/lib.rs#L79) |
-| 2.6 | ⬜ | **Hygiene** | `std::any::TypeId` not fully qualified (should be `::std::`) | [lib.rs:33](libs/xval-derive/src/lib.rs#L33) |
-
-### Details
-
-#### 2.3 — Hidden `Clone` requirement
-
-```rust
-fn to_value(&self) -> ::xval::Value {
-    ::xval::Value::from_struct(self.clone())
-}
-```
-
-Users must also `#[derive(Clone)]` but get no clear error message if they don't.
-
-**Fix:** Build the representation by iterating fields (like the enum path does) rather than cloning `self`.
-
----
-
 ## 3. xtera — Template Engine
 
 **Strengths:** Clean lex-parse-eval architecture, excellent `Span` design with `Arc<str>`, comprehensive test suite, Pratt precedence parser, Serde round-trip support.
