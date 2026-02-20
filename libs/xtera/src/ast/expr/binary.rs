@@ -101,13 +101,13 @@ impl BinaryExpr {
                 BinaryOp::Mul => Ok(xval::valueof!((lf * rf))),
                 BinaryOp::Div => {
                     if rf == 0.0 {
-                        return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
+                        return Err(EvalError::DivisionByZero(DivisionByZeroError).with_span(span));
                     }
                     Ok(xval::valueof!((lf / rf)))
                 }
                 BinaryOp::Mod => {
                     if rf == 0.0 {
-                        return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
+                        return Err(EvalError::DivisionByZero(DivisionByZeroError).with_span(span));
                     }
                     Ok(xval::valueof!((lf % rf)))
                 }
@@ -124,13 +124,13 @@ impl BinaryExpr {
             BinaryOp::Mul => Ok(xval::valueof!((li.wrapping_mul(ri)))),
             BinaryOp::Div => {
                 if ri == 0 {
-                    return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
+                    return Err(EvalError::DivisionByZero(DivisionByZeroError).with_span(span));
                 }
                 Ok(xval::valueof!((li.wrapping_div(ri))))
             }
             BinaryOp::Mod => {
                 if ri == 0 {
-                    return Err(EvalError::DivisionByZero(DivisionByZeroError { span }));
+                    return Err(EvalError::DivisionByZero(DivisionByZeroError).with_span(span));
                 }
                 Ok(xval::valueof!((li.wrapping_rem(ri))))
             }

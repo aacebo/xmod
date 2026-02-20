@@ -218,7 +218,7 @@ mod tests {
     #[test]
     fn division_by_zero() {
         let err = render_err("{{ 10 / 0 }}", &Scope::new());
-        assert!(matches!(err, ast::EvalError::DivisionByZero(_)));
+        assert!(matches!(err.inner(), ast::EvalError::DivisionByZero(_)));
     }
 
     #[test]
@@ -261,7 +261,7 @@ mod tests {
     #[test]
     fn undefined_variable() {
         let err = render_err("{{ x }}", &Scope::new());
-        assert!(matches!(err, ast::EvalError::UndefinedVariable(_)));
+        assert!(matches!(err.inner(), ast::EvalError::UndefinedVariable(_)));
     }
 
     #[test]
@@ -269,7 +269,7 @@ mod tests {
         let mut s = Scope::new();
         s.set_var("x", xval::valueof!("hi"));
         let err = render_err("{{ x | missing }}", &s);
-        assert!(matches!(err, ast::EvalError::UndefinedPipe(_)));
+        assert!(matches!(err.inner(), ast::EvalError::UndefinedPipe(_)));
     }
 
     #[test]
@@ -277,13 +277,13 @@ mod tests {
         let mut s = Scope::new();
         s.set_var("items", xval::valueof!(42_i64));
         let err = render_err("@for (n of items; track n) {x}", &s);
-        assert!(matches!(err, ast::EvalError::NotIterable(_)));
+        assert!(matches!(err.inner(), ast::EvalError::NotIterable(_)));
     }
 
     #[test]
     fn include_missing_template() {
         let err = render_err("@include('missing')", &Scope::new());
-        assert!(matches!(err, ast::EvalError::UndefinedTemplate(_)));
+        assert!(matches!(err.inner(), ast::EvalError::UndefinedTemplate(_)));
     }
 
     #[test]
@@ -291,7 +291,7 @@ mod tests {
         let mut s = Scope::new();
         s.set_var("name", xval::valueof!(42_i64));
         let err = render_err("@include(name)", &s);
-        assert!(matches!(err, ast::EvalError::TypeError(_)));
+        assert!(matches!(err.inner(), ast::EvalError::TypeError(_)));
     }
 
     // ── Simple control flow ─────────────────────────────────────────

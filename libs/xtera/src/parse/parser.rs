@@ -93,7 +93,11 @@ impl<'src> Parser<'src> {
                 let include_node = self.parse_include(&sp.span)?;
                 Ok(Some(Node::Include(include_node)))
             }
-            LexToken::CloseBrace | LexToken::Eof => Ok(None),
+            LexToken::CloseBrace => Ok(None),
+            LexToken::Eof if self.lexer.brace_depth() > 0 => {
+                Err(ParseError::new("unclosed '}'", sp.span))
+            }
+            LexToken::Eof => Ok(None),
             other => Err(ParseError::new(
                 format!("unexpected token: {other:?}"),
                 sp.span,

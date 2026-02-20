@@ -21,8 +21,8 @@ impl IndexExpr {
             return Err(EvalError::TypeError(TypeError {
                 expected: "array",
                 got: value_type_name(&obj),
-                span: self.span.clone(),
-            }));
+            })
+            .with_span(self.span.clone()));
         }
 
         let i = value_to_usize(&idx, self.span.clone())?;
@@ -31,8 +31,8 @@ impl IndexExpr {
             EvalError::IndexOutOfBounds(IndexOutOfBoundsError {
                 index: i,
                 len: arr.len(),
-                span: self.span.clone(),
             })
+            .with_span(self.span.clone())
         })
     }
 }

@@ -1,9 +1,6 @@
-use crate::ast::Span;
-
 #[derive(Debug, Clone, PartialEq)]
 pub struct UndefinedTemplateError {
     pub name: String,
-    pub span: Span,
 }
 
 impl std::fmt::Display for UndefinedTemplateError {

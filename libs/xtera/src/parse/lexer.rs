@@ -57,6 +57,8 @@ pub struct Lexer<'src> {
     peeked_expr: Option<Spanned>,
     brace_depth: usize,
     interp_depth: usize,
+    expr_lexer: Option<logos::Lexer<'src, Token>>,
+    expr_base: usize,
 }
 
 impl<'src> Lexer<'src> {
@@ -68,15 +70,19 @@ impl<'src> Lexer<'src> {
             peeked_expr: None,
             brace_depth: 0,
             interp_depth: 0,
+            expr_lexer: None,
+            expr_base: 0,
         }
     }
 
     pub fn open_brace(&mut self) {
         self.brace_depth += 1;
+        self.invalidate_expr_lexer();
     }
 
     pub fn close_brace(&mut self) {
         self.brace_depth = self.brace_depth.saturating_sub(1);
+        self.invalidate_expr_lexer();
     }
 
     /// Check if remaining source (after whitespace) starts with the
@@ -104,6 +110,14 @@ impl<'src> Lexer<'src> {
         }
     }
 
+    pub fn is_eof(&self) -> bool {
+        self.pos >= self.source.len()
+    }
+
+    pub fn brace_depth(&self) -> usize {
+        self.brace_depth
+    }
+
     fn remaining(&self) -> &'src str {
         &self.source[self.pos..]
     }
@@ -119,6 +133,7 @@ impl<'src> Lexer<'src> {
     /// Scan the next token in text mode. Stops at `{{`, `@keyword`,
     /// `}` (when brace_depth > 0), or EOF.
     pub fn next_text(&mut self) -> Result<Spanned> {
+        self.invalidate_expr_lexer();
         let start = self.pos;
         let bytes = self.source.as_bytes();
         let len = bytes.len();
@@ -226,41 +241,48 @@ impl<'src> Lexer<'src> {
         Ok(self.peeked_expr.as_ref().unwrap())
     }
 
+    fn invalidate_expr_lexer(&mut self) {
+        self.expr_lexer = None;
+    }
+
     fn scan_expr(&mut self) -> Result<Spanned> {
         let rem = self.remaining();
 
         if rem.is_empty() {
+            self.invalidate_expr_lexer();
             return Ok(Spanned {
                 token: LexToken::Eof,
                 span: self.here(),
             });
         }
 
-        // Skip leading whitespace
         let trimmed = rem.trim_start();
         let ws_len = rem.len() - trimmed.len();
-        self.pos += ws_len;
+        if ws_len > 0 {
+            self.pos += ws_len;
+            self.invalidate_expr_lexer();
+        }
         let rem = trimmed;
 
         if rem.is_empty() {
+            self.invalidate_expr_lexer();
             return Ok(Spanned {
                 token: LexToken::Eof,
                 span: self.here(),
             });
         }
 
-        // Check for `}}` — only treat as InterpEnd when inside an interpolation
         if rem.starts_with("}}") && self.interp_depth > 0 {
             let span = self.span(self.pos, self.pos + 2);
             self.pos += 2;
             self.interp_depth -= 1;
+            self.invalidate_expr_lexer();
             return Ok(Spanned {
                 token: LexToken::InterpEnd,
                 span,
             });
         }
 
-        // Check for `@match` in expression mode
         if rem.starts_with("@match") {
             let after = &rem[6..];
             if after.is_empty()
@@ -268,6 +290,7 @@ impl<'src> Lexer<'src> {
             {
                 let span = self.span(self.pos, self.pos + 6);
                 self.pos += 6;
+                self.invalidate_expr_lexer();
                 return Ok(Spanned {
                     token: LexToken::AtMatch,
                     span,
@@ -275,12 +298,18 @@ impl<'src> Lexer<'src> {
             }
         }
 
-        let mut lex = Token::lexer(rem);
+        let lex = self.expr_lexer.get_or_insert_with(|| {
+            self.expr_base = self.pos;
+            Token::lexer(rem)
+        });
+
         match lex.next() {
             Some(Ok(tok)) => {
                 let logo_span = lex.span();
-                let span = self.span(self.pos + logo_span.start, self.pos + logo_span.end);
-                self.pos += logo_span.end;
+                let abs_start = self.expr_base + logo_span.start;
+                let abs_end = self.expr_base + logo_span.end;
+                let span = self.span(abs_start, abs_end);
+                self.pos = abs_end;
                 Ok(Spanned {
                     token: LexToken::Expr(tok),
                     span,
@@ -290,10 +319,13 @@ impl<'src> Lexer<'src> {
                 "unexpected character",
                 self.span(self.pos, self.pos + 1),
             )),
-            None => Ok(Spanned {
-                token: LexToken::Eof,
-                span: self.here(),
-            }),
+            None => {
+                self.invalidate_expr_lexer();
+                Ok(Spanned {
+                    token: LexToken::Eof,
+                    span: self.here(),
+                })
+            }
         }
     }
 

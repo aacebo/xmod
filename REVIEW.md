@@ -17,69 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 3. xtera — Template Engine
-
-**Strengths:** Clean lex-parse-eval architecture, excellent `Span` design with `Arc<str>`, comprehensive test suite, Pratt precedence parser, Serde round-trip support.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 3.1 | ⬜ | **Bug** | `Scope::render` panics on missing template instead of returning `Err` | [scope.rs:64](libs/xtera/src/scope.rs#L64) |
-| 3.2 | ⬜ | **Bug** | `@include` has no recursion depth limit — stack overflow possible | [include.rs:31](libs/xtera/src/ast/node/include.rs#L31) |
-| 3.3 | ⬜ | **Bug** | `parse_block_body` doesn't detect unclosed `}` at EOF | parser.rs |
-| 3.4 | ⬜ | **Perf** | Per-token logos lexer instantiation — O(n^2) for expressions | lexer.rs |
-| 3.5 | ⬜ | **Perf** | `ForNode::render` clones entire `Scope` per iteration | [for_node.rs:29](libs/xtera/src/ast/node/for_node.rs#L29) |
-| 3.6 | ⬜ | **Design** | `Node::span()`/`Expr::span()` return owned `Span` (should be `&Span`) | [node/mod.rs](libs/xtera/src/ast/node/mod.rs), [expr/mod.rs](libs/xtera/src/ast/expr/mod.rs) |
-| 3.7 | ⬜ | **Security** | No HTML auto-escaping — XSS risk in HTML contexts | [interp.rs:12](libs/xtera/src/ast/node/interp.rs#L12) |
-| 3.8 | ⬜ | **Dead code** | `ForNode.track` field is parsed but never used during rendering | [for_node.rs:10](libs/xtera/src/ast/node/for_node.rs#L10) |
-
-### Details
-
-#### 3.1 — `Scope::render` panics
-
-```rust
-pub fn render(&self, name: &str) -> ast::Result<String> {
-    self.template(name)
-        .expect("template not found")  // PANICS
-        .render(self)
-}
-```
-
-**Fix:** Return `Err(EvalError::UndefinedTemplate(...))`.
-
-#### 3.2 — Unbounded `@include` recursion
-
-`IncludeNode::render` calls `tpl.render(scope)` which can include another template, which can include the first, leading to stack overflow.
-
-**Fix:** Add a recursion depth counter (e.g., a `Cell<usize>` in `Scope`). Error at depth ~64.
-
-#### 3.4 — O(n^2) expression parsing
-
-Every `scan_expr` call creates a fresh `Token::lexer()` over the remaining input, reads one token, then discards the lexer.
-
-**Fix:** Maintain a persistent logos lexer for the expression context, or buffer all expression tokens in one pass.
-
-#### 3.5 — Scope cloning in `@for`
-
-```rust
-let mut inner = scope.clone();
-```
-
-`Scope` contains four `BTreeMap`s. For n iterations over a scope with m variables, this is O(n*m) allocation.
-
-**Fix:** Use a child-scope / scope-stack pattern. O(1) per iteration for the new binding.
-
-### Missing Features
-
-- No whitespace control (`{{- expr -}}`)
-- No `@let` / variable assignment
-- No `@empty` for `@for` loops
-- No template inheritance / blocks (`@extends` / `@block`)
-- `Pipe` and `Func` traits are not `Send + Sync` (limits async usage)
-
----
-
 ## 4. xtera-derive — Compile-time Template Macro
 
 **Strengths:** Correct Pratt parsing, good error messages, `{{ }}` double-brace validation, thorough test suite (17 tests), fully qualified paths.
@@ -88,7 +25,7 @@ let mut inner = scope.clone();
 
 | # | Status | Severity | Issue | Location |
 |---|--------|----------|-------|----------|
-| 4.1 | ⬜ | **UX** | All spans are `(0,0)` — runtime errors have no useful source location | [parse.rs](libs/xtera-derive/src/parse.rs) throughout |
+| 4.1 | ⬜ | **UX** | All spans are `(0,0)` — runtime errors have no useful source location | [parse.rs](libs/xtera-derive/src/parse.rs) |
 | 4.2 | ⬜ | **Bug** | Missing trailing-token validation in parenthesized exprs and `@include` | [parse.rs:619](libs/xtera-derive/src/parse.rs#L619), [parse.rs:315](libs/xtera-derive/src/parse.rs#L315) |
 | 4.3 | ⬜ | **Bug** | Duplicate `_` arms in `@match` silently overwritten | [parse.rs:283](libs/xtera-derive/src/parse.rs#L283) |
 | 4.4 | ⬜ | **Design** | Duplicated precedence table (vs runtime parser) with no cross-validation test | [parse.rs:27-34](libs/xtera-derive/src/parse.rs#L27) |
@@ -136,8 +73,8 @@ In every typed schema, rules execute before the type check:
 
 ```rust
 fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-    let value = self.0.validate(ctx)?;  // run all rules first
-    if !value.is_null() && !value.is_bool() {  // then check type
+    let value = self.0.validate(ctx)?;
+    if !value.is_null() && !value.is_bool() {
         return Err(ctx.error("expected bool"));
     }
     Ok(value)
@@ -151,7 +88,7 @@ If you have `int().min(5)` and pass a string, `Min::validate` sees `is_number() 
 ```rust
 fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
     if ctx.value.is_null() {
-        return self.0.validate(ctx); // only run presence rules
+        return self.0.validate(ctx);
     }
     if !ctx.value.is_string() {
         return Err(ctx.error("expected string"));
@@ -238,7 +175,7 @@ A `count: u32` field gets zero type checking at validation time.
 | 7.1 | ⬜ | **Design** | `From<&str>` panics on invalid input — violates infallible `From` contract | [path.rs:64](libs/xpath/src/path.rs#L64) |
 | 7.2 | ⬜ | **Testing** | `push`, `pop`, `child`, `peer`, `iter` have zero test coverage | — |
 | 7.3 | ⬜ | **Design** | No `FromStr`/`IntoIterator`/`TryFrom` standard trait impls | — |
-| 7.4 | ⬜ | **Design** | Numeric keys impossible — `"42"` always becomes `Index(42)` | [ident.rs:14](libs/xpath/src/ident.rs#L14) |
+| 7.4 | ⬜ | **Design** | Numeric keys impossible — `"42"` always becomes `Index(42)` | [ident.rs:30](libs/xpath/src/ident.rs#L30) |
 
 ### Details
 
@@ -257,15 +194,6 @@ impl From<&str> for Path {
 **Fix:** Replace with `TryFrom<&str>` / `FromStr`. Add `IntoIterator` for `&Path`.
 
 #### 7.4 — Numeric key ambiguity
-
-```rust
-pub fn parse(src: &str) -> Self {
-    if let Ok(index) = src.parse::<usize>() {
-        return Self::Index(index);
-    }
-    Self::Key(src.into())
-}
-```
 
 Any purely numeric segment becomes an `Index`. No way to represent a key that happens to be a number. Should be documented.
 
@@ -353,22 +281,18 @@ With `max_attempts = 2`, you get 3 total attempts (1 initial + 2 retries). The t
 - `FlatMap` / `and_then` combinator
 - `Zip` / `join` for combining multiple tasks
 - `map_err` for Result pipelines
-- Zero doc comments (`///`) anywhere in the crate
 - `rust-version = "1.80"` in Cargo.toml (uses `LazyCell`)
 
 ---
 
 ## Cross-Cutting Themes
 
-### C.1 — No generics support in derive macros
+### C.1 — No generics support in xsch-derive
 
-~~[xval-derive](libs/xval-derive/src/lib.rs)~~ ✅ Fixed — now uses `input.generics.split_for_impl()` with integration tests covering generic structs and enums.
-
-[xsch-derive](libs/xsch-derive/src/lib.rs) still breaks on generic types and needs the same treatment (issue 6.2).
+[xsch-derive](libs/xsch-derive/src/lib.rs) breaks on generic types. Needs `input.generics.split_for_impl()` (issue 6.2).
 
 ### C.2 — Panicking APIs where `Result`/`Option` is expected
 
-- `Scope::render()` — [scope.rs:64](libs/xtera/src/scope.rs#L64)
 - `From<&str> for Path` — [path.rs:64](libs/xpath/src/path.rs#L64)
 - `ForkHandle` mutex poisoning — [fork.rs:30](libs/xpipe/src/op/fork.rs#L30)
 
@@ -383,14 +307,6 @@ Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 - `ForNode.track` — [for_node.rs:10](libs/xtera/src/ast/node/for_node.rs#L10)
 - `Node::Block` variant — [node/mod.rs](libs/xtera/src/ast/node/mod.rs)
 
-### C.5 — No crate-level documentation
-
-None of the 8 crates have `//!` doc comments or usage examples at the crate root.
-
-### C.6 — Test coverage
-
-Most crates have good unit tests, though some public methods (especially in xpath and the derive crates) lack coverage. No crate uses `trybuild` for compile-fail tests on derive macros.
-
 ---
 
 ## Priority Summary
@@ -401,6 +317,5 @@ Remaining items:
 2. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
 3. ⬜ **Handle generics** in xsch-derive (6.2)
 4. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-5. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
-6. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-7. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+5. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
+6. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)

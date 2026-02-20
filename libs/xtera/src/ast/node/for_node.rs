@@ -17,9 +17,7 @@ impl ForNode {
         let iterable = self.iterable.eval(scope)?;
 
         if !iterable.is_array() {
-            return Err(EvalError::NotIterable(NotIterableError {
-                span: self.iterable.span(),
-            }));
+            return Err(EvalError::NotIterable(NotIterableError).with_span(self.iterable.span()));
         }
 
         let arr = iterable.as_array();

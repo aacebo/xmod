@@ -1,7 +1,10 @@
 use crate::Scope;
 use crate::ast::{
-    EvalError, Expr, Result, Span, TypeError, UndefinedTemplateError, value_type_name,
+    EvalError, Expr, IncludeDepthError, Result, Span, TypeError, UndefinedTemplateError,
+    value_type_name,
 };
+
+const MAX_INCLUDE_DEPTH: usize = 64;
 
 #[derive(Debug, Clone, PartialEq)]
 pub struct IncludeNode {
@@ -11,24 +14,31 @@ pub struct IncludeNode {
 
 impl IncludeNode {
     pub fn render(&self, scope: &Scope) -> Result<String> {
+        if scope.depth() >= MAX_INCLUDE_DEPTH {
+            return Err(EvalError::IncludeDepth(IncludeDepthError).with_span(self.span.clone()));
+        }
+
         let name_val = self.name.eval(scope)?;
         if !name_val.is_string() {
             return Err(EvalError::TypeError(TypeError {
                 expected: "string",
                 got: value_type_name(&name_val),
-                span: self.span.clone(),
-            }));
+            })
+            .with_span(self.span.clone()));
         }
 
         let name = name_val.as_string().as_str();
         let tpl = scope.template(name).ok_or_else(|| {
             EvalError::UndefinedTemplate(UndefinedTemplateError {
                 name: name.to_string(),
-                span: self.span.clone(),
             })
+            .with_span(self.span.clone())
         })?;
 
-        tpl.render(scope)
+        scope.inc_depth();
+        let result = tpl.render(scope);
+        scope.dec_depth();
+        result
     }
 }
 

@@ -1,4 +1,4 @@
-use std::{collections::BTreeMap, sync::Arc};
+use std::{cell::Cell, collections::BTreeMap, sync::Arc};
 
 use crate::{Template, ast};
 
@@ -16,6 +16,7 @@ pub struct Scope {
     pipes: BTreeMap<String, Arc<dyn Pipe>>,
     funcs: BTreeMap<String, Arc<dyn Func>>,
     templates: BTreeMap<String, Arc<Template>>,
+    depth: Cell<usize>,
 }
 
 impl Scope {
@@ -61,8 +62,24 @@ impl Scope {
 
     pub fn render(&self, name: &str) -> ast::Result<String> {
         self.template(name)
-            .expect("template not found")
+            .ok_or_else(|| {
+                ast::EvalError::UndefinedTemplate(ast::UndefinedTemplateError {
+                    name: name.to_string(),
+                })
+            })?
             .render(self)
+    }
+
+    pub fn depth(&self) -> usize {
+        self.depth.get()
+    }
+
+    pub fn inc_depth(&self) {
+        self.depth.set(self.depth.get() + 1);
+    }
+
+    pub fn dec_depth(&self) {
+        self.depth.set(self.depth.get() - 1);
     }
 }
 

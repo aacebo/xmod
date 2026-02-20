@@ -1,4 +1,5 @@
 mod division_by_zero;
+mod include_depth;
 mod index_out_of_bounds;
 mod invalid_index;
 mod not_callable;
@@ -10,6 +11,7 @@ mod undefined_template;
 mod undefined_variable;
 
 pub use division_by_zero::*;
+pub use include_depth::*;
 pub use index_out_of_bounds::*;
 pub use invalid_index::*;
 pub use not_callable::*;
@@ -25,6 +27,24 @@ use super::Span;
 pub type Result<T> = std::result::Result<T, EvalError>;
 
 #[derive(Debug, Clone, PartialEq)]
+pub struct SpanError {
+    pub error: Box<EvalError>,
+    pub span: Span,
+}
+
+impl std::fmt::Display for SpanError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "eval error at {}..{}: {}",
+            self.span.start, self.span.end, self.error
+        )
+    }
+}
+
+impl std::error::Error for SpanError {}
+
+#[derive(Debug, Clone, PartialEq)]
 pub enum EvalError {
     UndefinedVariable(UndefinedVariableError),
     UndefinedPipe(UndefinedPipeError),
@@ -36,29 +56,35 @@ pub enum EvalError {
     NotCallable(NotCallableError),
     NotIterable(NotIterableError),
     InvalidIndex(InvalidIndexError),
+    IncludeDepth(IncludeDepthError),
+    Span(SpanError),
 }
 
 impl EvalError {
-    pub fn span(&self) -> Span {
+    pub fn span(&self) -> Option<&Span> {
         match self {
-            Self::UndefinedVariable(e) => e.span.clone(),
-            Self::UndefinedPipe(e) => e.span.clone(),
-            Self::UndefinedField(e) => e.span.clone(),
-            Self::UndefinedTemplate(e) => e.span.clone(),
-            Self::IndexOutOfBounds(e) => e.span.clone(),
-            Self::TypeError(e) => e.span.clone(),
-            Self::DivisionByZero(e) => e.span.clone(),
-            Self::NotCallable(e) => e.span.clone(),
-            Self::NotIterable(e) => e.span.clone(),
-            Self::InvalidIndex(e) => e.span.clone(),
+            Self::Span(e) => Some(&e.span),
+            _ => None,
+        }
+    }
+
+    pub fn with_span(self, span: Span) -> Self {
+        Self::Span(SpanError {
+            error: Box::new(self),
+            span,
+        })
+    }
+
+    pub fn inner(&self) -> &Self {
+        match self {
+            Self::Span(e) => e.error.inner(),
+            other => other,
         }
     }
 }
 
 impl std::fmt::Display for EvalError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let span = self.span();
-        write!(f, "eval error at {}..{}: ", span.start, span.end)?;
         match self {
             Self::UndefinedVariable(e) => write!(f, "{e}"),
             Self::UndefinedPipe(e) => write!(f, "{e}"),
@@ -70,13 +96,13 @@ impl std::fmt::Display for EvalError {
             Self::NotCallable(e) => write!(f, "{e}"),
             Self::NotIterable(e) => write!(f, "{e}"),
             Self::InvalidIndex(e) => write!(f, "{e}"),
+            Self::IncludeDepth(e) => write!(f, "{e}"),
+            Self::Span(e) => write!(f, "{e}"),
         }
     }
 }
 
 impl std::error::Error for EvalError {}
-
-// ── shared helpers ──
 
 pub fn is_truthy(val: &xval::Value) -> bool {
     match val {
@@ -88,28 +114,28 @@ pub fn is_truthy(val: &xval::Value) -> bool {
     }
 }
 
-pub(crate) fn expect_number<'a>(val: &'a xval::Value, span: Span) -> Result<&'a xval::Number> {
+pub fn expect_number<'a>(val: &'a xval::Value, span: Span) -> Result<&'a xval::Number> {
     match val {
         xval::Value::Number(n) => Ok(n),
         other => Err(EvalError::TypeError(TypeError {
             expected: "number",
             got: value_type_name(other),
-            span,
-        })),
+        })
+        .with_span(span)),
     }
 }
 
-pub(crate) fn value_to_usize(val: &xval::Value, span: Span) -> Result<usize> {
+pub fn value_to_usize(val: &xval::Value, span: Span) -> Result<usize> {
     let n = expect_number(val, span.clone())?;
     let v = n.to_i64();
     if v >= 0 {
         Ok(v as usize)
     } else {
-        Err(EvalError::InvalidIndex(InvalidIndexError { span }))
+        Err(EvalError::InvalidIndex(InvalidIndexError).with_span(span))
     }
 }
 
-pub(crate) fn value_type_name(val: &xval::Value) -> String {
+pub fn value_type_name(val: &xval::Value) -> String {
     match val {
         xval::Value::Null => "null".to_string(),
         xval::Value::Bool(_) => "bool".to_string(),

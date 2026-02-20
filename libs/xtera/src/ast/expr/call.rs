@@ -15,17 +15,13 @@ impl CallExpr {
         let name = match &*self.callee {
             Expr::Ident(ident) => ident.name.as_str(),
             _ => {
-                return Err(EvalError::NotCallable(NotCallableError {
-                    span: self.span.clone(),
-                }));
+                return Err(EvalError::NotCallable(NotCallableError).with_span(self.span.clone()));
             }
         };
 
-        let func = scope.func(name).ok_or_else(|| {
-            EvalError::NotCallable(NotCallableError {
-                span: self.span.clone(),
-            })
-        })?;
+        let func = scope
+            .func(name)
+            .ok_or_else(|| EvalError::NotCallable(NotCallableError).with_span(self.span.clone()))?;
 
         let evaluated_args: Vec<xval::Value> = self
             .args

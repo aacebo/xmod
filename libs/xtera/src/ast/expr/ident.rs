@@ -12,8 +12,8 @@ impl IdentExpr {
         scope.var(&self.name).cloned().ok_or_else(|| {
             EvalError::UndefinedVariable(UndefinedVariableError {
                 name: self.name.clone(),
-                span: self.span.clone(),
             })
+            .with_span(self.span.clone())
         })
     }
 }
