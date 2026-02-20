@@ -35,8 +35,9 @@ impl Validator for Min {
         if ctx.value.is_array() || ctx.value.is_string() {
             if ctx.value.len() < self.0.to_usize() {
                 return Err(ctx.error(&format!(
-                    "expected min of {}, received {}",
-                    &self.0, &ctx.value
+                    "length must be at least {}, got {}",
+                    self.0.to_usize(),
+                    ctx.value.len()
                 )));
             }
         }
@@ -44,8 +45,9 @@ impl Validator for Min {
         if ctx.value.is_number() {
             if ctx.value.as_number() < &self.0 {
                 return Err(ctx.error(&format!(
-                    "expected min of {}, received {}",
-                    &self.0, &ctx.value
+                    "value must be at least {}, got {}",
+                    &self.0,
+                    ctx.value.as_number()
                 )));
             }
         }

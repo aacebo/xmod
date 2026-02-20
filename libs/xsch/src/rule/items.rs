@@ -36,12 +36,24 @@ impl Validator for Items {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
         if !ctx.value.is_null() && ctx.value.is_array() {
             let mut items = vec![];
+            let mut error = ValidError::new(ctx.path.clone()).build();
 
             for (i, item) in ctx.value.as_array().items().enumerate() {
                 let mut next = ctx.clone();
                 next.path = ctx.path.child(i.into());
                 next.value = item.to_value();
-                items.push(self.0.validate(&next)?);
+
+                match self.0.validate(&next) {
+                    Ok(v) => items.push(v),
+                    Err(err) => {
+                        items.push(next.value);
+                        error.errors.push(err);
+                    }
+                }
+            }
+
+            if !error.errors.is_empty() {
+                return Err(error);
             }
 
             return Ok(items.to_value());

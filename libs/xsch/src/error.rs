@@ -97,9 +97,9 @@ mod tests {
                 .message("field is required")
                 .build();
             let output = err.to_string();
-            debug_assert!(output.contains("Error[required]"));
-            debug_assert!(output.contains("@ a/b"));
-            debug_assert!(output.contains("  field is required"));
+            assert!(output.contains("Error[required]"));
+            assert!(output.contains("@ a/b"));
+            assert!(output.contains("  field is required"));
         }
 
         #[test]
@@ -108,8 +108,8 @@ mod tests {
                 .message("something went wrong")
                 .build();
             let output = err.to_string();
-            debug_assert!(output.contains("Error[unknown] @ a"));
-            debug_assert!(output.contains("  something went wrong"));
+            assert!(output.contains("Error[unknown] @ a"));
+            assert!(output.contains("  something went wrong"));
         }
 
         #[test]
@@ -118,8 +118,8 @@ mod tests {
                 .name("equals")
                 .build();
             let output = err.to_string();
-            debug_assert!(output.contains("Error[equals]"));
-            debug_assert!(output.contains("@ x"));
+            assert!(output.contains("Error[equals]"));
+            assert!(output.contains("@ x"));
             assert_eq!(output.lines().count(), 1);
         }
 
@@ -138,10 +138,10 @@ mod tests {
             parent.errors.push(child2);
 
             let output = parent.to_string();
-            debug_assert!(output.contains("Error[required]"));
-            debug_assert!(output.contains("  required"));
-            debug_assert!(output.contains("Error[equals]"));
-            debug_assert!(output.contains("  not equal"));
+            assert!(output.contains("Error[required]"));
+            assert!(output.contains("  required"));
+            assert!(output.contains("Error[equals]"));
+            assert!(output.contains("  not equal"));
         }
     }
 

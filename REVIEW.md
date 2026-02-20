@@ -17,44 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 5. xsch — Schema Validation
-
-**Strengths:** Composable builder API (`string().required().min(3).max(10)`), error accumulation, path tracking, structured errors.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 5.1 | ✅ | **Bug** | Type checking happens AFTER rules — rules can operate on wrong types (panics) | All typed schemas (e.g., [bool.rs](libs/xsch/src/bool.rs), [string.rs](libs/xsch/src/string.rs)) |
-| 5.2 | ✅ | **Bug** | `Equals` and `Options` fire on null, breaking null-by-default contract | [equals.rs:34](libs/xsch/src/rule/equals.rs#L34), [options.rs:40](libs/xsch/src/rule/options.rs#L40) |
-| 5.3 | ✅ | **Bug** | `Pattern` calls `.as_str()` on non-strings — will panic | [pattern.rs:39](libs/xsch/src/rule/pattern.rs#L39) |
-| 5.4 | ⬜ | **Design** | `Items` short-circuits on first error but `Fields` accumulates — inconsistent | [items.rs:43](libs/xsch/src/rule/items.rs#L43) |
-| 5.5 | ✅ | **Design** | `Phase` enum exists but is not wired into rule execution — rules should be grouped and executed by phase | [phase.rs](libs/xsch/src/phase.rs), [rule/mod.rs](libs/xsch/src/rule/mod.rs) |
-| 5.6 | ⬜ | **Testing** | `debug_assert!` used in tests — stripped in release mode | [error.rs:100](libs/xsch/src/error.rs#L100) |
-| 5.7 | ⬜ | **Design** | `Min`/`Max` error messages don't distinguish length vs value | [min.rs:37](libs/xsch/src/rule/min.rs#L37), [max.rs:37](libs/xsch/src/rule/max.rs#L37) |
-
-### Details
-
-#### 5.6 — `debug_assert!` in tests
-
-```rust
-debug_assert!(output.contains("Error[required]"));
-```
-
-These assertions are stripped in `cargo test --release`.
-
-**Fix:** Replace with `assert!`.
-
-### Missing Validation Rules
-
-- `unique_items` for arrays
-- `additional_fields` / `additional_properties` for objects (currently unexpected fields are always rejected)
-- Conditional validation (`oneOf`/`anyOf`/`allOf`)
-- `exclusive_min`/`exclusive_max`
-- Custom validation functions / `Refine` phase
-
----
-
 ## 6. xsch-derive — Schema Derive Macros
 
 **Strengths:** Good `syn::Error`-based diagnostics, clean builder-chain code gen, comprehensive rule parsing with clear error messages.
