@@ -26,30 +26,13 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 | # | Status | Severity | Issue | Location |
 |---|--------|----------|-------|----------|
 | 2.1 | ✅ | **Bug** | Generics completely ignored — `Wrapper<T>` won't compile | [lib.rs:16](libs/xval-derive/src/lib.rs#L16) |
-| 2.2 | ⬜ | **Bug** | `len` counts all fields but iteration skips unnamed (tuple structs break) | [lib.rs:17-18](libs/xval-derive/src/lib.rs#L17) |
-| 2.3 | ⬜ | **Design** | Hidden `Clone` requirement baked into struct derive (`self.clone()`) | [lib.rs:23](libs/xval-derive/src/lib.rs#L23) |
-| 2.4 | ⬜ | **UX** | Unions silently produce empty output instead of `compile_error!` | [lib.rs:11](libs/xval-derive/src/lib.rs#L11) |
+| 2.2 | ✅ | **Bug** | `len` counts all fields but iteration skips unnamed (tuple structs break) | [lib.rs:17-18](libs/xval-derive/src/lib.rs#L17) |
+| 2.3 | ⬜ | **Design** | Hidden `Clone` requirement baked into struct derive (`self.clone()`) | [structs.rs:13](libs/xval-derive/src/structs.rs#L13) |
+| 2.4 | ✅ | **UX** | Unions silently produce empty output instead of `compile_error!` | [lib.rs:11](libs/xval-derive/src/lib.rs#L11) |
 | 2.5 | ⬜ | **Bug** | Enum named-variant uses `HashMap` — loses field declaration order | [lib.rs:79](libs/xval-derive/src/lib.rs#L79) |
 | 2.6 | ⬜ | **Hygiene** | `std::any::TypeId` not fully qualified (should be `::std::`) | [lib.rs:33](libs/xval-derive/src/lib.rs#L33) |
 
 ### Details
-
-#### 2.1 — Generics not handled
-
-The generated `impl` block uses only `#ident` without incorporating `input.generics`. Any generic struct will fail to compile.
-
-**Fix:** Extract generics with `input.generics.split_for_impl()` and thread `(impl_generics, ty_generics, where_clause)` into generated code.
-
-#### 2.2 — Tuple struct len/fields mismatch
-
-```rust
-let len = data.fields.len();        // counts ALL fields
-let fields: Vec<syn::Ident> = data.fields.iter().filter_map(|f| f.ident.clone()).collect();
-```
-
-For a tuple struct with 2 elements, `len()` returns 2 but `items()` yields 0 entries.
-
-**Fix:** Either handle tuple structs properly (access via `self.0`, `self.1`) or emit `compile_error!`.
 
 #### 2.3 — Hidden `Clone` requirement
 
@@ -62,10 +45,6 @@ fn to_value(&self) -> ::xval::Value {
 Users must also `#[derive(Clone)]` but get no clear error message if they don't.
 
 **Fix:** Build the representation by iterating fields (like the enum path does) rather than cloning `self`.
-
-#### 2.4 — No `syn::Error` diagnostics
-
-The macro never uses `syn::Error::new_spanned(...)`. All failure modes produce silent empty output or rely on downstream type errors. Unsupported cases (unions, tuple structs) should emit clear `compile_error!` messages.
 
 ---
 
