@@ -17,47 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 6. xsch-derive — Schema Derive Macros
-
-**Strengths:** Good `syn::Error`-based diagnostics, clean builder-chain code gen, comprehensive rule parsing with clear error messages.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 6.1 | ⬜ | **High** | No `Option<T>` support — extremely common Rust pattern falls back to `any()` | [schema_type.rs:17](libs/xsch-derive/src/schema_type.rs#L17) |
-| 6.2 | ⬜ | **High** | Generics not handled | [lib.rs:18](libs/xsch-derive/src/lib.rs#L18) |
-| 6.3 | ⬜ | **Medium** | Enums/unions silently produce no output | [lib.rs:13](libs/xsch-derive/src/lib.rs#L13) |
-| 6.4 | ⬜ | **Medium** | Unsigned integers map to `any()` — no type checking | [schema_type.rs:42](libs/xsch-derive/src/schema_type.rs#L42) |
-| 6.5 | ⬜ | **Medium** | `options` not supported for `Bool` or `Any` despite runtime support | [lib.rs:125](libs/xsch-derive/src/lib.rs#L125) |
-| 6.6 | ⬜ | **Low** | `required = false` is silently ignored — always emits `required()` | [lib.rs:94](libs/xsch-derive/src/lib.rs#L94) |
-| 6.7 | ⬜ | **Low** | Only first `#[field]` attribute per field is processed | [lib.rs:28](libs/xsch-derive/src/lib.rs#L28) |
-| 6.8 | ⬜ | **Low** | `pattern` emitted unconditionally but requires `xsch/regex` feature at runtime | [lib.rs:136](libs/xsch-derive/src/lib.rs#L136) |
-
-### Details
-
-#### 6.1 — No `Option<T>` / `Vec<T>` support
-
-`SchemaType::from_type` only handles simple idents via `get_ident()`. Any path with segments (`Option<String>`, `Vec<i32>`, `std::string::String`) falls through to `Self::Any`.
-
-**Fix (prioritized):**
-1. Handle `Option<T>` by extracting inner type and generating a non-required schema
-2. Handle `Vec<T>` by generating `::xsch::array()` with `items` schema
-3. Handle `&str` as string
-4. Handle qualified paths by checking last segment
-
-#### 6.4 — Unsigned integers -> `any()`
-
-```rust
-"u8" | "u16" | "u32" | "u64" | "u128" | "usize" => Self::Any,
-```
-
-A `count: u32` field gets zero type checking at validation time.
-
-**Fix:** Map to `::xsch::int()` or `::xsch::number()`.
-
----
-
 ## 7. xpath — Path Navigation
 
 **Strengths:** Clean, focused design. Correct parsing. Good serde integration. Solid test coverage for parse/display.
@@ -181,10 +140,6 @@ With `max_attempts = 2`, you get 3 total attempts (1 initial + 2 retries). The t
 
 ## Cross-Cutting Themes
 
-### C.1 — No generics support in xsch-derive
-
-[xsch-derive](libs/xsch-derive/src/lib.rs) breaks on generic types. Needs `input.generics.split_for_impl()` (issue 6.2).
-
 ### C.2 — Panicking APIs where `Result`/`Option` is expected
 
 - `From<&str> for Path` — [path.rs:64](libs/xpath/src/path.rs#L64)
@@ -204,6 +159,4 @@ Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 Remaining items:
 
 1. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-2. ⬜ **Handle generics** in xsch-derive (6.2)
-3. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-4. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+2. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)

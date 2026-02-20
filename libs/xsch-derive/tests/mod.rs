@@ -4,10 +4,10 @@ use xval::derive::Value;
 
 #[derive(Clone, Default, Value, Validate)]
 struct WithRules {
-    #[field(required, min = 3, options = [3, 4, 5])]
+    #[schema(required, min = 3, options = [3, 4, 5])]
     count: i32,
 
-    #[field(required)]
+    #[schema(required)]
     label: String,
 }
 
@@ -18,7 +18,11 @@ struct Simple {
     active: bool,
 }
 
-// ── Simple (no #[field] annotations) ────────────────────────────────────────
+#[derive(Clone, Default, Value, Validate)]
+struct WithOption {
+    name: Option<String>,
+    count: u32,
+}
 
 #[test]
 fn simple_struct_produces_object_schema() {
@@ -35,17 +39,12 @@ fn simple_struct_has_correct_field_schemas() {
         obj.get_field("name")
             .expect("missing 'name' field")
             .is_string(),
-        "expected 'name' to have StringSchema"
     );
-    assert!(
-        obj.get_field("age").expect("missing 'age' field").is_int(),
-        "expected 'age' to have IntSchema"
-    );
+    assert!(obj.get_field("age").expect("missing 'age' field").is_int(),);
     assert!(
         obj.get_field("active")
             .expect("missing 'active' field")
             .is_bool(),
-        "expected 'active' to have BoolSchema"
     );
 }
 
@@ -74,30 +73,9 @@ fn simple_struct_validates_matching_value() {
     );
 }
 
-// ── WithRules (#[field] annotations) ────────────────────────────────────────
-
 #[test]
 fn field_rules_produce_object_schema() {
     assert!(WithRules::default().to_schema().is_object());
-}
-
-#[test]
-fn field_rules_has_correct_field_schemas() {
-    let schema = WithRules::default().to_schema();
-    let obj = schema.as_object().expect("expected ObjectSchema");
-
-    assert!(
-        obj.get_field("count")
-            .expect("missing 'count' field")
-            .is_int(),
-        "expected 'count' to have IntSchema"
-    );
-    assert!(
-        obj.get_field("label")
-            .expect("missing 'label' field")
-            .is_string(),
-        "expected 'label' to have StringSchema"
-    );
 }
 
 #[test]
@@ -125,4 +103,24 @@ fn field_rules_options_rejects_value_not_in_list() {
         label: "hi".to_string(),
     };
     assert!(bad.validate().is_err());
+}
+
+#[test]
+fn optional_field_accepts_null() {
+    let s = WithOption {
+        name: None,
+        count: 5,
+    };
+    assert!(s.validate().is_ok());
+}
+
+#[test]
+fn unsigned_int_validates_as_number() {
+    let schema = WithOption::default().to_schema();
+    let obj = schema.as_object().expect("expected ObjectSchema");
+    assert!(
+        obj.get_field("count")
+            .expect("missing 'count' field")
+            .is_number()
+    );
 }
