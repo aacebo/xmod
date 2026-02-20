@@ -1,6 +1,6 @@
 # xtera
 
-A template engine for Rust with runtime and compile-time parsing. Supports interpolation, control flow directives, pipes, functions, and template composition.
+Template engine for Rust with interpolation, control flow, pipes, functions, and template composition. Templates can be parsed at runtime or compile time.
 
 ## Quick Start
 
@@ -16,36 +16,33 @@ assert_eq!(tpl.render(&scope).unwrap(), "Hello world!");
 
 ## Template Syntax
 
-### Text and Interpolation
+### Interpolation
 
-Plain text passes through unchanged. Expressions inside `{{ }}` are evaluated and rendered:
+Expressions inside `{{ }}` are evaluated and rendered:
 
 ```
 Hello {{ name }}!
 The answer is {{ x * 2 + 1 }}.
+{{ name | upper }}
+{{ val | slice:0:5 }}
+{{ name | trim | upper }}
 ```
 
 ### Expressions
 
 ```
-{{ x + y }}              Arithmetic: + - * / %
-{{ a == b }}             Comparison: == != < <= > >=
-{{ cond && other }}      Logical: && || (short-circuit)
-{{ !flag }}              Unary: ! -
-{{ user.name }}          Member access
-{{ items[0] }}           Index access
-{{ len(items) }}         Function calls
-{{ name | upper }}       Pipes
-{{ val | slice:0:5 }}    Pipes with arguments
-{{ [1, 2, 3] }}          Array literals
-{{ { name: "alice" } }}  Object literals
+{{ x + y }}              arithmetic: + - * / %
+{{ a == b }}             comparison: == != < <= > >=
+{{ cond && other }}      logical:    && ||
+{{ !flag }}              unary:      ! -
+{{ user.name }}          member access
+{{ items[0] }}           index access
+{{ len(items) }}         function call
+{{ [1, 2, 3] }}          array literal
+{{ { name: "alice" } }}  object literal
 ```
 
-Pipes can be chained: `{{ name | trim | upper }}`.
-
-### Control Flow
-
-**Conditionals:**
+### Conditionals
 
 ```
 @if (show) {
@@ -57,7 +54,7 @@ Pipes can be chained: `{{ name | trim | upper }}`.
 }
 ```
 
-**Loops:**
+### Loops
 
 ```
 @for (item of items; track item) {
@@ -65,7 +62,7 @@ Pipes can be chained: `{{ name | trim | upper }}`.
 }
 ```
 
-**Pattern matching:**
+### Pattern Matching
 
 ```
 @match (color) {
@@ -75,7 +72,7 @@ Pipes can be chained: `{{ name | trim | upper }}`.
 }
 ```
 
-**Template inclusion:**
+### Template Inclusion
 
 ```
 @include('header')
@@ -83,31 +80,25 @@ Pipes can be chained: `{{ name | trim | upper }}`.
 
 Renders a named template registered in the scope.
 
-## Scope API
+## Scope
 
-`Scope` holds variables, pipes, functions, and templates:
+The scope holds everything a template can reference — variables, pipes, functions, and other templates:
 
 ```rust
+use xtera::{Scope, Template};
+
 let mut scope = Scope::new();
 
-// Variables (any xval::Value)
 scope.set_var("name", xval::valueof!("alice"));
 scope.set_var("items", xval::valueof!([1_i64, 2_i64, 3_i64]));
 
-// Pipes (implement the Pipe trait)
-scope.set_pipe("upper", UpperPipe);
-
-// Functions (implement the Func trait)
-scope.set_func("len", LenFunc);
-
-// Named templates
 scope.set_template("header", Template::parse("<h1>{{ title }}</h1>").unwrap());
-
-// Render a named template
 let html = scope.render("header").unwrap();
 ```
 
-### Custom Pipes and Functions
+## Custom Pipes and Functions
+
+Pipes transform a value, functions produce one:
 
 ```rust
 use xtera::{Pipe, Func, ast};
@@ -125,11 +116,21 @@ impl Func for LenFunc {
         Ok(xval::valueof!((args[0].as_array().len() as i64)))
     }
 }
+
+scope.set_pipe("upper", UpperPipe);
+scope.set_func("len", LenFunc);
+```
+
+Then use them in templates:
+
+```
+{{ name | upper }}
+{{ len(items) }} items
 ```
 
 ## Compile-Time Templates
 
-Enable the `derive` feature for the `render!` macro, which parses templates at compile time:
+Enable the `derive` feature for the `render!` macro. Template syntax errors become compile errors:
 
 ```toml
 [dependencies]
@@ -150,21 +151,20 @@ scope.set_var("items", xval::valueof!([1_i64, 2_i64, 3_i64]));
 assert_eq!(tpl.render(&scope).unwrap(), "oddevenodd");
 ```
 
-The `render!` macro produces a `Template` with the same behavior as `Template::parse`, but template syntax errors are caught at compile time.
-
 ## Error Handling
 
-All evaluation errors include byte-offset spans for error reporting:
+Evaluation errors include byte-offset spans for reporting:
 
-- `UndefinedVariable` - variable not in scope
-- `UndefinedPipe` / `UndefinedTemplate` - pipe or template not registered
-- `TypeError` - type mismatch (e.g. iterating a number)
-- `DivisionByZero` - divide or modulo by zero
-- `IndexOutOfBounds` - array index out of range
-- `NotIterable` / `NotCallable` - wrong type for operation
+- `UndefinedVariable` — variable not in scope
+- `UndefinedPipe` / `UndefinedTemplate` — pipe or template not registered
+- `TypeError` — type mismatch (e.g. iterating a number)
+- `DivisionByZero` — divide or modulo by zero
+- `IndexOutOfBounds` — array index past end
+- `NotIterable` / `NotCallable` — wrong type for operation
 
 ## Features
 
 | Feature | Description |
 |---------|-------------|
-| `derive` | Enables the `render!` compile-time template macro via `xtera-derive` |
+| `derive` | `render!` compile-time template macro via `xtera-derive` |
+| `serde` | `Serialize`/`Deserialize` for `xval` value types |
