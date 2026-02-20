@@ -11,6 +11,7 @@ pub struct Max(xval::Number);
 
 impl Max {
     pub const KEY: &str = "max";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(value: xval::Number) -> Self {
         Self(value)

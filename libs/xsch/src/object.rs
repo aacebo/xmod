@@ -1,4 +1,4 @@
-use crate::{Context, Fields, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
+use crate::{Context, Fields, Phase, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
 
 pub fn object() -> ObjectSchema {
     ObjectSchema::default()
@@ -55,12 +55,14 @@ impl From<ObjectSchema> for Schema {
 
 impl Validator for ObjectSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        let value = self.0.validate(ctx)?;
+        let value = self.0.validate_phase(ctx, Phase::Presence)?;
 
         if !value.is_null() && !value.is_struct() {
             return Err(ctx.error("expected object"));
         }
 
-        Ok(value)
+        let mut next = ctx.clone();
+        next.value = value;
+        self.0.validate_phase(&next, Phase::Constraint)
     }
 }

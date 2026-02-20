@@ -13,6 +13,7 @@ pub struct Fields(BTreeMap<String, Schema>);
 
 impl Fields {
     pub const KEY: &str = "fields";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(fields: BTreeMap<String, Schema>) -> Self {
         Self(fields)

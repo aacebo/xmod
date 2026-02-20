@@ -11,6 +11,7 @@ pub struct Equals(xval::Value);
 
 impl Equals {
     pub const KEY: &str = "equals";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(value: xval::Value) -> Self {
         Self(value)
@@ -31,6 +32,10 @@ impl From<Equals> for Rule {
 
 impl Validator for Equals {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
+        if ctx.value.is_null() {
+            return Ok(ctx.value.clone());
+        }
+
         if ctx.value != self.0 {
             return Err(ctx.error(&format!("{} is not equal to {}", &ctx.value, &self.0)));
         }

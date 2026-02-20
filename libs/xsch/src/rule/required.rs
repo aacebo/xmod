@@ -11,6 +11,7 @@ pub struct Required(bool);
 
 impl Required {
     pub const KEY: &str = "required";
+    pub const PHASE: crate::Phase = crate::Phase::Presence;
 
     pub fn new(is_required: bool) -> Self {
         Self(is_required)

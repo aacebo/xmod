@@ -13,6 +13,7 @@ pub struct Items(Schema);
 
 impl Items {
     pub const KEY: &str = "items";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(items: Schema) -> Self {
         Self(items)

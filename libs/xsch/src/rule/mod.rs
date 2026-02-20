@@ -18,7 +18,7 @@ pub use options::*;
 pub use pattern::*;
 pub use required::*;
 
-use crate::{Context, ValidError, Validator};
+use crate::{Context, Phase, ValidError, Validator};
 
 #[derive(Debug, Clone)]
 pub enum Rule {
@@ -34,6 +34,20 @@ pub enum Rule {
 }
 
 impl Rule {
+    pub fn phase(&self) -> Phase {
+        match self {
+            Self::Equals(_) => Equals::PHASE,
+            Self::Options(_) => Options::PHASE,
+            Self::Required(_) => Required::PHASE,
+            Self::Min(_) => Min::PHASE,
+            Self::Max(_) => Max::PHASE,
+            Self::Items(_) => Items::PHASE,
+            Self::Fields(_) => Fields::PHASE,
+            #[cfg(feature = "regex")]
+            Self::Pattern(_) => Pattern::PHASE,
+        }
+    }
+
     pub fn key(&self) -> &str {
         match self {
             Self::Equals(_) => Equals::KEY,
@@ -244,6 +258,28 @@ impl RuleSet {
     pub fn merge(mut self, other: Self) -> Self {
         self.0.extend(other.0);
         self
+    }
+
+    pub fn validate_phase(&self, ctx: &Context, phase: Phase) -> Result<xval::Value, ValidError> {
+        let mut next = ctx.clone();
+        let mut error = ValidError::new(ctx.path.clone()).name(&ctx.name).build();
+
+        for rule in self.0.iter().filter(|r| r.phase() == phase) {
+            next.name = rule.key().to_string();
+            next.value = match rule.validate(&next) {
+                Ok(v) => v,
+                Err(err) => {
+                    error.errors.push(err);
+                    continue;
+                }
+            };
+        }
+
+        if !error.errors.is_empty() {
+            return Err(error);
+        }
+
+        Ok(next.value)
     }
 }
 

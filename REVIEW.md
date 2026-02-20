@@ -25,65 +25,15 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 | # | Status | Severity | Issue | Location |
 |---|--------|----------|-------|----------|
-| 5.1 | ⬜ | **Bug** | Type checking happens AFTER rules — rules can operate on wrong types (panics) | All typed schemas (e.g., [bool.rs](libs/xsch/src/bool.rs), [string.rs](libs/xsch/src/string.rs)) |
-| 5.2 | ⬜ | **Bug** | `Equals` and `Options` fire on null, breaking null-by-default contract | [equals.rs:34](libs/xsch/src/rule/equals.rs#L34), [options.rs:40](libs/xsch/src/rule/options.rs#L40) |
-| 5.3 | ⬜ | **Bug** | `Pattern` calls `.as_str()` on non-strings — will panic | [pattern.rs:39](libs/xsch/src/rule/pattern.rs#L39) |
+| 5.1 | ✅ | **Bug** | Type checking happens AFTER rules — rules can operate on wrong types (panics) | All typed schemas (e.g., [bool.rs](libs/xsch/src/bool.rs), [string.rs](libs/xsch/src/string.rs)) |
+| 5.2 | ✅ | **Bug** | `Equals` and `Options` fire on null, breaking null-by-default contract | [equals.rs:34](libs/xsch/src/rule/equals.rs#L34), [options.rs:40](libs/xsch/src/rule/options.rs#L40) |
+| 5.3 | ✅ | **Bug** | `Pattern` calls `.as_str()` on non-strings — will panic | [pattern.rs:39](libs/xsch/src/rule/pattern.rs#L39) |
 | 5.4 | ⬜ | **Design** | `Items` short-circuits on first error but `Fields` accumulates — inconsistent | [items.rs:43](libs/xsch/src/rule/items.rs#L43) |
-| 5.5 | ⬜ | **Design** | `Phase` enum exists but is not wired into rule execution — rules should be grouped and executed by phase | [phase.rs](libs/xsch/src/phase.rs), [rule/mod.rs](libs/xsch/src/rule/mod.rs) |
+| 5.5 | ✅ | **Design** | `Phase` enum exists but is not wired into rule execution — rules should be grouped and executed by phase | [phase.rs](libs/xsch/src/phase.rs), [rule/mod.rs](libs/xsch/src/rule/mod.rs) |
 | 5.6 | ⬜ | **Testing** | `debug_assert!` used in tests — stripped in release mode | [error.rs:100](libs/xsch/src/error.rs#L100) |
 | 5.7 | ⬜ | **Design** | `Min`/`Max` error messages don't distinguish length vs value | [min.rs:37](libs/xsch/src/rule/min.rs#L37), [max.rs:37](libs/xsch/src/rule/max.rs#L37) |
 
 ### Details
-
-#### 5.1 — Type checking after rules (critical)
-
-In every typed schema, rules execute before the type check:
-
-```rust
-fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-    let value = self.0.validate(ctx)?;
-    if !value.is_null() && !value.is_bool() {
-        return Err(ctx.error("expected bool"));
-    }
-    Ok(value)
-}
-```
-
-If you have `int().min(5)` and pass a string, `Min::validate` sees `is_number() == false` and `is_string() == true`, so it compares string length against 5 — completely wrong semantics. Worse, `Pattern` will call `.as_str()` on a non-string and panic.
-
-**Fix:** Check type first:
-
-```rust
-fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-    if ctx.value.is_null() {
-        return self.0.validate(ctx);
-    }
-    if !ctx.value.is_string() {
-        return Err(ctx.error("expected string"));
-    }
-    self.0.validate(ctx)
-}
-```
-
-#### 5.2 — `Equals` and `Options` fire on null
-
-Rules like `Min`, `Max`, `Items`, `Fields`, and `Pattern` all guard with `if !ctx.value.is_null()`, but `Equals` and `Options` do not. This means `string().equals("hello")` rejects null even without `.required()`, breaking the null-by-default contract.
-
-**Fix:** Add `if ctx.value.is_null() { return Ok(ctx.value.clone()); }` at the top of both validators.
-
-#### 5.5 — Phase-based rule execution
-
-The `Phase` enum defines five phases (Presence, Type, Coerce, Constraint, Refine) but `RuleSet::validate` just iterates rules in insertion order. Each rule should declare its phase, and `RuleSet` should group and execute rules by phase so that:
-
-1. **Presence** (`Required`) runs first — reject missing values early
-2. **Type** — type checking happens before constraints
-3. **Coerce** — future coercion/transformation
-4. **Constraint** (`Min`, `Max`, `Equals`, `Options`, `Pattern`, `Items`, `Fields`) — only runs after type is confirmed
-5. **Refine** — custom validation functions
-
-This solves issues 5.1, 5.2, and 5.3 structurally — instead of relying on callers to add rules in the right order, the phase system guarantees correct execution order.
-
-**Fix:** Add a `fn phase(&self) -> Phase` method to `Rule`, sort/group by phase in `RuleSet::validate`.
 
 #### 5.6 — `debug_assert!` in tests
 
@@ -291,8 +241,7 @@ Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 
 Remaining items:
 
-1. ⬜ **Wire Phase into rule execution** in xsch (5.5) — solves 5.1, 5.2, 5.3 structurally
-2. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-3. ⬜ **Handle generics** in xsch-derive (6.2)
-4. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-5. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+1. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
+2. ⬜ **Handle generics** in xsch-derive (6.2)
+3. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
+4. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)

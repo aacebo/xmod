@@ -1,6 +1,8 @@
 use xval::ToValue;
 
-use crate::{Context, Equals, Options, Required, RuleSet, Schema, ToSchema, ValidError, Validator};
+use crate::{
+    Context, Equals, Options, Phase, Required, RuleSet, Schema, ToSchema, ValidError, Validator,
+};
 
 pub fn bool() -> BoolSchema {
     BoolSchema::default()
@@ -47,13 +49,15 @@ impl From<BoolSchema> for Schema {
 
 impl Validator for BoolSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        let value = self.0.validate(ctx)?;
+        let value = self.0.validate_phase(ctx, Phase::Presence)?;
 
         if !value.is_null() && !value.is_bool() {
             return Err(ctx.error("expected bool"));
         }
 
-        Ok(value)
+        let mut next = ctx.clone();
+        next.value = value;
+        self.0.validate_phase(&next, Phase::Constraint)
     }
 }
 

@@ -11,6 +11,7 @@ pub struct Options(Vec<xval::Value>);
 
 impl Options {
     pub const KEY: &str = "options";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(options: Vec<xval::Value>) -> Self {
         Self(options)
@@ -37,6 +38,10 @@ impl From<Options> for Rule {
 
 impl Validator for Options {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
+        if ctx.value.is_null() {
+            return Ok(ctx.value.clone());
+        }
+
         for option in &self.0 {
             if ctx.value == *option {
                 return Ok(ctx.value.clone());

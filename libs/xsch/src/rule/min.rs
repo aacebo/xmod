@@ -11,6 +11,7 @@ pub struct Min(xval::Number);
 
 impl Min {
     pub const KEY: &str = "min";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(value: xval::Number) -> Self {
         Self(value)

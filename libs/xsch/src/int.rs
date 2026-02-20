@@ -1,7 +1,7 @@
 use xval::ToValue;
 
 use crate::{
-    Context, Equals, Max, Min, NumberSchema, Options, Required, RuleSet, Schema, ToSchema,
+    Context, Equals, Max, Min, NumberSchema, Options, Phase, Required, RuleSet, Schema, ToSchema,
     ValidError, Validator,
 };
 
@@ -66,13 +66,15 @@ impl From<NumberSchema> for IntSchema {
 
 impl Validator for IntSchema {
     fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
-        let value = self.0.validate(ctx)?;
+        let value = self.0.validate_phase(ctx, Phase::Presence)?;
 
         if !value.is_null() && !value.is_int() {
             return Err(ctx.error("expected integer"));
         }
 
-        Ok(value)
+        let mut next = ctx.clone();
+        next.value = value;
+        self.0.validate_phase(&next, Phase::Constraint)
     }
 }
 

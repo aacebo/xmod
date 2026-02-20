@@ -11,6 +11,7 @@ pub struct Pattern(String);
 
 impl Pattern {
     pub const KEY: &str = "pattern";
+    pub const PHASE: crate::Phase = crate::Phase::Constraint;
 
     pub fn new(pattern: String) -> Self {
         Self(pattern)

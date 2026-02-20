@@ -129,6 +129,9 @@ mod tests {
     fn validate_collects_multiple_errors() {
         let schema = any().required().equals(true.to_value());
         let err = schema.validate(&xval::valueof!(null).into()).unwrap_err();
-        assert_eq!(err.errors.len(), 2);
+        assert_eq!(err.errors.len(), 1);
+
+        let err = schema.validate(&xval::valueof!(false).into()).unwrap_err();
+        assert_eq!(err.errors.len(), 1);
     }
 }
