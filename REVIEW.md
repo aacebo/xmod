@@ -17,38 +17,6 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 ---
 
-## 4. xtera-derive — Compile-time Template Macro
-
-**Strengths:** Correct Pratt parsing, good error messages, `{{ }}` double-brace validation, thorough test suite (17 tests), fully qualified paths.
-
-### Issues
-
-| # | Status | Severity | Issue | Location |
-|---|--------|----------|-------|----------|
-| 4.1 | ⬜ | **UX** | All spans are `(0,0)` — runtime errors have no useful source location | [parse.rs](libs/xtera-derive/src/parse.rs) |
-| 4.2 | ⬜ | **Bug** | Missing trailing-token validation in parenthesized exprs and `@include` | [parse.rs:619](libs/xtera-derive/src/parse.rs#L619), [parse.rs:315](libs/xtera-derive/src/parse.rs#L315) |
-| 4.3 | ⬜ | **Bug** | Duplicate `_` arms in `@match` silently overwritten | [parse.rs:283](libs/xtera-derive/src/parse.rs#L283) |
-| 4.4 | ⬜ | **Design** | Duplicated precedence table (vs runtime parser) with no cross-validation test | [parse.rs:27-34](libs/xtera-derive/src/parse.rs#L27) |
-| 4.5 | ⬜ | **Bug** | `@for` header does not validate that all tokens are consumed after `track` expr | [parse.rs:251](libs/xtera-derive/src/parse.rs#L251) |
-
-### Details
-
-#### 4.1 — All spans are `(0,0)`
-
-Every AST node gets `Span::new(0, 0, src.clone())`. Runtime errors from macro-generated templates always point to position `0..0`, which is useless for debugging.
-
-#### 4.2 — Missing trailing-token validation
-
-After `parse_expr(&content)` in parenthesized expressions, `@include`, and `@for` track expressions, there is no check that all content was consumed. Extra tokens are silently ignored.
-
-**Fix:** Add `if !content.is_empty() { return Err(content.error("unexpected tokens")); }` after each delimited parse.
-
-#### 4.3 — No compile-fail tests
-
-Only happy-path tests exist. Should add `trybuild` tests for invalid syntax to verify error messages.
-
----
-
 ## 5. xsch — Schema Validation
 
 **Strengths:** Composable builder API (`string().required().min(3).max(10)`), error accumulation, path tracking, structured errors.
@@ -61,7 +29,7 @@ Only happy-path tests exist. Should add `trybuild` tests for invalid syntax to v
 | 5.2 | ⬜ | **Bug** | `Equals` and `Options` fire on null, breaking null-by-default contract | [equals.rs:34](libs/xsch/src/rule/equals.rs#L34), [options.rs:40](libs/xsch/src/rule/options.rs#L40) |
 | 5.3 | ⬜ | **Bug** | `Pattern` calls `.as_str()` on non-strings — will panic | [pattern.rs:39](libs/xsch/src/rule/pattern.rs#L39) |
 | 5.4 | ⬜ | **Design** | `Items` short-circuits on first error but `Fields` accumulates — inconsistent | [items.rs:43](libs/xsch/src/rule/items.rs#L43) |
-| 5.5 | ⬜ | **Dead code** | `Phase` enum and `Validate` trait are defined but never used | [phase.rs](libs/xsch/src/phase.rs), [lib.rs:60](libs/xsch/src/lib.rs#L60) |
+| 5.5 | ⬜ | **Design** | `Phase` enum exists but is not wired into rule execution — rules should be grouped and executed by phase | [phase.rs](libs/xsch/src/phase.rs), [rule/mod.rs](libs/xsch/src/rule/mod.rs) |
 | 5.6 | ⬜ | **Testing** | `debug_assert!` used in tests — stripped in release mode | [error.rs:100](libs/xsch/src/error.rs#L100) |
 | 5.7 | ⬜ | **Design** | `Min`/`Max` error messages don't distinguish length vs value | [min.rs:37](libs/xsch/src/rule/min.rs#L37), [max.rs:37](libs/xsch/src/rule/max.rs#L37) |
 
@@ -102,6 +70,20 @@ fn validate(&self, ctx: &Context) -> Result<xval::Value, ValidError> {
 Rules like `Min`, `Max`, `Items`, `Fields`, and `Pattern` all guard with `if !ctx.value.is_null()`, but `Equals` and `Options` do not. This means `string().equals("hello")` rejects null even without `.required()`, breaking the null-by-default contract.
 
 **Fix:** Add `if ctx.value.is_null() { return Ok(ctx.value.clone()); }` at the top of both validators.
+
+#### 5.5 — Phase-based rule execution
+
+The `Phase` enum defines five phases (Presence, Type, Coerce, Constraint, Refine) but `RuleSet::validate` just iterates rules in insertion order. Each rule should declare its phase, and `RuleSet` should group and execute rules by phase so that:
+
+1. **Presence** (`Required`) runs first — reject missing values early
+2. **Type** — type checking happens before constraints
+3. **Coerce** — future coercion/transformation
+4. **Constraint** (`Min`, `Max`, `Equals`, `Options`, `Pattern`, `Items`, `Fields`) — only runs after type is confirmed
+5. **Refine** — custom validation functions
+
+This solves issues 5.1, 5.2, and 5.3 structurally — instead of relying on callers to add rules in the right order, the phase system guarantees correct execution order.
+
+**Fix:** Add a `fn phase(&self) -> Phase` method to `Rule`, sort/group by phase in `RuleSet::validate`.
 
 #### 5.6 — `debug_assert!` in tests
 
@@ -301,11 +283,7 @@ With `max_attempts = 2`, you get 3 total attempts (1 initial + 2 retries). The t
 Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 
 ### C.4 — Dead code
-
-- `Phase` enum — [phase.rs](libs/xsch/src/phase.rs)
-- `Validate` trait — [lib.rs:60](libs/xsch/src/lib.rs#L60)
 - `ForNode.track` — [for_node.rs:10](libs/xtera/src/ast/node/for_node.rs#L10)
-- `Node::Block` variant — [node/mod.rs](libs/xtera/src/ast/node/mod.rs)
 
 ---
 
@@ -313,9 +291,8 @@ Across multiple crates: `FromStr`, `IntoIterator`, `TryFrom`, `Hash`.
 
 Remaining items:
 
-1. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
+1. ⬜ **Wire Phase into rule execution** in xsch (5.5) — solves 5.1, 5.2, 5.3 structurally
 2. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
 3. ⬜ **Handle generics** in xsch-derive (6.2)
 4. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
-5. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)
-6. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
+5. ⬜ **Handle `Option<T>`** in xsch-derive (6.1)
