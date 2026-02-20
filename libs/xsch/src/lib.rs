@@ -45,7 +45,7 @@ impl ToSchema for xval::Value {
                     let mut schema = object();
 
                     for (ident, item) in v.items() {
-                        schema = schema.field(&ident.to_string(), item.to_value().to_schema());
+                        schema = schema.field(&ident.to_string(), item.to_value());
                     }
 
                     schema.to_schema()
@@ -268,28 +268,28 @@ mod tests {
 
         #[test]
         fn array_items_valid() {
-            let schema = Schema::Array(array().items(string().into()));
+            let schema = Schema::Array(array().items(string()));
             let value = vec!["a", "b"].to_value();
             assert!(schema.validate(&value.into()).is_ok());
         }
 
         #[test]
         fn array_items_invalid() {
-            let schema = Schema::Array(array().items(string().into()));
+            let schema = Schema::Array(array().items(string()));
             let value = vec![1i32, 2].to_value();
             assert!(schema.validate(&value.into()).is_err());
         }
 
         #[test]
         fn array_items_with_inner_rules() {
-            let schema = Schema::Array(array().items(int().required().into()));
+            let schema = Schema::Array(array().items(int().required()));
             let value = vec![1i32, 2, 3].to_value();
             assert!(schema.validate(&value.into()).is_ok());
         }
 
         #[test]
         fn array_combined_rules() {
-            let schema = Schema::Array(array().required().min(1).max(3).items(int().into()));
+            let schema = Schema::Array(array().required().min(1).max(3).items(int()));
             assert!(schema.validate(&vec![1i32, 2].to_value().into()).is_ok());
             assert!(schema.validate(&xval::valueof!(null).into()).is_err());
             assert!(
@@ -345,7 +345,7 @@ mod tests {
         #[test]
         fn object_field_valid() {
             use std::collections::HashMap;
-            let schema = Schema::Object(object().field("name", string().into()));
+            let schema = Schema::Object(object().field("name", string()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             assert!(schema.validate(&map.to_value().into()).is_ok());
@@ -354,7 +354,7 @@ mod tests {
         #[test]
         fn object_field_invalid_type() {
             use std::collections::HashMap;
-            let schema = Schema::Object(object().field("name", string().into()));
+            let schema = Schema::Object(object().field("name", string()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!(42_i32));
             assert!(schema.validate(&map.to_value().into()).is_err());
@@ -363,7 +363,7 @@ mod tests {
         #[test]
         fn object_unexpected_field() {
             use std::collections::HashMap;
-            let schema = Schema::Object(object().field("name", string().into()));
+            let schema = Schema::Object(object().field("name", string()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             map.insert(xval::Ident::key("extra"), xval::valueof!(1_i32));
@@ -375,8 +375,8 @@ mod tests {
             use std::collections::HashMap;
             let schema = Schema::Object(
                 object()
-                    .field("name", string().required().into())
-                    .field("age", int().into()),
+                    .field("name", string().required())
+                    .field("age", int()),
             );
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
@@ -386,11 +386,7 @@ mod tests {
         #[test]
         fn object_multiple_fields() {
             use std::collections::HashMap;
-            let schema = Schema::Object(
-                object()
-                    .field("name", string().into())
-                    .field("age", int().into()),
-            );
+            let schema = Schema::Object(object().field("name", string()).field("age", int()));
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
             map.insert(xval::Ident::key("age"), xval::valueof!(30_i32));
@@ -400,8 +396,8 @@ mod tests {
         #[test]
         fn object_nested_object() {
             use std::collections::HashMap;
-            let inner_schema = object().field("street", string().into());
-            let schema = Schema::Object(object().field("address", inner_schema.into()));
+            let inner_schema = object().field("street", string());
+            let schema = Schema::Object(object().field("address", inner_schema));
             let mut inner = HashMap::new();
             inner.insert(xval::Ident::key("street"), xval::valueof!("123 Main"));
             let mut outer = HashMap::new();
@@ -412,11 +408,7 @@ mod tests {
         #[test]
         fn object_combined_rules() {
             use std::collections::HashMap;
-            let schema = Schema::Object(
-                object()
-                    .required()
-                    .field("name", string().required().into()),
-            );
+            let schema = Schema::Object(object().required().field("name", string().required()));
             // valid
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
@@ -680,8 +672,8 @@ mod tests {
             let schema = Schema::Object(
                 object()
                     .required()
-                    .field("name", string().into())
-                    .field("age", int().into()),
+                    .field("name", string())
+                    .field("age", int()),
             );
             let json = serde_json::to_string(&schema).unwrap();
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();

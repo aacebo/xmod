@@ -16,7 +16,6 @@ pub fn derive(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
             let field_name = field_ident.to_string();
             let kind = SchemaType::from_type(&field.ty);
             let base = kind.to_token_stream();
-
             let attrs: Vec<_> = field
                 .attrs
                 .iter()
@@ -40,12 +39,12 @@ pub fn derive(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
             }
 
             let schema_expr = if rule_calls.is_empty() {
-                quote!(#base.into())
+                quote!(#base)
             } else {
                 quote! {{
                     let schema = #base;
                     #(let schema = schema.#rule_calls;)*
-                    schema.into()
+                    schema
                 }}
             };
 

@@ -23,7 +23,9 @@ impl ObjectSchema {
         self
     }
 
-    pub fn field(mut self, name: &str, schema: Schema) -> Self {
+    pub fn field<T: ToSchema>(mut self, name: &str, value: T) -> Self {
+        let schema = value.to_schema();
+
         if let Some(fields) = self.0.get_mut(Fields::KEY).and_then(|v| v.as_fields_mut()) {
             fields.set(name, schema);
             return self;

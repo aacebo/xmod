@@ -30,8 +30,8 @@ impl ArraySchema {
         self
     }
 
-    pub fn items(mut self, items: Schema) -> Self {
-        self.0 = self.0.add(Items::from(items).into());
+    pub fn items<T: ToSchema>(mut self, items: T) -> Self {
+        self.0 = self.0.add(Items::from(items.to_schema()).into());
         self
     }
 }
