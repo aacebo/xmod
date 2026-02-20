@@ -324,6 +324,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "xwire"
+version = "0.0.0"
+dependencies = [
+ "xwire-derive",
+]
+
+[[package]]
+name = "xwire-derive"
+version = "0.0.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+ "xwire",
+]
+
+[[package]]
 name = "zmij"
 version = "1.0.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"

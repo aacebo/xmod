@@ -39,4 +39,3 @@ impl<T: xval::ToValue> From<T> for Context {
         }
     }
 }
-

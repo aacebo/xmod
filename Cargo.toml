@@ -23,6 +23,8 @@ xtera = { path = "./libs/xtera", version = "0.0.0" }
 xtera-derive = { path = "./libs/xtera-derive", version = "0.0.0" }
 xval = { path = "./libs/xval", version = "0.0.0" }
 xval-derive = { path = "./libs/xval-derive", version = "0.0.0" }
+xwire = { path = "./libs/xwire", version = "0.0.0" }
+xwire-derive = { path = "./libs/xwire-derive", version = "0.0.0" }
 
 # 3rd Party
 serde = { version = "1", features = ["default", "derive"] }
