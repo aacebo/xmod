@@ -25,7 +25,7 @@ Overall the codebase is clean, well-organized, and shows strong Rust fundamental
 
 | # | Status | Severity | Issue | Location |
 |---|--------|----------|-------|----------|
-| 2.1 | ⬜ | **Bug** | Generics completely ignored — `Wrapper<T>` won't compile | [lib.rs:16](libs/xval-derive/src/lib.rs#L16) |
+| 2.1 | ✅ | **Bug** | Generics completely ignored — `Wrapper<T>` won't compile | [lib.rs:16](libs/xval-derive/src/lib.rs#L16) |
 | 2.2 | ⬜ | **Bug** | `len` counts all fields but iteration skips unnamed (tuple structs break) | [lib.rs:17-18](libs/xval-derive/src/lib.rs#L17) |
 | 2.3 | ⬜ | **Design** | Hidden `Clone` requirement baked into struct derive (`self.clone()`) | [lib.rs:23](libs/xval-derive/src/lib.rs#L23) |
 | 2.4 | ⬜ | **UX** | Unions silently produce empty output instead of `compile_error!` | [lib.rs:11](libs/xval-derive/src/lib.rs#L11) |
@@ -414,7 +414,9 @@ With `max_attempts = 2`, you get 3 total attempts (1 initial + 2 retries). The t
 
 ### C.1 — No generics support in derive macros
 
-Both [xval-derive](libs/xval-derive/src/lib.rs) and [xsch-derive](libs/xsch-derive/src/lib.rs) will break on generic types. Both need `input.generics.split_for_impl()`.
+~~[xval-derive](libs/xval-derive/src/lib.rs)~~ ✅ Fixed — now uses `input.generics.split_for_impl()` with integration tests covering generic structs and enums.
+
+[xsch-derive](libs/xsch-derive/src/lib.rs) still breaks on generic types and needs the same treatment (issue 6.2).
 
 ### C.2 — Panicking APIs where `Result`/`Option` is expected
 
@@ -449,7 +451,7 @@ Remaining items:
 
 1. ⬜ **Move type checking before rules** in xsch (5.1) — rules can panic on wrong types
 2. ⬜ **Eliminate `unsafe`** in xpipe's `Task::eval` (8.1)
-3. ⬜ **Handle generics** in both derive macros (2.1, 6.2)
+3. ⬜ **Handle generics** in xsch-derive (6.2)
 4. ⬜ **Fix panicking `From<&str>`** in xpath (7.1)
 5. ⬜ **Fix `Scope::render` panic** and add `@include` recursion guard in xtera (3.1, 3.2)
 6. ⬜ **Guard `Equals`/`Options`/`Pattern`** against null/wrong types in xsch (5.2, 5.3)

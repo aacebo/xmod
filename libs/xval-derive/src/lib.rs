@@ -15,16 +15,17 @@ pub fn derive_value(input: TokenStream) -> TokenStream {
 fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStream {
     let ident = &input.ident;
     let len = data.fields.len();
-    let fields: Vec<syn::Ident> = data.fields.iter().filter_map(|f| f.ident.clone()).collect();
+    let fields: Vec<_> = data.fields.iter().filter_map(|f| f.ident.clone()).collect();
+    let (impl_generics, type_generics, where_generics) = input.generics.split_for_impl();
 
     quote! {
-        impl ::xval::ToValue for #ident {
+        impl #impl_generics ::xval::ToValue for #ident #type_generics #where_generics {
             fn to_value(&self) -> ::xval::Value {
                 ::xval::Value::from_struct(self.clone())
             }
         }
 
-        impl ::xval::Struct for #ident {
+        impl #impl_generics ::xval::Struct for #ident #type_generics #where_generics {
             fn name(&self) -> &str {
                 stringify!(#ident)
             }
@@ -62,13 +63,13 @@ fn derive_struct(input: &syn::DeriveInput, data: &syn::DataStruct) -> TokenStrea
 
 fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     let ident = &input.ident;
-
+    let (impl_generics, type_generics, where_generics) = input.generics.split_for_impl();
     let match_arms = data.variants.iter().map(|variant| {
         let variant_ident = &variant.ident;
 
         match &variant.fields {
             syn::Fields::Named(fields) => {
-                let field_idents: Vec<&syn::Ident> = fields
+                let field_idents: Vec<_> = fields
                     .named
                     .iter()
                     .filter_map(|f| f.ident.as_ref())
@@ -107,7 +108,7 @@ fn derive_enum(input: &syn::DeriveInput, data: &syn::DataEnum) -> TokenStream {
     });
 
     quote! {
-        impl ::xval::ToValue for #ident {
+        impl #impl_generics ::xval::ToValue for #ident #type_generics #where_generics {
             fn to_value(&self) -> ::xval::Value {
                 match self {
                     #( #match_arms ),*
