@@ -8,7 +8,7 @@ Template engine for Rust with interpolation, control flow, pipes, functions, and
 use xtera::{Scope, Template};
 
 let mut scope = Scope::new();
-scope.set_var("name", xval::valueof!("world"));
+scope.set_var("name", "world");
 
 let tpl = Template::parse("Hello {{ name }}!").unwrap();
 assert_eq!(tpl.render(&scope).unwrap(), "Hello world!");
@@ -89,7 +89,7 @@ use xtera::{Scope, Template};
 
 let mut scope = Scope::new();
 
-scope.set_var("name", xval::valueof!("alice"));
+scope.set_var("name", "alice");
 scope.set_var("items", xval::valueof!([1_i64, 2_i64, 3_i64]));
 
 scope.set_template("header", Template::parse("<h1>{{ title }}</h1>").unwrap());

@@ -80,6 +80,8 @@ macro_rules! valueof {
 
 #[cfg(test)]
 mod tests {
+    use crate::ext::StructExt;
+
     #[test]
     fn null() {
         let v = valueof!(null);
@@ -158,14 +160,8 @@ mod tests {
     fn struct_with_fields() {
         let v = valueof!({ "a": 1_i32, "b": "hello" });
         assert!(v.is_struct());
-        assert_eq!(
-            v.as_struct().field("a".into()).unwrap().to_value().to_i32(),
-            1
-        );
-        assert_eq!(
-            v.as_struct().field("b".into()).unwrap().to_value().as_str(),
-            "hello"
-        );
+        assert_eq!(v.as_struct().get("a").unwrap().to_value().to_i32(), 1);
+        assert_eq!(v.as_struct().get("b").unwrap().to_value().as_str(), "hello");
     }
 
     #[test]
@@ -186,7 +182,7 @@ mod tests {
                 .unwrap()
                 .to_value()
                 .as_struct()
-                .field("name".into())
+                .get("name")
                 .unwrap()
                 .to_value()
                 .as_str(),
@@ -198,7 +194,7 @@ mod tests {
     fn nested_array_in_struct() {
         let v = valueof!({ "items": [42_i32, 99_i32] });
         assert!(v.is_struct());
-        let items = v.as_struct().field("items".into()).unwrap().to_value();
+        let items = v.as_struct().get("items").unwrap().to_value();
         assert!(items.is_array());
         assert_eq!(items.as_array().index(0).unwrap().to_value().to_i32(), 42);
         assert_eq!(items.as_array().index(1).unwrap().to_value().to_i32(), 99);
@@ -214,15 +210,8 @@ mod tests {
             "count": 2_i32,
         });
         assert!(v.is_struct());
-        assert_eq!(
-            v.as_struct()
-                .field("count".into())
-                .unwrap()
-                .to_value()
-                .to_i32(),
-            2
-        );
-        let users = v.as_struct().field("users".into()).unwrap().to_value();
+        assert_eq!(v.as_struct().get("count").unwrap().to_value().to_i32(), 2);
+        let users = v.as_struct().get("users").unwrap().to_value();
         assert!(users.is_array());
         assert_eq!(users.as_array().len(), 2);
     }
@@ -240,13 +229,7 @@ mod tests {
     #[test]
     fn null_in_struct() {
         let v = valueof!({ "x": null });
-        assert!(
-            v.as_struct()
-                .field("x".into())
-                .unwrap()
-                .to_value()
-                .is_null()
-        );
+        assert!(v.as_struct().get("x").unwrap().to_value().is_null());
     }
 
     #[test]

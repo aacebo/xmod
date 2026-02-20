@@ -1,6 +1,6 @@
 use std::collections::BTreeMap;
 
-use xval::Value;
+use xval::{ToValue, Value};
 
 #[derive(Debug, Clone)]
 pub struct Context {
@@ -11,10 +11,10 @@ pub struct Context {
 }
 
 impl Context {
-    pub fn new(input: Value) -> Self {
+    pub fn new(input: impl ToValue) -> Self {
         Self {
             started_at: std::time::Instant::now(),
-            input,
+            input: input.to_value(),
             data: BTreeMap::new(),
         }
     }
@@ -49,8 +49,8 @@ impl Context {
         self.data.get(key)
     }
 
-    pub fn set(&mut self, key: impl Into<String>, value: Value) -> &mut Self {
-        self.data.insert(key.into(), value);
+    pub fn set(&mut self, key: impl Into<String>, value: impl ToValue) -> &mut Self {
+        self.data.insert(key.into(), value.to_value());
         self
     }
 }

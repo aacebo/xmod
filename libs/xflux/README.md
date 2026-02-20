@@ -9,13 +9,14 @@ An action receives an execution context and returns a value:
 ```rust
 use async_trait::async_trait;
 use xflux::{Action, Context};
+use xval::ext::StructExt;
 
 struct Greet;
 
 #[async_trait]
 impl Action for Greet {
     async fn exec(&self, ctx: &mut Context) -> xok::Result<xval::Value> {
-        let name = ctx.input.as_struct().field("name".into()).unwrap().to_value();
+        let name = ctx.input.as_struct().get("name").unwrap().to_value();
         Ok(xval::valueof!((format!("hello {}", name.as_str()))))
     }
 }
@@ -46,7 +47,7 @@ use xflux::Context;
 
 let mut ctx = Context::new(xval::valueof!({ "user": "alice" }));
 
-ctx.set("token", xval::valueof!("abc123"));
+ctx.set("token", "abc123");
 assert_eq!(ctx.get("token").unwrap().as_str(), "abc123");
 assert!(ctx.exists("token"));
 

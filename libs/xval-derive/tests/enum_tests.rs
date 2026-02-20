@@ -1,4 +1,5 @@
 use xval::ToValue;
+use xval::ext::StructExt;
 use xval_derive::Value;
 
 #[derive(Value)]
@@ -46,6 +47,6 @@ fn enum_named_variant() {
 
     let s = v.as_struct();
     assert_eq!(s.len(), 2);
-    assert_eq!(s.field("user".into()).unwrap().to_value().as_str(), "alice");
-    assert_eq!(s.field("text".into()).unwrap().to_value().as_str(), "hi");
+    assert_eq!(s.get("user").unwrap().to_value().as_str(), "alice");
+    assert_eq!(s.get("text").unwrap().to_value().as_str(), "hi");
 }

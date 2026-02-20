@@ -33,15 +33,15 @@ assert!(Path::parse("/a").is_err());
 use xpath::{Path, Ident};
 
 let mut path = Path::default();
-path.push(Ident::key("users"));
-path.push(Ident::index(0));
-path.push(Ident::key("name"));
+path.push("users");
+path.push(0usize);
+path.push("name");
 
 // child appends a segment
-let with_email = path.child(Ident::key("email"));
+let with_email = path.child("email");
 
 // peer replaces the last segment
-let sibling = path.peer(Ident::key("age")); // users/0/age
+let sibling = path.peer("age"); // users/0/age
 ```
 
 ## Converting from Strings

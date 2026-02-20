@@ -13,13 +13,15 @@ pub fn any() -> AnySchema {
 pub struct AnySchema(pub(crate) RuleSet);
 
 impl AnySchema {
-    pub fn equals(mut self, value: xval::Value) -> Self {
-        self.0 = self.0.add(Equals::from(value).into());
+    pub fn equals<T: xval::ToValue>(mut self, value: T) -> Self {
+        self.0 = self.0.add(Equals::from(value.to_value()).into());
         self
     }
 
-    pub fn options(mut self, options: &[xval::Value]) -> Self {
-        self.0 = self.0.add(Options::from(options).into());
+    pub fn options(mut self, options: &[&dyn xval::ToValue]) -> Self {
+        self.0 = self
+            .0
+            .add(Options::from(options.iter().map(|v| v.to_value()).collect::<Vec<_>>()).into());
         self
     }
 
@@ -87,37 +89,35 @@ mod tests {
 
     #[test]
     fn validate_equals_match() {
-        let schema = any().equals("hello".to_value());
+        let schema = any().equals("hello");
         let result = schema.validate(&"hello".to_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_equals_mismatch() {
-        let schema = any().equals("hello".to_value());
+        let schema = any().equals("hello");
         let result = schema.validate(&"world".to_value().into());
         assert!(result.is_err());
     }
 
     #[test]
     fn validate_options_match() {
-        let schema = any().options(&[1i32.to_value(), "test".to_value(), true.to_value()]);
+        let schema = any().options(&[&1i32, &"test", &true]);
         let result = schema.validate(&"test".to_value().into());
         assert!(result.is_ok());
     }
 
     #[test]
     fn validate_options_mismatch() {
-        let schema = any().options(&[1i32.to_value(), 2i32.to_value()]);
+        let schema = any().options(&[&1i32, &2i32]);
         let result = schema.validate(&3i32.to_value().into());
         assert!(result.is_err());
     }
 
     #[test]
     fn validate_required_and_options() {
-        let schema = any()
-            .required()
-            .options(&[true.to_value(), false.to_value()]);
+        let schema = any().required().options(&[&true, &false]);
 
         assert!(schema.validate(&true.to_value().into()).is_ok());
         assert!(schema.validate(&false.to_value().into()).is_ok());
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn validate_collects_multiple_errors() {
-        let schema = any().required().equals(true.to_value());
+        let schema = any().required().equals(true);
         let err = schema.validate(&xval::valueof!(null).into()).unwrap_err();
         assert_eq!(err.errors.len(), 1);
 

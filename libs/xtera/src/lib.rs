@@ -84,8 +84,8 @@ mod tests {
     #[test]
     fn include_with_control_flow() {
         let mut s = scope();
-        s.set_var("show", xval::valueof!(true));
-        s.set_var("name", xval::valueof!("world"));
+        s.set_var("show", true);
+        s.set_var("name", "world");
 
         s.set_template(
             "greeting",
@@ -102,9 +102,9 @@ mod tests {
     #[test]
     fn pipes_and_expressions_in_control_flow() {
         let mut s = scope();
-        s.set_var("x", xval::valueof!(10_i64));
-        s.set_var("y", xval::valueof!(3_i64));
-        s.set_var("label", xval::valueof!("result"));
+        s.set_var("x", 10_i64);
+        s.set_var("y", 3_i64);
+        s.set_var("label", "result");
 
         let tpl = Template::parse("@if (x > 5 && y < 10) {{{ label | upper }}: {{ x * y + 1 }}}")
             .unwrap();
@@ -116,12 +116,12 @@ mod tests {
     #[test]
     fn full_page_template() {
         let mut s = scope();
-        s.set_var("title", xval::valueof!("My Page"));
+        s.set_var("title", "My Page");
         s.set_var(
             "users",
             xval::valueof!((vec![xval::valueof!("alice"), xval::valueof!("bob"),])),
         );
-        s.set_var("theme", xval::valueof!("dark"));
+        s.set_var("theme", "dark");
 
         s.set_template(
             "header",
@@ -267,7 +267,7 @@ mod tests {
     #[test]
     fn undefined_pipe() {
         let mut s = Scope::new();
-        s.set_var("x", xval::valueof!("hi"));
+        s.set_var("x", "hi");
         let err = render_err("{{ x | missing }}", &s);
         assert!(matches!(err.inner(), ast::EvalError::UndefinedPipe(_)));
     }
@@ -275,7 +275,7 @@ mod tests {
     #[test]
     fn for_not_iterable() {
         let mut s = Scope::new();
-        s.set_var("items", xval::valueof!(42_i64));
+        s.set_var("items", 42_i64);
         let err = render_err("@for (n of items; track n) {x}", &s);
         assert!(matches!(err.inner(), ast::EvalError::NotIterable(_)));
     }
@@ -289,7 +289,7 @@ mod tests {
     #[test]
     fn include_non_string_name() {
         let mut s = Scope::new();
-        s.set_var("name", xval::valueof!(42_i64));
+        s.set_var("name", 42_i64);
         let err = render_err("@include(name)", &s);
         assert!(matches!(err.inner(), ast::EvalError::TypeError(_)));
     }
@@ -335,7 +335,7 @@ mod tests {
     #[test]
     fn match_default() {
         let mut s = Scope::new();
-        s.set_var("x", xval::valueof!("b"));
+        s.set_var("x", "b");
         let tpl = Template::parse("@match (x) { 'a' => {A}, _ => {?} }").unwrap();
         s.set_template("main", tpl);
         assert_eq!(s.render("main").unwrap(), "?");
@@ -344,7 +344,7 @@ mod tests {
     #[test]
     fn match_arm() {
         let mut s = Scope::new();
-        s.set_var("x", xval::valueof!("a"));
+        s.set_var("x", "a");
         let tpl = Template::parse("@match (x) { 'a' => {A}, 'b' => {B} }").unwrap();
         s.set_template("main", tpl);
         assert_eq!(s.render("main").unwrap(), "A");
@@ -353,7 +353,7 @@ mod tests {
     #[test]
     fn match_no_match() {
         let mut s = Scope::new();
-        s.set_var("x", xval::valueof!("c"));
+        s.set_var("x", "c");
         let tpl = Template::parse("@match (x) { 'a' => {A} }").unwrap();
         s.set_template("main", tpl);
         assert_eq!(s.render("main").unwrap(), "");
@@ -367,7 +367,7 @@ mod tests {
     #[test]
     fn interpolation_with_variable() {
         let mut s = Scope::new();
-        s.set_var("x", xval::valueof!(10_i64));
+        s.set_var("x", 10_i64);
         let tpl = Template::parse("{{ x }}").unwrap();
         s.set_template("main", tpl);
         assert_eq!(s.render("main").unwrap(), "10");

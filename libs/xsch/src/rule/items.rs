@@ -40,7 +40,7 @@ impl Validator for Items {
 
             for (i, item) in ctx.value.as_array().items().enumerate() {
                 let mut next = ctx.clone();
-                next.path = ctx.path.child(i.into());
+                next.path = ctx.path.child(i);
                 next.value = item.to_value();
 
                 match self.0.validate(&next) {

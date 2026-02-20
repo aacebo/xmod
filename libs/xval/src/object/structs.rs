@@ -166,6 +166,7 @@ impl<'a, const N: usize> From<&'a [(Ident, Value); N]> for StructIter<'a> {
 mod tests {
     use std::collections::HashMap;
 
+    use crate::ext::StructExt;
     use crate::*;
 
     fn sample_struct() -> HashMap<Ident, Value> {
@@ -220,13 +221,13 @@ mod tests {
     #[test]
     fn field() {
         let s = sample_struct();
-        let v = s.field("a".into()).unwrap();
+        let v = Struct::field(&s, "a".into()).unwrap();
         assert_eq!(v.to_value().to_i32(), 1);
 
-        let v = s.field("b".into()).unwrap();
+        let v = Struct::field(&s, "b".into()).unwrap();
         assert_eq!(v.to_value().as_str(), "hello");
 
-        assert!(s.field("missing".into()).is_none());
+        assert!(Struct::field(&s, "missing".into()).is_none());
     }
 
     #[test]
@@ -246,8 +247,8 @@ mod tests {
         assert!(v.is_struct());
         let s = v.as_struct();
         assert_eq!(s.len(), 2);
-        assert_eq!(s.field("x".into()).unwrap().to_value().to_i32(), 10);
-        assert_eq!(s.field("y".into()).unwrap().to_value().to_i32(), 20);
+        assert_eq!(s.get("x").unwrap().to_value().to_i32(), 10);
+        assert_eq!(s.get("y").unwrap().to_value().to_i32(), 20);
     }
 
     #[test]
@@ -257,7 +258,7 @@ mod tests {
         let v = map.to_value();
         assert!(v.is_struct());
         let s = v.as_struct();
-        assert_eq!(s.field("name".into()).unwrap().to_value().as_str(), "alice");
+        assert_eq!(s.get("name").unwrap().to_value().as_str(), "alice");
     }
 
     #[test]

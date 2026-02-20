@@ -1,4 +1,5 @@
 mod bool;
+pub mod ext;
 mod macros;
 pub mod num;
 mod object;

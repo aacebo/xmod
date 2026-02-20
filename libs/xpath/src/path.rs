@@ -38,8 +38,8 @@ impl Path {
         self.0.iter()
     }
 
-    pub fn push(&mut self, ident: Ident) -> &mut Self {
-        self.0.push(ident);
+    pub fn push(&mut self, ident: impl Into<Ident>) -> &mut Self {
+        self.0.push(ident.into());
         self
     }
 
@@ -47,16 +47,16 @@ impl Path {
         self.0.pop()
     }
 
-    pub fn child(&self, ident: Ident) -> Self {
+    pub fn child(&self, ident: impl Into<Ident>) -> Self {
         let mut path = self.clone();
-        path.0.push(ident);
+        path.0.push(ident.into());
         path
     }
 
-    pub fn peer(&self, ident: Ident) -> Self {
+    pub fn peer(&self, ident: impl Into<Ident>) -> Self {
         let mut path = self.clone();
         path.0.pop();
-        path.0.push(ident);
+        path.0.push(ident.into());
         path
     }
 }

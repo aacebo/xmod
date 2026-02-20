@@ -1,4 +1,5 @@
 use xval::ToValue;
+use xval::ext::StructExt;
 use xval_derive::Value;
 
 #[derive(Value)]
@@ -35,7 +36,7 @@ fn generic_struct_single_param() {
     assert_eq!(
         w.to_value()
             .as_struct()
-            .field("value".into())
+            .get("value")
             .unwrap()
             .to_value()
             .to_i32(),
@@ -52,11 +53,8 @@ fn generic_struct_multiple_params() {
     assert!(p.to_value().is_struct());
     let v = p.to_value();
     let s = v.as_struct();
-    assert_eq!(
-        s.field("first".into()).unwrap().to_value().as_str(),
-        "hello"
-    );
-    assert_eq!(s.field("second".into()).unwrap().to_value().to_bool(), true);
+    assert_eq!(s.get("first").unwrap().to_value().as_str(), "hello");
+    assert_eq!(s.get("second").unwrap().to_value().to_bool(), true);
 }
 
 #[test]
@@ -67,18 +65,8 @@ fn generic_struct_where_clause() {
     assert!(c.to_value().is_struct());
     let v = c.to_value();
     let s = v.as_struct();
-    assert!(
-        s.field("items".into())
-            .is_some_and(|v| v.to_value().is_array())
-    );
-    assert_eq!(
-        s.field("items".into())
-            .unwrap()
-            .to_value()
-            .as_object()
-            .len(),
-        3
-    );
+    assert!(s.get("items").is_some_and(|v| v.to_value().is_array()));
+    assert_eq!(s.get("items").unwrap().to_value().as_object().len(), 3);
 }
 
 #[test]
@@ -102,5 +90,5 @@ fn generic_enum_named_variant() {
     .to_value();
     assert!(v.is_struct());
     let s = v.as_struct();
-    assert_eq!(s.field("value".into()).unwrap().to_value().as_str(), "hi");
+    assert_eq!(s.get("value").unwrap().to_value().as_str(), "hi");
 }

@@ -28,8 +28,8 @@ impl Fields {
         self
     }
 
-    pub fn field(mut self, name: &str, schema: Schema) -> Self {
-        self.0.insert(name.to_string(), schema);
+    pub fn field<T: crate::ToSchema>(mut self, name: &str, value: T) -> Self {
+        self.0.insert(name.to_string(), value.to_schema());
         self
     }
 }

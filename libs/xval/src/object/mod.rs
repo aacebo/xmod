@@ -603,6 +603,7 @@ mod tests {
         use std::sync::Arc;
 
         use super::*;
+        use crate::ext::StructExt;
 
         #[test]
         fn serialize_struct() {
@@ -633,8 +634,8 @@ mod tests {
             assert!(obj.is_struct());
             let s = obj.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field("x".into()).unwrap().to_value().to_i8(), 42);
-            assert_eq!(s.field("y".into()).unwrap().to_value().as_str(), "world");
+            assert_eq!(s.get("x").unwrap().to_value().to_i8(), 42);
+            assert_eq!(s.get("y").unwrap().to_value().as_str(), "world");
         }
 
         #[test]
@@ -656,7 +657,7 @@ mod tests {
             assert!(deserialized.is_struct());
             let s = deserialized.as_struct();
             assert_eq!(s.len(), 2);
-            assert_eq!(s.field("a".into()).unwrap().to_value().to_i8(), 1);
+            assert_eq!(s.get("a").unwrap().to_value().to_i8(), 1);
         }
 
         #[test]

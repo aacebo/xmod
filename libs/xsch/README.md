@@ -11,12 +11,12 @@ use xsch::*;
 
 let name_schema = string().required().min(1).max(100);
 let age_schema  = int().min(0).max(150);
-let tags_schema = array().min(1).items(string().into());
+let tags_schema = array().min(1).items(string());
 
 let user_schema = object()
-    .field("name", name_schema.into())
-    .field("age", age_schema.into())
-    .field("tags", tags_schema.into());
+    .field("name", name_schema)
+    .field("age", age_schema)
+    .field("tags", tags_schema);
 ```
 
 ## Validating Values
@@ -46,8 +46,8 @@ use xsch::*;
 use xval::ToValue;
 
 let schema: Schema = object()
-    .field("name", string().required().into())
-    .field("scores", array().items(int().into()).into())
+    .field("name", string().required())
+    .field("scores", array().items(int()))
     .into();
 
 let good = xval::valueof!({ "name": "alice", "scores": [90_i32, 85_i32] });

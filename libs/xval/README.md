@@ -48,12 +48,14 @@ let s: xval::Str    = valueof!("hello" as string);
 ## Reading Values
 
 ```rust
+use xval::ext::StructExt;
+
 let v = valueof!({ "name": "alice", "scores": [90_i32, 85_i32] });
 
 assert!(v.is_struct());
-assert_eq!(v.as_struct().field("name".into()).unwrap().to_value().as_str(), "alice");
+assert_eq!(v.as_struct().get("name").unwrap().to_value().as_str(), "alice");
 
-let scores = v.as_struct().field("scores".into()).unwrap().to_value();
+let scores = v.as_struct().get("scores").unwrap().to_value();
 assert_eq!(scores.as_array().len(), 2);
 assert_eq!(scores.as_array().index(0).unwrap().to_value().to_i32(), 90);
 ```
@@ -106,6 +108,8 @@ xval = { version = "0.0.0", features = ["derive"] }
 ### Structs
 
 ```rust
+use xval::ext::StructExt;
+
 #[derive(Clone, xval::derive::Value)]
 struct User {
     name: String,
@@ -116,7 +120,7 @@ let user = User { name: "alice".into(), age: 30 };
 let v = user.to_value();
 
 assert!(v.is_struct());
-assert_eq!(v.as_struct().field("name".into()).unwrap().to_value().as_str(), "alice");
+assert_eq!(v.as_struct().get("name").unwrap().to_value().as_str(), "alice");
 ```
 
 ### Tuple Structs

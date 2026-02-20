@@ -448,11 +448,7 @@ mod tests {
 
         #[test]
         fn serialize_any_with_rules() {
-            let schema = Schema::Any(any().required().options(&[
-                1i32.to_value(),
-                "test".to_value(),
-                true.to_value(),
-            ]));
+            let schema = Schema::Any(any().required().options(&[&1i32, &"test", &true]));
             let json = serde_json::to_string(&schema).unwrap();
             let v: serde_json::Value = serde_json::from_str(&json).unwrap();
             assert_eq!(v["type"], "any");
