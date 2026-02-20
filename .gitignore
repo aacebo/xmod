@@ -19,4 +19,4 @@ target/
 
 # AI config files
 .claude
-.CLAUDE.md
+CLAUDE.md
