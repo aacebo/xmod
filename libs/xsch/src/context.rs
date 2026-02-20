@@ -31,11 +31,12 @@ impl Context {
     }
 }
 
-impl From<xval::Value> for Context {
-    fn from(value: xval::Value) -> Self {
+impl<T: xval::ToValue> From<T> for Context {
+    fn from(value: T) -> Self {
         Self {
-            value,
+            value: value.to_value(),
             ..Self::default()
         }
     }
 }
+

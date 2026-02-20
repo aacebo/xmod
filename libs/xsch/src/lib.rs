@@ -412,7 +412,7 @@ mod tests {
             // valid
             let mut map = HashMap::new();
             map.insert(xval::Ident::key("name"), xval::valueof!("alice"));
-            assert!(schema.validate(&map.to_value().into()).is_ok());
+            assert!(schema.validate(&map.into()).is_ok());
             // null rejected
             assert!(schema.validate(&xval::valueof!(null).into()).is_err());
         }
@@ -428,8 +428,6 @@ mod tests {
 
     #[cfg(feature = "serde")]
     mod serde {
-        use xval::ToValue;
-
         use crate::*;
 
         #[test]
