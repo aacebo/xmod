@@ -2,6 +2,7 @@ use std::cell::LazyCell;
 
 use crate::{Operator, Pipe};
 
+#[must_use]
 pub struct Task<T>(LazyCell<T, Box<dyn FnOnce() -> T + Send>>);
 
 impl<T: Send + 'static> Task<T> {

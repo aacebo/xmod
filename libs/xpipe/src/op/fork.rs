@@ -1,4 +1,6 @@
+use std::any::Any;
 use std::future::Future;
+use std::panic::{AssertUnwindSafe, catch_unwind, resume_unwind};
 use std::pin::Pin;
 use std::sync::{Arc, Condvar, Mutex};
 use std::task::{Context, Poll, Waker};
@@ -6,10 +8,11 @@ use std::task::{Context, Poll, Waker};
 use crate::{Operator, Pipe, Task};
 
 struct State<T> {
-    result: Option<T>,
+    result: Option<Result<T, Box<dyn Any + Send>>>,
     waker: Option<Waker>,
 }
 
+#[must_use]
 pub struct ForkHandle<T>(Arc<(Mutex<State<T>>, Condvar)>);
 
 impl<T: Send + 'static> ForkHandle<T> {
@@ -25,7 +28,7 @@ impl<T: Send + 'static> ForkHandle<T> {
         let shared_clone = shared.clone();
 
         std::thread::spawn(move || {
-            let value = task.eval();
+            let value = catch_unwind(AssertUnwindSafe(|| task.eval()));
             let (lock, cvar) = &*shared_clone;
             let mut state = lock.lock().unwrap();
 
@@ -47,7 +50,10 @@ impl<T: Send + 'static> ForkHandle<T> {
 
         loop {
             if let Some(value) = state.result.take() {
-                return value;
+                match value {
+                    Ok(v) => return v,
+                    Err(payload) => resume_unwind(payload),
+                }
             }
 
             state = cvar.wait(state).unwrap();
@@ -67,7 +73,10 @@ impl<T: Send + 'static> Future for ForkHandle<T> {
         let mut state = lock.lock().unwrap();
 
         if let Some(value) = state.result.take() {
-            Poll::Ready(value)
+            match value {
+                Ok(v) => Poll::Ready(v),
+                Err(payload) => resume_unwind(payload),
+            }
         } else {
             state.waker = Some(cx.waker().clone());
             Poll::Pending
@@ -145,5 +154,13 @@ mod tests {
     async fn future_impl() {
         let result = task!(42).fork().await;
         assert_eq!(result, 42);
+    }
+
+    #[test]
+    #[should_panic(expected = "task panicked")]
+    fn fork_propagates_panic() {
+        Task::from_lazy(|| -> i32 { panic!("task panicked") })
+            .fork()
+            .eval();
     }
 }

@@ -77,6 +77,30 @@ where
     }
 }
 
+pub struct MapErr<F> {
+    handler: F,
+}
+
+impl<F> MapErr<F> {
+    pub fn new(handler: F) -> Self {
+        Self { handler }
+    }
+}
+
+impl<T, E, E2, F> Operator<Result<T, E>> for MapErr<F>
+where
+    T: Send + 'static,
+    E: Send + 'static,
+    E2: Send + 'static,
+    F: FnOnce(E) -> E2 + Send + 'static,
+{
+    type Output = Result<T, E2>;
+
+    fn apply(self, task: Task<Result<T, E>>) -> Task<Self::Output> {
+        Task::from_lazy(move || task.eval().map_err(self.handler))
+    }
+}
+
 pub trait LogicalPipe<T, E>: Pipe<Result<T, E>> + Sized
 where
     T: Send + 'static,
@@ -101,6 +125,14 @@ where
         F: FnOnce(E) -> T + Send + 'static,
     {
         self.pipe(OrElseMap::new(handler))
+    }
+
+    fn map_err<E2, F>(self, handler: F) -> Task<Result<T, E2>>
+    where
+        E2: Send + 'static,
+        F: FnOnce(E) -> E2 + Send + 'static,
+    {
+        self.pipe(MapErr::new(handler))
     }
 }
 
@@ -197,6 +229,22 @@ mod tests {
             .eval();
 
         assert_eq!(result, Ok(10));
+    }
+
+    #[test]
+    fn map_err_transforms_error() {
+        let result: Result<i32, String> = task!(Err::<i32, &str>("bad"))
+            .map_err(|e| e.to_uppercase())
+            .eval();
+        assert_eq!(result, Err("BAD".to_string()));
+    }
+
+    #[test]
+    fn map_err_preserves_ok() {
+        let result: Result<i32, String> = task!(Ok::<i32, &str>(42))
+            .map_err(|e| e.to_uppercase())
+            .eval();
+        assert_eq!(result, Ok(42));
     }
 
     #[test]

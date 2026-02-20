@@ -1,4 +1,5 @@
 mod filter;
+mod flat_map;
 mod fork;
 mod logical;
 mod map;
@@ -6,8 +7,10 @@ mod result;
 mod run;
 mod time;
 mod try_map;
+mod zip;
 
 pub use filter::*;
+pub use flat_map::*;
 pub use fork::*;
 pub use logical::*;
 pub use map::*;
@@ -15,3 +18,4 @@ pub use result::*;
 pub use run::*;
 pub use time::*;
 pub use try_map::*;
+pub use zip::*;
