@@ -4,10 +4,10 @@
     derive(serde::Deserialize, serde::Serialize),
     serde(rename_all = "snake_case")
 )]
-pub struct CustomActionSpec {
+pub struct Invoke {
+    pub alias: Option<String>,
     pub name: String,
-    pub version: semver::Version,
+    pub version: Option<semver::Version>,
     pub description: Option<String>,
-    pub input: Option<xsch::Schema>,
-    pub output: Option<xsch::Schema>,
+    pub input: Option<xval::Value>,
 }

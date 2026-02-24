@@ -1,10 +1,15 @@
-use async_trait::async_trait;
-use xok::Result;
-use xval::Value;
+use crate::Invoke;
 
-use crate::Context;
-
-#[async_trait]
-pub trait Action: Send + Sync {
-    async fn exec(&self, ctx: &mut Context) -> Result<Value>;
+#[derive(Debug, Clone)]
+#[cfg_attr(
+    feature = "serde",
+    derive(serde::Deserialize, serde::Serialize),
+    serde(rename_all = "snake_case")
+)]
+pub struct Action {
+    pub name: String,
+    pub version: semver::Version,
+    pub description: Option<String>,
+    pub input: Option<xsch::Schema>,
+    pub actions: Vec<Invoke>,
 }
