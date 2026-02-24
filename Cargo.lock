@@ -230,10 +230,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "xmod"
-version = "0.0.0"
-
-[[package]]
 name = "xok"
 version = "0.0.0"
 dependencies = [
