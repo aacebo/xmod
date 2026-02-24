@@ -1,3 +1,5 @@
+use crate::ActionRef;
+
 #[derive(Debug, Clone)]
 #[cfg_attr(
     feature = "serde",
@@ -6,8 +8,7 @@
 )]
 pub struct Invoke {
     pub alias: Option<String>,
-    pub name: String,
-    pub version: Option<semver::Version>,
+    pub action: ActionRef,
     pub description: Option<String>,
-    pub input: Option<xval::Value>,
+    pub input: xval::Value,
 }
