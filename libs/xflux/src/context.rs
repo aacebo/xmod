@@ -36,7 +36,7 @@ impl Context {
         self
     }
 
-    pub fn registry(&mut self, action: ActionRef, executor: impl Execute + 'static) -> &mut Self {
+    pub fn register(&mut self, action: ActionRef, executor: impl Execute + 'static) -> &mut Self {
         self.actions.insert(action, Arc::new(executor));
         self
     }
@@ -57,12 +57,19 @@ impl Context {
         input: xval::Value,
     ) -> xok::Result<xval::Value> {
         let executor = match self.actions.get(action) {
-            None => return Err(Box::new(FluxError::new("action not found"))),
+            None => {
+                return Err(Box::new(FluxError::new(format!(
+                    "action not found: {action}"
+                ))));
+            }
             Some(v) => v.clone(),
         };
 
         let mut ctx = self.clone();
         ctx.input = input;
-        Ok(executor.exec(&mut ctx).await?)
+
+        let result = executor.exec(&mut ctx).await?;
+        self.merge(ctx);
+        Ok(result)
     }
 }

@@ -223,6 +223,7 @@ dependencies = [
  "async-trait",
  "semver",
  "serde",
+ "tokio",
  "xok",
  "xsch",
  "xtera",

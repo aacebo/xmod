@@ -21,3 +21,6 @@ xok = { workspace = true }
 xtera = { workspace = true }
 xval = { workspace = true }
 xsch = { workspace = true }
+
+[dev-dependencies]
+tokio = { version = "1", features = ["rt", "macros"] }

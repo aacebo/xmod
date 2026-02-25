@@ -16,7 +16,3 @@ use async_trait::async_trait;
 pub trait Execute: Send + Sync {
     async fn exec(&self, ctx: &mut Context) -> xok::Result<xval::Value>;
 }
-
-pub trait Subscribe: Send + Sync {
-    fn subscribe(&mut self, action: impl Execute);
-}
